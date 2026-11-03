@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta name="referrer" content="no-referrer" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#c62828" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="소방전기 하루4문" />
+<title>소방전기기사 하루 4문제</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --ink:#1d2129; --sub:#5f6773; --line:#e3e6ea;
+  --brand:#c62828; --brand-soft:#fdecea; --ok:#2e7d32; --ok-soft:#e8f5e9; --bad:#c62828; --bad-soft:#fdecea;
+  --s0:#e65100; --s1:#1565c0; --s2:#6a1b9a; --s3:#00838f;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#121417; --card:#1c1f24; --ink:#e8eaed; --sub:#9aa0a6; --line:#2e3238;
+    --brand:#ef5350; --brand-soft:#3a1d1d; --ok:#66bb6a; --ok-soft:#1b2e1c; --bad:#ef5350; --bad-soft:#3a1d1d;
+    --s0:#ffa726; --s1:#64b5f6; --s2:#ce93d8; --s3:#4dd0e1; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:12px 16px;
+  padding-top:max(12px,env(safe-area-inset-top))}
+header h1{margin:0;font-size:18px;font-weight:700}
+header .date{font-size:13px;opacity:.9}
+main{max-width:720px;margin:0 auto;padding:16px 16px 96px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;color:var(--sub);padding:8px 0 10px;font:inherit;font-size:12px;cursor:pointer}
+nav button .ic{display:block;font-size:20px;line-height:1.3}
+nav button.on{color:var(--brand);font-weight:700}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--brand);color:#fff;font-size:11px;line-height:18px;margin-left:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.muted{color:var(--sub);font-size:14px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;color:#fff}
+.chip.s0{background:var(--s0)}.chip.s1{background:var(--s1)}.chip.s2{background:var(--s2)}.chip.s3{background:var(--s3)}
+.chip.rv{background:var(--sub)}
+h2{font-size:17px;margin:4px 0 12px}
+h3{font-size:15px;margin:0 0 8px}
+.qtext{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;margin:10px 0 12px;font-weight:600}
+.qimg{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;background:#fff}
+.opt{display:flex;gap:8px;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:10px;padding:11px 12px;margin:6px 0;font:inherit;cursor:pointer;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
+.opt .n{flex:none;font-weight:700}
+.opt:hover:not(:disabled){border-color:var(--brand)}
+.opt:disabled{cursor:default}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.result{margin-top:10px;padding:12px;border-radius:10px;font-size:15px}
+.result.ok{background:var(--ok-soft)}.result.bad{background:var(--bad-soft)}
+.result .t{font-weight:700;margin-bottom:4px}
+.exp{white-space:pre-wrap;overflow-wrap:anywhere}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 14px;font:inherit;font-size:15px;cursor:pointer}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--bad)}
+textarea,input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;
+  font-size:15px;background:var(--card);color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+.progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px}
+.progress > i{display:block;height:100%;background:var(--brand)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats b{display:block;font-size:22px}
+.subj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.subj-grid > div{border:1px solid var(--line);border-radius:10px;padding:10px}
+.days{display:flex;gap:4px;margin-top:8px}
+.days i{flex:1;height:18px;border-radius:4px;background:var(--line)}
+.days i.part{background:#f4a29d}.days i.full{background:var(--brand)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.note-meta{font-size:13px;color:var(--sub);margin-top:8px}
+.empty{text-align:center;color:var(--sub);padding:28px 8px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;
+  font-size:14px;z-index:20;max-width:90vw}
+pre.fmt{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.qlist .item{border-top:1px solid var(--line);padding:10px 0}
+.qlist .item:first-child{border-top:0}
+.clip{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.hidden{display:none!important}
+@media print{
+  header,nav,.noprint,.toast{display:none!important}
+  main{padding:0;max-width:none}
+  body{background:#fff;color:#000}
+  .card{break-inside:avoid;border:1px solid #999}
+  .print-only{display:block!important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔥 소방전기기사 하루 4문제</h1>
+  <div class="date" id="hdrDate"></div>
+</header>
+<main id="view"></main>
+<nav id="nav">
+  <button data-tab="today" class="on"><span class="ic">📅</span>오늘</button>
+  <button data-tab="notes"><span class="ic">📒</span>오답노트<span id="noteBadge"></span></button>
+  <button data-tab="bank"><span class="ic">📚</span>문제은행</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>설정</button>
+</nav>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== 기본 정보 ===================== */
+var SUBJECTS = ["소방원론", "소방전기일반", "소방관계법규", "소방전기시설의 구조 및 원리"];
+var SHORT    = ["원론", "전기일반", "법규", "구조원리"];
+var NUMS = ["①","②","③","④"];
+var DB_NAME = "fire_elec_exam", DB_STORE = "kv", STATE_KEY = "state_v1";
+
+/* 저작권 걱정 없는 직접 만든 예시 문제 (문제집을 넣은 뒤 삭제해도 됩니다) */
+var SAMPLES = [
+  {s:0, q:"연소의 3요소에 해당하지 않는 것은?", opts:["가연물","산소공급원","점화원","연쇄반응"], a:4,
+   exp:"연소의 3요소: 가연물·산소공급원·점화원.\n여기에 '연쇄반응'을 더하면 연소의 4요소가 됩니다."},
+  {s:0, q:"1기압, 100℃에서 물의 증발잠열은 약 몇 kcal/kg인가?", opts:["80","100","539","639"], a:3,
+   exp:"물의 증발잠열 ≒ 539 kcal/kg (약 2,256 kJ/kg).\n얼음의 융해잠열은 약 80 kcal/kg."},
+  {s:1, q:"10 Ω의 저항에 100 V의 직류전압을 가했을 때 흐르는 전류는 몇 A인가?", opts:["0.1","1","10","1000"], a:3,
+   exp:"옴의 법칙 I = V / R = 100 / 10 = 10 A"},
+  {s:1, q:"저항 4 Ω과 6 Ω을 병렬로 접속했을 때 합성저항은 몇 Ω인가?", opts:["2.4","5","10","24"], a:1,
+   exp:"병렬 합성저항 R = (R1×R2)/(R1+R2) = 24/10 = 2.4 Ω"},
+  {s:2, q:"소방기본법상 소방대의 구성원에 해당하지 않는 것은?", opts:["소방공무원","의무소방원","의용소방대원","자체소방대원"], a:4,
+   exp:"소방대: 소방공무원, 의무소방원, 의용소방대원으로 구성된 조직체.\n※ 법령은 개정될 수 있으니 최신 법령으로 확인하세요."},
+  {s:3, q:"다음 중 열감지기에 해당하지 않는 것은?", opts:["차동식 스포트형","정온식 스포트형","보상식 스포트형","광전식 스포트형"], a:4,
+   exp:"광전식은 연기를 감지하는 연기감지기입니다.\n차동식·정온식·보상식은 열감지기."}
+];
+
+/* ===================== 저장소 (IndexedDB, 이 기기에만 저장) ===================== */
+var idb = null;
+function openDb(){
+  return new Promise(function(res){
+    try{
+      var r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = function(){ r.result.createObjectStore(DB_STORE); };
+      r.onsuccess = function(){ idb = r.result; res(); };
+      r.onerror = function(){ res(); };
+    }catch(e){ res(); }
+  });
+}
+function dbGet(k){
+  if(!idb){ try{ var v = localStorage.getItem(DB_NAME+"_"+k); return Promise.resolve(v ? JSON.parse(v) : null); }catch(e){ return Promise.resolve(null); } }
+  return new Promise(function(res){
+    var t = idb.transaction(DB_STORE,"readonly").objectStore(DB_STORE).get(k);
+    t.onsuccess = function(){ res(t.result || null); }; t.onerror = function(){ res(null); };
+  });
+}
+function dbSet(k, v){
+  if(!idb){ try{ localStorage.setItem(DB_NAME+"_"+k, JSON.stringify(v)); }catch(e){ toast("저장 공간이 부족합니다."); } return Promise.resolve(); }
+  return new Promise(function(res){
+    var tx = idb.transaction(DB_STORE,"readwrite"); tx.objectStore(DB_STORE).put(v, k);
+    tx.oncomplete = function(){ res(); }; tx.onerror = function(){ toast("저장 실패"); res(); };
+  });
+}
+
+var S; // 앱 상태
+function blankState(){
+  return { v:1, seq:1, questions:[], daily:{}, stats:{}, wrong:{},
+           settings:{ perSubject:1, reviewPerDay:2, masterAfter:2 } };
+}
+var saveTimer = null;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(function(){ dbSet(STATE_KEY, S); }, 150); }
+
+/* ===================== 유틸 ===================== */
+function pad(n){ return (n<10?"0":"")+n; }
+function dkey(d){ d = d || new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function addDays(key, n){ var p = key.split("-"); var d = new Date(+p[0], +p[1]-1, +p[2]); d.setDate(d.getDate()+n); return dkey(d); }
+function today(){ return dkey(); }
+function fmtKo(key){ var p = key.split("-"); var d = new Date(+p[0], +p[1]-1, +p[2]);
+  return (+p[1])+"월 "+(+p[2])+"일 ("+"일월화수목금토"[d.getDay()]+")"; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function norm(t){ return String(t||"").replace(/\s+/g," ").trim(); }
+function qById(id){ for(var i=0;i<S.questions.length;i++) if(S.questions[i].id===id) return S.questions[i]; return null; }
+
+/* 안전한 DOM 생성 (문제 내용은 항상 글자로만 표시) */
+function h(tag, attrs){
+  var el = document.createElement(tag);
+  if(attrs) for(var k in attrs){
+    var v = attrs[k];
+    if(v == null || v === false) continue;
+    if(k === "class") el.className = v;
+    else if(k === "text") el.textContent = v;
+    else if(k.slice(0,2) === "on") el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for(var i=2;i<arguments.length;i++) add(el, arguments[i]);
+  return el;
+}
+function add(el, c){
+  if(c == null || c === false) return;
+  if(Array.isArray(c)) c.forEach(function(x){ add(el, x); });
+  else el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+}
+var toastEl = null, toastT = null;
+function toast(msg){
+  if(!toastEl){ toastEl = h("div",{class:"toast"}); document.body.appendChild(toastEl); }
+  toastEl.textContent = msg; toastEl.classList.remove("hidden");
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.add("hidden"); }, 2400);
+}
+function chip(s){ return h("span",{class:"chip s"+s, text:SUBJECTS[s]}); }
+
+/* ===================== 오늘의 문제 뽑기 ===================== */
+function ensureDaily(){
+  var key = today();
+  if(S.daily[key]) return S.daily[key];
+  var per = S.settings.perSubject, ids = [];
+  for(var s=0;s<4;s++){
+    var pool = S.questions.filter(function(q){
+      return q.s === s && !(S.wrong[q.id] && !S.wrong[q.id].mastered);   // 오답노트에 있는 건 복습으로
+    });
+    shuffle(pool);
+    pool.sort(function(a,b){
+      var sa = S.stats[a.id] || {n:0,last:""}, sb = S.stats[b.id] || {n:0,last:""};
+      if(sa.n !== sb.n) return sa.n - sb.n;            // 안 푼 문제 먼저
+      return sa.last < sb.last ? -1 : sa.last > sb.last ? 1 : 0;  // 오래전에 푼 문제 먼저
+    });
+    pool.slice(0, per).forEach(function(q){ ids.push(q.id); });
+  }
+  // 복습: 오답노트에서 오늘 이전에 마지막으로 푼 문제 중 오래된 것부터
+  var rv = Object.keys(S.wrong).map(Number).filter(function(id){
+    var w = S.wrong[id]; return !w.mastered && qById(id) && w.last < key && ids.indexOf(id) < 0;
+  }).sort(function(a,b){ return S.wrong[a].last < S.wrong[b].last ? -1 : 1; }).slice(0, S.settings.reviewPerDay);
+  S.daily[key] = { ids: ids, review: rv, ans: {} };
+  save();
+  return S.daily[key];
+}
+
+/* 답 기록: 통계 + 오답노트 반영 */
+function record(q, pick){
+  var key = today(), ok = pick === q.a;
+  var st = S.stats[q.id] || (S.stats[q.id] = {n:0, ok:0, last:""});
+  st.n++; if(ok) st.ok++; st.last = key;
+  var w = S.wrong[q.id];
+  if(!ok){
+    if(!w) w = S.wrong[q.id] = { added:key, memo:"", picks:[], streak:0, mastered:false, last:key, times:0 };
+    w.picks.push(pick); w.times++; w.streak = 0; w.mastered = false; w.last = key;
+  }else if(w){
+    w.streak++; w.last = key;
+    if(w.streak >= S.settings.masterAfter && !w.mastered){ w.mastered = true; toast("🎉 "+S.settings.masterAfter+"번 연속 정답! 오답노트 '완료'로 이동했어요"); }
+  }
+  save(); updateBadge();
+  return ok;
+}
+
+/* ===================== 문제 카드 ===================== */
+/* opts: {picked, onPick(pick), label, showMemo} */
+function questionCard(q, o){
+  o = o || {};
+  var card = h("div",{class:"card"});
+  var head = h("div",{class:"row"}, chip(q.s), o.label ? h("span",{class:"chip rv", text:o.label}) : null,
+               h("span",{class:"grow"}), q.src ? h("span",{class:"muted", text:q.src}) : null);
+  card.appendChild(head);
+  card.appendChild(h("div",{class:"qtext", text:q.q}));
+  if(q.img) card.appendChild(h("img",{class:"qimg", src:q.img, alt:"문제 그림"}));
+  var btns = [], resBox = h("div");
+  q.opts.forEach(function(t, i){
+    var b = h("button",{class:"opt", type:"button", onclick:function(){ choose(i+1); }},
+              h("span",{class:"n", text:NUMS[i]}), h("span",{text:t}));
+    btns.push(b); card.appendChild(b);
+  });
+  card.appendChild(resBox);
+  function show(pick){
+    btns.forEach(function(b, i){
+      b.disabled = true;
+      if(i+1 === q.a) b.classList.add("correct");
+      else if(i+1 === pick) b.classList.add("wrong");
+    });
+    var ok = pick === q.a;
+    resBox.innerHTML = "";
+    var r = h("div",{class:"result "+(ok?"ok":"bad")},
+      h("div",{class:"t", text: ok ? "⭕ 정답입니다!" : "❌ 틀렸어요. 정답은 "+NUMS[q.a-1]+" — 오답노트에 저장했어요"}),
+      q.exp ? h("div",{class:"exp", text:q.exp}) : h("div",{class:"muted", text:"(해설 없음)"}));
+    resBox.appendChild(r);
+    if(S.wrong[q.id] && o.showMemo !== false) resBox.appendChild(memoBox(q.id));
+  }
+  function choose(pick){
+    if(btns[0].disabled) return;
+    var ok = o.onPick ? o.onPick(pick) : record(q, pick);
+    show(pick);
+    if(o.after) o.after(ok);
+  }
+  if(o.picked) show(o.picked);
+  return card;
+}
+function memoBox(id){
+  var w = S.wrong[id];
+  var ta = h("textarea",{placeholder:"왜 틀렸는지, 외울 포인트를 적어두세요 (자동 저장)", rows:"2"});
+  ta.value = w.memo || "";
+  ta.addEventListener("input", function(){ w.memo = ta.value; save(); });
+  return h("div",{}, h("label",{class:"f", text:"✏️ 나의 메모"}), ta);
+}
+
+/* ===================== 화면: 오늘 ===================== */
+function viewToday(root){
+  if(!S.questions.length){
+    root.appendChild(h("div",{class:"card empty"},
+      h("div",{text:"아직 문제가 없어요."}), h("br"),
+      h("button",{class:"btn pri", onclick:function(){ go("bank"); }, text:"📚 문제은행에서 문제 넣기"})));
+    return;
+  }
+  var d = ensureDaily(), all = d.ids.concat(d.review);
+  var done = all.filter(function(id){ return d.ans[id]; }).length;
+  var correct = all.filter(function(id){ var q = qById(id); return q && d.ans[id] === q.a; }).length;
+
+  var top = h("div",{class:"card"},
+    h("div",{class:"row"}, h("h2",{class:"grow", style:"margin:0", text:"오늘의 문제"}),
+      h("span",{class:"muted", text: done+" / "+all.length+" 완료"})),
+    h("div",{class:"progress"}, h("i",{style:"width:"+(all.length? done/all.length*100 : 0)+"%"})));
+  if(done === all.length && all.length){
+    top.appendChild(h("div",{style:"margin-top:10px;font-weight:700", text:"✅ 오늘 끝! "+all.length+"문제 중 "+correct+"문제 정답"}));
+  }
+  var missing = [0,1,2,3].filter(function(s){ return !S.questions.some(function(q){ return q.s===s; }); });
+  if(missing.length) top.appendChild(h("div",{class:"muted", style:"margin-top:8px",
+    text:"※ 문제가 없는 과목: "+missing.map(function(s){ return SUBJECTS[s]; }).join(", ")}));
+  root.appendChild(top);
+
+  function rerenderHead(){ render(); }
+  d.ids.forEach(function(id){
+    var q = qById(id); if(!q) return;
+    root.appendChild(questionCard(q, { picked:d.ans[id],
+      onPick:function(p){ d.ans[id] = p; return record(q, p); }, after:function(){ save(); setTimeout(rerenderHead, 0); keepScroll(); } }));
+  });
+  if(d.review.length){
+    root.appendChild(h("h2",{text:"🔁 오답 복습"}));
+    d.review.forEach(function(id){
+      var q = qById(id); if(!q) return;
+      root.appendChild(questionCard(q, { picked:d.ans[id], label:"복습",
+        onPick:function(p){ d.ans[id] = p; return record(q, p); }, after:function(){ save(); setTimeout(rerenderHead, 0); keepScroll(); } }));
+    });
+  }
+  if(done === all.length){
+    root.appendChild(h("div",{class:"card noprint"},
+      h("div",{class:"muted", text:"더 풀고 싶다면 과목별로 한 문제씩 더 받을 수 있어요."}),
+      h("button",{class:"btn", style:"margin-top:8px", text:"➕ 4문제 더 풀기", onclick:function(){ moreToday(); }})));
+  }
+  root.appendChild(historyCard());
+}
+var scrollY0 = null;
+function keepScroll(){ scrollY0 = window.scrollY; }
+function moreToday(){
+  var d = S.daily[today()];
+  for(var s=0;s<4;s++){
+    var pool = S.questions.filter(function(q){ return q.s===s && d.ids.indexOf(q.id)<0 && d.review.indexOf(q.id)<0 && !(S.wrong[q.id] && !S.wrong[q.id].mastered); });
+    shuffle(pool).sort(function(a,b){ return ((S.stats[a.id]||{n:0}).n) - ((S.stats[b.id]||{n:0}).n); });
+    if(pool[0]) d.ids.push(pool[0].id);
+  }
+  save(); render();
+}
+function historyCard(){
+  var key = today(), cells = [], streak = 0, counting = true;
+  for(var i=13;i>=0;i--){
+    var k = addDays(key, -i), d = S.daily[k], cls = "";
+    if(d){ var all = d.ids.concat(d.review), n = all.filter(function(id){ return d.ans[id]; }).length;
+      cls = n && n === all.length ? "full" : n ? "part" : ""; }
+    cells.push(h("i",{class:cls, title:k}));
+  }
+  // 연속 학습일: 오늘이 아직이면 어제부터 셈
+  var k2 = key;
+  if(!dayDone(k2)) k2 = addDays(k2, -1);
+  while(dayDone(k2)){ streak++; k2 = addDays(k2, -1); }
+  var totN = 0, totOk = 0, per = [[0,0],[0,0],[0,0],[0,0]];
+  Object.keys(S.stats).forEach(function(id){ var q = qById(+id), st = S.stats[id]; if(!q) return;
+    totN += st.n; totOk += st.ok; per[q.s][0] += st.n; per[q.s][1] += st.ok; });
+  return h("div",{class:"card"},
+    h("h3",{text:"📈 나의 기록"}),
+    h("div",{class:"stats"},
+      h("div",{}, h("b",{text:streak+"일"}), h("span",{class:"muted", text:"연속 학습"})),
+      h("div",{}, h("b",{text:totN}), h("span",{class:"muted", text:"푼 문제"})),
+      h("div",{}, h("b",{text: totN ? Math.round(totOk/totN*100)+"%" : "-"}), h("span",{class:"muted", text:"정답률"}))),
+    h("div",{class:"muted", style:"margin-top:12px", text:"최근 14일"}),
+    h("div",{class:"days"}, cells),
+    h("div",{class:"subj-grid", style:"margin-top:12px"}, [0,1,2,3].map(function(s){
+      return h("div",{}, chip(s), h("div",{class:"muted", style:"margin-top:4px",
+        text: per[s][0] ? "정답률 "+Math.round(per[s][1]/per[s][0]*100)+"% ("+per[s][1]+"/"+per[s][0]+")" : "아직 기록 없음"}));
+    })));
+}
+function dayDone(k){ var d = S.daily[k]; if(!d) return false; var all = d.ids.concat(d.review);
+  return all.length > 0 && all.every(function(id){ return d.ans[id]; }); }
+
+/* ===================== 화면: 오답노트 ===================== */
+var noteState = { tab:"active", s:-1, retry:null };
+function viewNotes(root){
+  var ids = Object.keys(S.wrong).map(Number).filter(function(id){ return qById(id); });
+  var act = ids.filter(function(id){ return !S.wrong[id].mastered; }), mst = ids.filter(function(id){ return S.wrong[id].mastered; });
+  var list = (noteState.tab === "active" ? act : mst).filter(function(id){ return noteState.s < 0 || qById(id).s === noteState.s; })
+    .sort(function(a,b){ return S.wrong[b].times - S.wrong[a].times || (S.wrong[a].added < S.wrong[b].added ? 1 : -1); });
+
+  root.appendChild(h("div",{class:"print-only"}, h("h2",{text:"소방전기기사 오답노트 ("+today()+")"})));
+  var bar = h("div",{class:"card noprint"},
+    h("div",{class:"tabs"},
+      tabBtn("복습중 "+act.length, noteState.tab==="active", function(){ noteState.tab="active"; render(); }),
+      tabBtn("완료 "+mst.length, noteState.tab==="mastered", function(){ noteState.tab="mastered"; render(); })),
+    h("div",{class:"tabs", style:"margin:0"},
+      [tabBtn("전체", noteState.s<0, function(){ noteState.s=-1; render(); })].concat([0,1,2,3].map(function(s){
+        return tabBtn(SHORT[s], noteState.s===s, function(){ noteState.s=s; render(); }); }))),
+    h("div",{class:"muted", style:"margin-top:10px", text:"틀린 문제는 자동 저장돼요. "+S.settings.masterAfter+"번 연속 맞히면 '완료'로 이동."}),
+    h("div",{class:"row", style:"margin-top:8px"},
+      list.length ? h("button",{class:"btn sm", text:"🔀 섞어서 다시 풀기", onclick:function(){ noteState.retry = shuffle(list.slice()); render(); }}) : null,
+      list.length ? h("button",{class:"btn sm", text:"🖨️ 인쇄/PDF", onclick:function(){ window.print(); }}) : null));
+  root.appendChild(bar);
+
+  if(noteState.retry){
+    var rid = noteState.retry[0], rq = qById(rid);
+    if(!rq){ noteState.retry = null; render(); return; }
+    root.appendChild(h("div",{class:"row noprint", style:"margin-bottom:8px"},
+      h("b",{class:"grow", text:"다시 풀기 · 남은 문제 "+noteState.retry.length}),
+      h("button",{class:"btn sm", text:"그만하기", onclick:function(){ noteState.retry = null; render(); }})));
+    var cardEl = questionCard(rq, { label:"다시 풀기", after:function(){
+      cardEl.appendChild(h("button",{class:"btn pri", style:"margin-top:12px;width:100%", text: noteState.retry.length > 1 ? "다음 문제 ▶" : "끝내기",
+        onclick:function(){ noteState.retry.shift(); if(!noteState.retry.length){ noteState.retry = null; toast("다시 풀기 완료!"); } render(); window.scrollTo(0,0); }}));
+    }});
+    root.appendChild(cardEl);
+    return;
+  }
+
+  if(!list.length){
+    root.appendChild(h("div",{class:"card empty", text: noteState.tab==="active" ? "복습할 오답이 없어요 👍" : "아직 완료한 오답이 없어요"}));
+    return;
+  }
+  list.forEach(function(id){
+    var q = qById(id), w = S.wrong[id];
+    var card = h("div",{class:"card"},
+      h("div",{class:"row"}, chip(q.s), h("span",{class:"grow"}), h("span",{class:"muted", text:"틀린 횟수 "+w.times})),
+      h("div",{class:"qtext", text:q.q}),
+      q.img ? h("img",{class:"qimg", src:q.img, alt:"문제 그림"}) : null,
+      q.opts.map(function(t, i){
+        var mine = w.picks.indexOf(i+1) >= 0;
+        return h("div",{class:"opt"+(i+1===q.a?" correct":mine?" wrong":""), style:"cursor:default"},
+          h("span",{class:"n", text:NUMS[i]}), h("span",{class:"grow", text:t}),
+          i+1===q.a ? h("b",{text:"정답"}) : mine ? h("span",{text:"내 답"}) : null);
+      }),
+      q.exp ? h("div",{class:"result ok"}, h("div",{class:"t", text:"해설"}), h("div",{class:"exp", text:q.exp})) : null);
+    var memoWrap = h("div");
+    memoWrap.appendChild(memoBox(id));
+    card.appendChild(memoWrap);
+    card.appendChild(h("div",{class:"note-meta", text:"처음 틀린 날 "+w.added+" · 마지막 "+w.last+" · 연속 정답 "+w.streak+"/"+S.settings.masterAfter}));
+    card.appendChild(h("div",{class:"row noprint", style:"margin-top:8px"},
+      h("button",{class:"btn sm", text:"다시 풀기", onclick:function(){ noteState.retry = [id]; render(); window.scrollTo(0,0); }}),
+      w.mastered
+        ? h("button",{class:"btn sm", text:"복습중으로 되돌리기", onclick:function(){ w.mastered=false; w.streak=0; save(); updateBadge(); render(); }})
+        : h("button",{class:"btn sm", text:"외웠어요 (완료)", onclick:function(){ w.mastered=true; save(); updateBadge(); render(); }}),
+      h("span",{class:"grow"}),
+      h("button",{class:"btn sm danger", text:"노트에서 삭제", onclick:function(){ if(confirm("오답노트에서 삭제할까요? (문제 자체는 문제은행에 남아요)")){ delete S.wrong[id]; save(); updateBadge(); render(); } }})));
+    root.appendChild(card);
+  });
+}
+function tabBtn(t, on, fn){ return h("button",{class:on?"on":"", text:t, onclick:fn}); }
+
+/* ===================== 문제 파서 (텍스트 붙여넣기) ===================== */
+function subjectFromText(t){
+  t = t.replace(/\s/g,"");
+  if(/원론/.test(t)) return 0;
+  if(/전기일반|전기공학|일반/.test(t)) return 1;
+  if(/법규|관계법/.test(t)) return 2;
+  if(/구조|원리|설비|시설/.test(t)) return 3;
+  var m = t.match(/^(\d)(과목)?$/) || t.match(/^(\d)과목/); if(m && +m[1]>=1 && +m[1]<=4) return +m[1]-1;
+  return -1;
+}
+var OPT_RE = /(①|②|③|④|❶|❷|❸|❹|\(\s*[1-4]\s*\)|^\s*[1-4]\s*\)|^\s*[가나다라]\s*[.)])/;
+function optIndex(tok){
+  var m = "①②③④".indexOf(tok); if(m>=0) return m;
+  m = "❶❷❸❹".indexOf(tok); if(m>=0) return m;
+  var d = tok.match(/[1-4]/); if(d) return +d[0]-1;
+  var k = tok.match(/[가나다라]/); if(k) return "가나다라".indexOf(k[0]);
+  return -1;
+}
+function parseText(text, defaultS){
+  var lines = String(text).replace(/\r/g,"").split("\n");
+  var out = [], errs = [], cur = null, s = defaultS, mode = null, lastOpt = -1;
+  function flush(){
+    if(!cur) return;
+    cur.q = cur.q.trim(); cur.exp = (cur.exp||"").trim();
+    cur.opts = cur.opts.map(function(x){ return (x||"").trim(); });
+    var bad = [];
+    if(cur.s < 0) bad.push("과목 없음");
+    if(cur.opts.filter(Boolean).length !== 4) bad.push("보기 4개가 아님");
+    if(!(cur.a >= 1 && cur.a <= 4)) bad.push("정답 없음");
+    if(!cur.q) bad.push("문제 없음");
+    if(bad.length) errs.push((cur.no ? cur.no+"번" : "문제")+" ("+(cur.q.slice(0,20)||"?")+"…): "+bad.join(", "));
+    else out.push({ s:cur.s, q:cur.q, opts:cur.opts, a:cur.a, exp:cur.exp, src:cur.src||"" });
+    cur = null;
+  }
+  for(var i=0;i<lines.length;i++){
+    var line = lines[i], t = line.trim();
+    if(!t){ if(mode === "exp" && cur) cur.exp += "\n"; continue; }
+    var m;
+    // 과목 헤더: [소방원론] / # 소방원론 / ## 2과목
+    if((m = t.match(/^\[(.+)\]$/)) || (m = t.match(/^#+\s*(.+)$/))){
+      var ss = subjectFromText(m[1]);
+      if(ss >= 0){ flush(); s = ss; mode = null; continue; }
+    }
+    // 출처: (출처: 2023년 1회)
+    if(cur && (m = t.match(/^(출처|source)\s*[:：]\s*(.+)$/i))){ cur.src = m[2].trim(); continue; }
+    // 정답
+    if(cur && (m = t.match(/^(?:정답|답|answer)\s*[:：.]?\s*(①|②|③|④|❶|❷|❸|❹|[1-4]|\(\s*[1-4]\s*\))/i))){
+      cur.a = optIndex(m[1]) + 1; mode = null;
+      var rest = t.slice(m[0].length).replace(/^[\s,/]+/,"");
+      var em = rest.match(/^(?:해설)\s*[:：]?\s*(.*)$/);
+      if(em){ cur.exp = em[1]; mode = "exp"; }
+      continue;
+    }
+    // 해설
+    if(cur && (m = t.match(/^(?:해설|풀이)\s*[:：]?\s*(.*)$/))){ cur.exp = (cur.exp? cur.exp+"\n":"") + m[1]; mode = "exp"; continue; }
+    // 새 문제: "12. 문제" / "12) 문제"? → 숫자+점 / 문제 12. / Q12.
+    if((m = t.match(/^(?:문제\s*|Q\s*)?(\d{1,4})\s*\.(?!\d)\s*(.*)$/i))){
+      flush();
+      cur = { no:m[1], s:s, q:m[2], opts:["","","",""], a:0, exp:"" }; mode = "q"; lastOpt = -1;
+      splitOpts(m[2]);
+      continue;
+    }
+    if(!cur) continue;
+    if(mode === "exp"){ cur.exp += (cur.exp && !/\n$/.test(cur.exp) ? "\n" : "") + t; continue; }
+    if(OPT_RE.test(t) && /^(①|②|③|④|❶|❷|❸|❹|\(\s*[1-4]\s*\)|[1-4]\s*\)|[가나다라]\s*[.)])/.test(t)){ splitOpts(t, true); continue; }
+    if(mode === "opts" && lastOpt >= 0){ cur.opts[lastOpt] += " " + t; continue; }
+    cur.q += "\n" + t;
+  }
+  flush();
+  return { items: out, errors: errs };
+
+  // 한 줄 안에 여러 보기가 있을 수 있음: "① 가 ② 나 ③ 다 ④ 라"
+  function splitOpts(str, isOptLine){
+    var re = /(①|②|③|④|❶|❷|❸|❹|\(\s*[1-4]\s*\)|(?:^|\s)[1-4]\s*\)|(?:^|\s)[가나다라]\s*[.)])/g, idx = [], mm;
+    if(!isOptLine){
+      // 문제 줄 안의 보기는 동그라미 숫자만 인정
+      re = /(①|②|③|④|❶|❷|❸|❹)/g;
+    }
+    while((mm = re.exec(str))) idx.push({ at:mm.index, len:mm[0].length, n:optIndex(mm[0].trim()) });
+    if(!idx.length) return;
+    if(!isOptLine) cur.q = str.slice(0, idx[0].at);
+    for(var j=0;j<idx.length;j++){
+      var seg = str.slice(idx[j].at + idx[j].len, j+1<idx.length ? idx[j+1].at : str.length).trim();
+      if(idx[j].n >= 0){ cur.opts[idx[j].n] = seg; lastOpt = idx[j].n; }
+    }
+    mode = "opts";
+  }
+}
+
+/* ===================== 화면: 문제은행 ===================== */
+var bankState = { s:-1, q:"", edit:null, show:30 };
+function viewBank(root){
+  if(bankState.edit){ root.appendChild(editForm(bankState.edit)); return; }
+
+  var counts = [0,1,2,3].map(function(s){ return S.questions.filter(function(q){ return q.s===s; }); });
+  root.appendChild(h("div",{class:"card"},
+    h("h2",{text:"📚 문제은행 · 총 "+S.questions.length+"문제"}),
+    h("div",{class:"subj-grid"}, counts.map(function(list, s){
+      var unseen = list.filter(function(q){ return !S.stats[q.id]; }).length;
+      return h("div",{}, chip(s), h("div",{style:"margin-top:4px"}, h("b",{text:list.length+"문제"}),
+        h("span",{class:"muted", text:" · 안 푼 문제 "+unseen})),
+        h("div",{class:"muted", text: list.length ? "약 "+Math.ceil(unseen / S.settings.perSubject)+"일치 남음" : ""}));
+    }))));
+
+  // 가져오기
+  var defSel = h("select",{}, h("option",{value:"-1", text:"(과목 머리말로 구분)"}),
+    [0,1,2,3].map(function(s){ return h("option",{value:String(s), text:SUBJECTS[s]}); }));
+  var ta = h("textarea",{rows:"8", placeholder:"여기에 문제를 붙여넣으세요. 아래 '입력 형식'을 참고하세요."});
+  var file = h("input",{type:"file", accept:".txt,.json,.md,text/plain,application/json", class:"hidden"});
+  var msg = h("div",{class:"muted", style:"margin-top:8px;white-space:pre-wrap"});
+  file.addEventListener("change", function(){
+    var f = file.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      var txt = String(r.result);
+      if(/\.json$/i.test(f.name) || /^\s*[\[{]/.test(txt)) importJson(txt, msg);
+      else { ta.value = txt; msg.textContent = "파일 내용을 불러왔어요. '미리보기'를 눌러 확인하세요."; }
+      file.value = "";
+    };
+    r.readAsText(f, "utf-8");
+  });
+  var preview = h("div");
+  function doParse(commit){
+    var res = parseText(ta.value, +defSel.value);
+    preview.innerHTML = "";
+    var dup = 0, fresh = [];
+    var have = {}; S.questions.forEach(function(q){ have[q.s+"|"+norm(q.q)] = 1; });
+    res.items.forEach(function(it){ var k = it.s+"|"+norm(it.q); if(have[k]) dup++; else { have[k]=1; fresh.push(it); } });
+    var perS = [0,0,0,0]; fresh.forEach(function(it){ perS[it.s]++; });
+    msg.textContent = "인식된 문제 "+res.items.length+"개 (새 문제 "+fresh.length+"개"+(dup?", 중복 "+dup+"개 제외":"")+")\n"+
+      [0,1,2,3].map(function(s){ return SHORT[s]+" "+perS[s]; }).join(" · ") +
+      (res.errors.length ? "\n\n⚠️ 인식 못 한 문제 "+res.errors.length+"개:\n- "+res.errors.slice(0,15).join("\n- ")+(res.errors.length>15?"\n…":"") : "");
+    if(commit){
+      fresh.forEach(function(it){ it.id = S.seq++; S.questions.push(it); });
+      save(); toast(fresh.length+"문제를 추가했어요");
+      if(fresh.length){ ta.value = ""; }
+      render(); return;
+    }
+    fresh.slice(0,3).forEach(function(it){ preview.appendChild(questionCard(Object.assign({id:-1}, it), { onPick:function(p){ return p===it.a; }, showMemo:false })); });
+    if(fresh.length > 3) preview.appendChild(h("div",{class:"muted", text:"…외 "+(fresh.length-3)+"문제"}));
+  }
+  root.appendChild(h("div",{class:"card"},
+    h("h3",{text:"➕ 문제집 넣기"}),
+    h("label",{class:"f", text:"과목 (붙여넣은 내용에 과목 머리말이 없을 때)"}), defSel,
+    h("label",{class:"f", text:"문제 붙여넣기"}), ta,
+    h("div",{class:"row", style:"margin-top:8px"},
+      h("button",{class:"btn", text:"👀 미리보기", onclick:function(){ doParse(false); }}),
+      h("button",{class:"btn pri", text:"추가하기", onclick:function(){ doParse(true); }}),
+      h("span",{class:"grow"}),
+      h("button",{class:"btn", text:"📄 파일 불러오기 (.txt/.json)", onclick:function(){ file.click(); }}), file),
+    msg, preview,
+    h("details",{style:"margin-top:12px"}, h("summary",{text:"입력 형식 보기"}),
+      h("pre",{class:"fmt", text:
+"[소방원론]\n1. 연소의 3요소에 해당하지 않는 것은?\n① 가연물\n② 산소공급원\n③ 점화원\n④ 연쇄반응\n정답: 4\n해설: 연소의 3요소는 가연물, 산소공급원, 점화원이다.\n출처: 2023년 1회\n\n[소방전기일반]\n2. 10Ω 저항에 100V를 가하면 전류는? ① 0.1A ② 1A ③ 10A ④ 100A\n정답: ③\n해설: I = V/R = 10A\n\n※ 과목 머리말: [소방원론] [소방전기일반] [소방관계법규] [소방전기시설의 구조 및 원리]\n   (# 1과목, [법규] 처럼 줄여 써도 됩니다)\n※ 보기 기호: ①②③④ 또는 (1)(2)(3)(4) 또는 1) 2) 3) 4)\n※ 해설은 여러 줄이어도 됩니다. 다음 문제 번호(\"2.\")가 나오면 끝납니다.\n※ 정답만 있고 해설이 없어도 됩니다."})),
+    h("div",{class:"row", style:"margin-top:10px"},
+      h("button",{class:"btn sm", text:"✍️ 한 문제 직접 입력 (그림 첨부 가능)", onclick:function(){ bankState.edit = {s: Math.max(0, +defSel.value), q:"", opts:["","","",""], a:0, exp:"", src:""}; render(); }}))));
+
+  // 목록
+  var search = h("input",{type:"text", placeholder:"문제 검색", value:bankState.q});
+  search.addEventListener("input", function(){ bankState.q = search.value; bankState.show = 30; drawList(); });
+  var listEl = h("div",{class:"qlist"});
+  function drawList(){
+    listEl.innerHTML = "";
+    var term = norm(bankState.q);
+    var arr = S.questions.filter(function(q){ return (bankState.s<0 || q.s===bankState.s) && (!term || norm(q.q+" "+q.opts.join(" ")+" "+q.exp).indexOf(term)>=0); });
+    if(!arr.length){ listEl.appendChild(h("div",{class:"empty", text:"문제가 없어요"})); return; }
+    arr.slice(0, bankState.show).forEach(function(q){
+      var st = S.stats[q.id];
+      listEl.appendChild(h("div",{class:"item"},
+        h("div",{class:"row"}, chip(q.s), q.src ? h("span",{class:"muted", text:q.src}) : null, h("span",{class:"grow"}),
+          h("span",{class:"muted", text: st ? st.ok+"/"+st.n+" 정답" : "안 풂"}), S.wrong[q.id] && !S.wrong[q.id].mastered ? h("span",{text:"📒"}) : null),
+        h("div",{class:"clip", style:"margin-top:4px", text:q.q}),
+        h("div",{class:"row", style:"margin-top:6px"},
+          h("button",{class:"btn sm", text:"수정", onclick:function(){ bankState.edit = JSON.parse(JSON.stringify(q)); render(); window.scrollTo(0,0); }}),
+          h("button",{class:"btn sm danger", text:"삭제", onclick:function(){ if(confirm("이 문제를 삭제할까요?")) { removeQ(q.id); render(); } }}))));
+    });
+    if(arr.length > bankState.show) listEl.appendChild(h("button",{class:"btn", style:"width:100%;margin-top:8px", text:"더 보기 ("+(arr.length-bankState.show)+")",
+      onclick:function(){ bankState.show += 50; drawList(); }}));
+  }
+  var subjTabs = h("div",{class:"tabs"}, [tabBtn("전체", bankState.s<0, function(){ bankState.s=-1; render(); })].concat([0,1,2,3].map(function(s){
+    return tabBtn(SHORT[s], bankState.s===s, function(){ bankState.s=s; render(); }); })));
+  root.appendChild(h("div",{class:"card"}, h("h3",{text:"문제 목록"}), subjTabs, search, h("div",{style:"height:8px"}), listEl));
+  drawList();
+}
+function removeQ(id){
+  S.questions = S.questions.filter(function(q){ return q.id !== id; });
+  delete S.stats[id]; delete S.wrong[id];
+  Object.keys(S.daily).forEach(function(k){ var d = S.daily[k];
+    d.ids = d.ids.filter(function(x){ return x!==id; }); d.review = d.review.filter(function(x){ return x!==id; }); delete d.ans[id]; });
+  save(); updateBadge();
+}
+
+function editForm(q){
+  var isNew = !q.id;
+  var sSel = h("select",{}, [0,1,2,3].map(function(s){ return h("option",{value:String(s), text:SUBJECTS[s], selected: q.s===s}); }));
+  var qt = h("textarea",{rows:"4"}); qt.value = q.q;
+  var ops = q.opts.map(function(t, i){ var el = h("input",{type:"text", placeholder:NUMS[i]+" 보기"}); el.value = t; return el; });
+  var aSel = h("select",{}, h("option",{value:"0", text:"정답 선택"}), NUMS.map(function(n, i){ return h("option",{value:String(i+1), text:n, selected:q.a===i+1}); }));
+  var ex = h("textarea",{rows:"4"}); ex.value = q.exp || "";
+  var src = h("input",{type:"text", placeholder:"예: 2023년 1회 (선택)"}); src.value = q.src || "";
+  var img = q.img || null;
+  var imgPrev = h("div");
+  function drawImg(){ imgPrev.innerHTML = ""; if(img) imgPrev.appendChild(h("div",{}, h("img",{class:"qimg", src:img}),
+    h("button",{class:"btn sm danger", text:"그림 빼기", onclick:function(){ img = null; drawImg(); }}))); }
+  drawImg();
+  var imgIn = h("input",{type:"file", accept:"image/*"});
+  imgIn.addEventListener("change", function(){ var f = imgIn.files[0]; if(!f) return;
+    shrinkImage(f).then(function(d){ img = d; drawImg(); }).catch(function(){ toast("그림을 읽지 못했어요"); }); });
+  return h("div",{class:"card"},
+    h("h2",{text: isNew ? "✍️ 문제 직접 입력" : "문제 수정"}),
+    h("label",{class:"f", text:"과목"}), sSel,
+    h("label",{class:"f", text:"문제"}), qt,
+    h("label",{class:"f", text:"그림 (회로도·표 사진 등, 선택)"}), imgIn, imgPrev,
+    h("label",{class:"f", text:"보기"}), ops.map(function(o){ return h("div",{style:"margin-bottom:6px"}, o); }),
+    h("label",{class:"f", text:"정답"}), aSel,
+    h("label",{class:"f", text:"해설"}), ex,
+    h("label",{class:"f", text:"출처"}), src,
+    h("div",{class:"row", style:"margin-top:14px"},
+      h("button",{class:"btn pri", text:"저장", onclick:function(){
+        var nq = { s:+sSel.value, q:qt.value.trim(), opts:ops.map(function(o){ return o.value.trim(); }), a:+aSel.value, exp:ex.value.trim(), src:src.value.trim() };
+        if(img) nq.img = img;
+        if(!nq.q || nq.opts.some(function(x){ return !x; }) || !nq.a){ toast("문제, 보기 4개, 정답을 모두 넣어주세요"); return; }
+        if(isNew){ nq.id = S.seq++; S.questions.push(nq); }
+        else { var old = qById(q.id); Object.keys(old).forEach(function(k){ if(k!=="id") delete old[k]; }); Object.assign(old, nq); }
+        save(); bankState.edit = null; toast("저장했어요"); render();
+      }}),
+      h("button",{class:"btn", text:"취소", onclick:function(){ bankState.edit = null; render(); }})));
+}
+function shrinkImage(file){
+  return new Promise(function(res, rej){
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function(){
+      var max = 1100, w = im.naturalWidth, hh = im.naturalHeight, r = Math.min(1, max/Math.max(w, hh));
+      var c = document.createElement("canvas"); c.width = Math.round(w*r); c.height = Math.round(hh*r);
+      var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", 0.82));
+    };
+    im.onerror = function(){ URL.revokeObjectURL(url); rej(); };
+    im.src = url;
+  });
+}
+
+/* JSON: 문제 배열 또는 전체 백업 */
+function importJson(txt, msgEl){
+  var data;
+  try{ data = JSON.parse(txt); }catch(e){ (msgEl ? msgEl.textContent = "JSON 형식이 올바르지 않아요." : toast("JSON 형식 오류")); return; }
+  if(data && data.v && Array.isArray(data.questions) && data.daily){
+    if(!confirm("전체 백업 파일이에요. 지금 기기의 기록을 이 백업으로 바꿀까요?")) return;
+    S = Object.assign(blankState(), data); save(); updateBadge(); toast("백업을 복원했어요"); render(); return;
+  }
+  var arr = Array.isArray(data) ? data : (data && data.questions) || [];
+  var have = {}; S.questions.forEach(function(q){ have[q.s+"|"+norm(q.q)] = 1; });
+  var n = 0, bad = 0;
+  arr.forEach(function(it){
+    var s = typeof it.s === "number" ? it.s : subjectFromText(String(it.subject || it.과목 || ""));
+    var q = it.q || it.question || it.문제, opts = it.opts || it.options || it.보기, a = +(it.a || it.answer || it.정답);
+    if(!(s>=0 && s<4) || !q || !Array.isArray(opts) || opts.length !== 4 || !(a>=1 && a<=4)){ bad++; return; }
+    var k = s+"|"+norm(q); if(have[k]) return; have[k] = 1;
+    var nq = { id:S.seq++, s:s, q:String(q), opts:opts.map(String), a:a, exp:String(it.exp || it.explanation || it.해설 || ""), src:String(it.src || it.source || it.출처 || "") };
+    if(typeof it.img === "string" && /^data:image\//.test(it.img)) nq.img = it.img;
+    S.questions.push(nq); n++;
+  });
+  save();
+  var m = n+"문제를 추가했어요"+(bad ? " (형식 오류 "+bad+"개 제외)" : "");
+  if(msgEl) msgEl.textContent = m; toast(m); render();
+}
+
+/* ===================== 화면: 설정 ===================== */
+function viewSettings(root){
+  var st = S.settings;
+  function numSel(val, min, max, fn){
+    var sel = h("select",{}); for(var i=min;i<=max;i++) sel.appendChild(h("option",{value:String(i), text:String(i), selected:i===val}));
+    sel.addEventListener("change", function(){ fn(+sel.value); save(); toast("저장했어요 (내일 문제부터 적용)"); }); return sel;
+  }
+  root.appendChild(h("div",{class:"card"},
+    h("h2",{text:"⚙️ 학습 설정"}),
+    h("label",{class:"f", text:"과목별 하루 새 문제 수 (기본 1 → 하루 4문제)"}), numSel(st.perSubject, 1, 10, function(v){ st.perSubject = v; }),
+    h("label",{class:"f", text:"하루 오답 복습 문제 수"}), numSel(st.reviewPerDay, 0, 10, function(v){ st.reviewPerDay = v; }),
+    h("label",{class:"f", text:"몇 번 연속 맞히면 오답노트 '완료'로 옮길까요?"}), numSel(st.masterAfter, 1, 5, function(v){ st.masterAfter = v; }),
+    h("div",{class:"row", style:"margin-top:12px"},
+      h("button",{class:"btn sm", text:"오늘 문제 다시 뽑기", onclick:function(){
+        if(!confirm("오늘 문제를 새로 뽑을까요? (이미 푼 기록은 통계에 남아요)")) return;
+        delete S.daily[today()]; save(); go("today"); }}))));
+
+  var fileIn = h("input",{type:"file", accept:".json,application/json", class:"hidden"});
+  fileIn.addEventListener("change", function(){ var f = fileIn.files[0]; if(!f) return;
+    var r = new FileReader(); r.onload = function(){ importJson(String(r.result)); fileIn.value = ""; }; r.readAsText(f, "utf-8"); });
+  root.appendChild(h("div",{class:"card"},
+    h("h2",{text:"💾 백업"}),
+    h("div",{class:"muted", text:"문제·기록·오답노트는 이 기기의 브라우저 안에만 저장돼요. 휴대폰을 바꾸거나 브라우저 기록을 지우기 전에 백업해 두세요. 백업 파일로 PC ↔ 휴대폰 옮기기도 됩니다."}),
+    h("div",{class:"row", style:"margin-top:10px"},
+      h("button",{class:"btn pri", text:"백업 파일 받기", onclick:function(){
+        download("소방전기_백업_"+today()+".json", JSON.stringify(S)); }}),
+      h("button",{class:"btn", text:"문제만 내보내기", onclick:function(){
+        download("소방전기_문제_"+today()+".json", JSON.stringify(S.questions.map(function(q){ var c = Object.assign({}, q); delete c.id; c.subject = SUBJECTS[q.s]; return c; }), null, 1)); }}),
+      h("button",{class:"btn", text:"백업 불러오기", onclick:function(){ fileIn.click(); }}), fileIn)));
+
+  root.appendChild(h("div",{class:"card"},
+    h("h2",{text:"🧹 초기화"}),
+    h("div",{class:"row"},
+      h("button",{class:"btn sm danger", text:"예시 문제 지우기", onclick:function(){
+        var ids = S.questions.filter(function(q){ return q.src === "예시"; }).map(function(q){ return q.id; });
+        if(!ids.length){ toast("예시 문제가 없어요"); return; }
+        if(confirm("예시 문제 "+ids.length+"개를 지울까요?")){ ids.forEach(removeQ); toast("지웠어요"); render(); } }}),
+      h("button",{class:"btn sm danger", text:"풀이 기록만 초기화", onclick:function(){
+        if(confirm("푼 기록·오답노트·날짜별 기록을 모두 지울까요? (문제는 남아요)")){ S.daily = {}; S.stats = {}; S.wrong = {}; save(); updateBadge(); render(); } }}),
+      h("button",{class:"btn sm danger", text:"전부 초기화", onclick:function(){
+        if(confirm("문제를 포함한 모든 자료를 지울까요? 되돌릴 수 없어요.")){ S = blankState(); save(); updateBadge(); render(); } }}))));
+  root.appendChild(h("div",{class:"muted", style:"text-align:center;margin-top:8px",
+    text:"휴대폰: 브라우저 메뉴 → '홈 화면에 추가'를 누르면 앱처럼 쓸 수 있어요."}));
+}
+function download(name, text){
+  var a = h("a",{href:URL.createObjectURL(new Blob([text],{type:"application/json"})), download:name});
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ===================== 라우팅 ===================== */
+var tab = "today";
+function go(t){ tab = t; if(t !== "notes") noteState.retry = null; render(); window.scrollTo(0,0); }
+function render(){
+  var y = scrollY0; scrollY0 = null;
+  var root = document.getElementById("view"); root.innerHTML = "";
+  document.getElementById("hdrDate").textContent = fmtKo(today()) + " · 오늘도 한 걸음";
+  [].forEach.call(document.querySelectorAll("#nav button"), function(b){ b.classList.toggle("on", b.dataset.tab === tab); });
+  if(tab === "today") viewToday(root);
+  else if(tab === "notes") viewNotes(root);
+  else if(tab === "bank") viewBank(root);
+  else viewSettings(root);
+  if(y != null) window.scrollTo(0, y);
+}
+function updateBadge(){
+  var n = Object.keys(S.wrong).filter(function(id){ return !S.wrong[id].mastered && qById(+id); }).length;
+  var el = document.getElementById("noteBadge"); el.innerHTML = "";
+  if(n) el.appendChild(h("span",{class:"badge", text:n}));
+}
+[].forEach.call(document.querySelectorAll("#nav button"), function(b){ b.addEventListener("click", function(){ go(b.dataset.tab); }); });
+
+// 날짜가 바뀌면(자정 넘어 앱을 다시 열면) 새 문제
+var lastDay = today();
+document.addEventListener("visibilitychange", function(){ if(!document.hidden && today() !== lastDay){ lastDay = today(); render(); } });
+
+openDb().then(function(){ return dbGet(STATE_KEY); }).then(function(st){
+  if(st && st.v){ S = Object.assign(blankState(), st); S.settings = Object.assign(blankState().settings, st.settings || {}); }
+  else {
+    S = blankState();
+    SAMPLES.forEach(function(x){ var q = JSON.parse(JSON.stringify(x)); q.id = S.seq++; q.src = "예시"; S.questions.push(q); });
+    save();
+  }
+  window.__exam = { get state(){ return S; }, parseText: parseText };   // 디버그용
+  updateBadge(); render();
+});
+})();
+</script>
+</body>
+</html>
