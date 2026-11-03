@@ -36,6 +36,8 @@ B = rep(B, "let chain = Promise.resolve();\n",
         "const idbGet = async (k)=> WoomiSec.decVal(await idbGetRaw(k));   // 기록은 암호화해서 보관\n"
         "const idbSet = (k, v)=> WoomiSec.trackIdb((async ()=> idbSetRaw(k, await WoomiSec.encVal(v)))());\n"
         "let chain = Promise.resolve();\n")
+# PC 전용: 화면(프레임)이 좁아도 입력창·미리보기를 좌우로 유지
+B = rep(B, "@media screen and (max-width:900px){", "@media screen and (max-width:0px){", count=2)
 B_b64 = base64.b64encode(B.encode("utf-8")).decode("ascii")
 
 # ---------------- A (소방안전교육·훈련) + 통합 ----------------
