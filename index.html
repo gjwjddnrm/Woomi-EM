@@ -3799,7 +3799,7 @@ html.wsec-locked #wsecLock{ display:flex; }
         </div>
         <button type="button" class="reset-btn" id="b3a-ocr-batch-btn" style="display:none;width:100%;margin-top:6px;font-weight:700">📚 모든 날짜를 각각 기록으로 저장</button>
         <div class="field-row" style="margin-top:6px">
-          <button type="button" class="reset-btn" id="b3a-ocr-apply-btn" style="flex:1">✅ 이 값으로 폼에 적용</button>
+          <button type="button" class="reset-btn" id="b3a-ocr-apply-btn" style="flex:1">✅ 이 값으로 기록 저장</button>
           <button type="button" class="reset-btn" id="b3a-ocr-cancel-btn" style="flex:1">취소</button>
         </div>
       </div>
@@ -8446,8 +8446,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     const multi = b3aOcrDays.length > 1;
     wrap.style.display = multi ? "block" : "none";
     document.getElementById("b3a-ocr-batch-btn").style.display = multi ? "" : "none";
-    document.getElementById("b3a-ocr-batch-btn").textContent = "선택한 날짜 1일치만 폼에 적용";
-    document.getElementById("b3a-ocr-apply-btn").textContent = multi ? "📚 " + b3aOcrDays.length + "일치 날짜별로 각각 저장" : "✅ 이 값으로 폼에 적용";
+    document.getElementById("b3a-ocr-batch-btn").textContent = "선택한 날짜 1일치만 기록으로 저장";
+    document.getElementById("b3a-ocr-apply-btn").textContent = multi ? "📚 " + b3aOcrDays.length + "일치 날짜별로 각각 저장" : "✅ 이 값으로 기록 저장";
     document.getElementById("b3a-ocr-day-count").textContent = String(b3aOcrDays.length);
   }
 
@@ -8596,8 +8596,21 @@ html.wsec-locked #wsecLock{ display:flex; }
   document.getElementById("b3a-ocr-batch-btn").addEventListener("click", ()=>{ b3aOcrApplySingle(); });
   function b3aOcrApplySingle(){
     b3aOcrSaveDayEdits();
+    if(b3aEditingId){ applyB3aFormData(getB3aBlankTemplate()); b3aApplyRoster([]); }   // 다른 기록을 고치던 중이면 빈 양식에서 시작
+    b3aEditingId = null;                                                              // PDF로 읽은 내용은 항상 새 기록
     const rosterAppliedCount = b3aOcrApplyToForm();
     document.getElementById("b3a-ocr-review").style.display = "none";
+    const before = b3aLogEntries.length;
+    b3aSilentSave = true; b3aLastSaveOk = true;
+    const archived = b3aArchiveCurrent();
+    b3aSilentSave = false;
+    if(archived && !b3aLastSaveOk){ b3aLogEntries.length = before; b3aEditingId = null; }
+    renderB3a(); renderB3aLogList();
+    if(archived && b3aLastSaveOk){
+      alert(`기록으로 저장했어요.${rosterAppliedCount ? ` (별지 3-2 이수자 ${rosterAppliedCount}명 포함)` : ""}\n\n인원수·날짜·사진 등 틀린 곳이 있으면 "직접 작성" 탭에서 고친 뒤 "💾 새 기록으로 저장"을 누르세요. 방금 저장한 이 기록이 고친 내용으로 갱신돼요.`);
+      return;
+    }
+    if(archived){ alert('저장 공간이 부족해서 기록으로 저장하지 못했어요. 내용은 "직접 작성" 탭에 채워 두었어요.'); return; }
     alert(`적용했어요.${rosterAppliedCount ? ` 별지 3-2 이수자 명단을 새 PDF의 ${rosterAppliedCount}명으로 교체했어요.` : ""} 내용을 한 번 더 확인해주세요 (특히 인원수·날짜·업체별 인원수, 이수자 명단).`);
   }
 

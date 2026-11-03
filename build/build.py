@@ -90,6 +90,11 @@ s = rep(s, """document.querySelectorAll("#globalSidebar .gs-navlink").forEach(el
 s = rep(s, "  async function b3IdbGet(key){\n", "  async function b3IdbGet(key){ return WoomiSec.decVal(await b3IdbGetRaw(key)); }\n  function b3IdbSet(key, val){ return WoomiSec.trackIdb((async ()=> b3IdbSetRaw(key, await WoomiSec.encVal(val)))()); }\n  async function b3IdbGetRaw(key){\n")
 s = rep(s, "  async function b3IdbSet(key, val){\n    const db", "  async function b3IdbSetRaw(key, val){\n    const db")
 
+# 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
+import importlib.util as _u
+_sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
+for _o, _n in _m.PAIRS: s = rep(s, _o, _n)
+
 s = rep(s, "</body>", f"<script>\n{ui}</script>\n</body>")
 
 OUT.write_text(s, "utf-8")
