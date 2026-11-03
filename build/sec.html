@@ -1,0 +1,64 @@
+<!-- ============ 보안: 잠금 화면 ============ -->
+<div id="wsecLock" role="dialog" aria-modal="true" aria-labelledby="wsecTitle">
+  <div class="wsec-card">
+    <div class="wsec-brand"><span class="wsec-ic">🧯</span><div><b>소방안전관리도 WOOMI</b><small>건설현장 소방안전관리자 서류</small></div></div>
+    <h2 id="wsecTitle">잠금 해제</h2>
+    <p id="wsecProfile" class="wsec-profile"></p>
+    <p id="wsecDesc" class="wsec-desc"></p>
+    <form id="wsecForm" autocomplete="off">
+      <input type="text" name="username" value="WOOMI" autocomplete="username" hidden>
+      <div class="wsec-row2" id="wsecProfileRow">
+        <label class="wsec-lb">현장명<input type="text" id="wsecSite" maxlength="40" placeholder="예) ○○아파트 신축공사"></label>
+        <label class="wsec-lb">소방안전관리자 이름<input type="text" id="wsecManager" maxlength="40" placeholder="예) 홍길동"></label>
+      </div>
+      <label class="wsec-lb">비밀번호<input type="password" id="wsecPw" required></label>
+      <label class="wsec-lb" id="wsecPw2Row">비밀번호 확인<input type="password" id="wsecPw2" autocomplete="new-password"></label>
+      <p class="wsec-warn" id="wsecWarn">⚠️ 비밀번호를 잊으면 자료를 <b>복구할 수 없어요</b>. 비밀번호는 현장 관리자만 알고, 주기적으로 <b>암호화 백업</b>을 만들어 두세요.</p>
+      <button type="submit" id="wsecGo" class="wsec-btn pri">잠금 해제</button>
+      <p id="wsecMsg" class="wsec-msg" aria-live="polite"></p>
+      <p id="wsecForgotRow" class="wsec-forgot"><button type="button" id="wsecForgot">비밀번호를 잊었어요</button></p>
+    </form>
+    <p class="wsec-foot">🔒 모든 자료는 이 컴퓨터 안에만 암호화(AES-256)되어 저장되고, 외부 서버로 전송되지 않아요.</p>
+  </div>
+</div>
+
+<!-- ============ 보안: 설정 창 ============ -->
+<div id="wsecSettings" role="dialog" aria-modal="true" aria-label="보안 설정">
+  <div class="wsec-card wide">
+    <div class="wsec-head"><h2>🔒 보안 설정</h2><button type="button" id="wsecClose" class="wsec-x" aria-label="닫기">✕</button></div>
+    <p class="wsec-setmsg" id="wsecSetMsg" aria-live="polite"></p>
+
+    <section><h3>현장 정보</h3>
+      <p class="wsec-desc">잠금 화면과 메뉴에 표시돼요.</p>
+      <input type="text" id="wsecSetSite" maxlength="40" placeholder="현장명">
+      <input type="text" id="wsecSetManager" maxlength="40" placeholder="소방안전관리자 이름">
+      <button type="button" class="wsec-btn" id="wsecProfileBtn">현장 정보 저장</button>
+    </section>
+
+    <section><h3>자동 잠금</h3>
+      <p class="wsec-desc">아무 조작이 없으면 자동으로 잠겨요. 여럿이 쓰는 현장 사무실 PC라면 짧게 두세요.</p>
+      <select id="wsecIdle"><option value="5">5분</option><option value="10">10분</option><option value="30">30분</option><option value="60">1시간</option><option value="120">2시간</option></select>
+      <button type="button" class="wsec-btn" data-wsec-lock>지금 잠그기</button>
+    </section>
+
+    <section><h3>비밀번호 변경</h3>
+      <input type="password" id="wsecOld" placeholder="현재 비밀번호" autocomplete="current-password">
+      <input type="password" id="wsecNew" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password">
+      <input type="password" id="wsecNew2" placeholder="새 비밀번호 확인" autocomplete="new-password">
+      <button type="button" class="wsec-btn" id="wsecChangeBtn">비밀번호 변경</button>
+    </section>
+
+    <section><h3>암호화 백업 내보내기</h3>
+      <p class="wsec-desc">모든 자료(사진·서명 포함)를 암호화된 <b>.woomi</b> 파일 하나로 저장해요. PC 교체·인수인계 때 쓰세요. 파일은 현재 비밀번호로만 열려요.</p>
+      <input type="password" id="wsecBkPw" placeholder="현재 비밀번호" autocomplete="current-password">
+      <button type="button" class="wsec-btn" id="wsecExportBtn">백업 파일 저장</button>
+    </section>
+
+    <section><h3>백업 가져오기</h3>
+      <p class="wsec-desc">백업 파일 내용으로 이 컴퓨터의 자료를 <b>교체</b>해요.</p>
+      <input type="file" id="wsecImpFile" accept=".woomi,application/octet-stream">
+      <input type="password" id="wsecImpPw" placeholder="백업할 때 쓴 비밀번호" autocomplete="off">
+      <button type="button" class="wsec-btn" id="wsecImportBtn">백업으로 복원</button>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,62 @@
+/* ================= 보안: 잠금 화면 · 설정 · 통합 화면 ================= */
+html.wsec-locked body > *:not(#wsecLock){ visibility:hidden !important; }
+html.wsec-locked, html.wsec-locked body{ overflow:hidden; }
+#wsecLock{ display:none; position:fixed; inset:0; margin:0 !important; z-index:10000; align-items:center; justify-content:center; padding:16px;
+  background:radial-gradient(900px 500px at 50% 0%, #2a3560, #121729); }
+html.wsec-locked #wsecLock{ display:flex; }
+#wsecSettings{ display:none; position:fixed; inset:0; margin:0 !important; z-index:9000; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; background:rgba(15,20,40,.55); }
+#wsecSettings.on{ display:flex; }
+.wsec-card{ width:100%; max-width:400px; background:#fff; border-radius:16px; padding:26px 24px 20px; box-shadow:0 20px 60px rgba(0,0,0,.35); color:#1c2230; }
+.wsec-card.wide{ max-width:520px; }
+.wsec-brand{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+.wsec-brand b{ display:block; font-size:15px; } .wsec-brand small{ display:block; font-size:11.5px; color:#5a6272; margin-top:2px; }
+.wsec-ic{ width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; background:linear-gradient(135deg,#ef4444,#f97316); }
+.wsec-card h2{ font-size:18px; margin:0 0 6px; }
+.wsec-card h3{ font-size:14px; margin:0 0 6px; }
+.wsec-card section{ border-top:1px solid #e2e5ea; padding:14px 0; display:flex; flex-direction:column; gap:8px; }
+.wsec-desc{ font-size:12.5px; color:#5a6272; line-height:1.6; margin:0 0 10px; }
+.wsec-card section .wsec-desc{ margin:0; }
+.wsec-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.wsec-profile{ display:none; margin:0 0 12px; padding:12px 14px; border-radius:10px; background:#eef3ff; border:1px solid #d5e0fb; color:#1c2230; font-size:14px; line-height:1.5; }
+.wsec-profile.on{ display:block; }
+.wsec-profile b{ display:block; font-size:16px; }
+.wsec-profile span{ color:#5a6272; font-size:13px; }
+#globalSidebar .gs-profile{ margin-top:10px; font-size:12px; line-height:1.5; color:inherit; opacity:.9; word-break:keep-all; }
+#globalSidebar .gs-profile b{ display:block; font-size:12.5px; }
+.wsec-lb{ display:block; font-size:12.5px; font-weight:600; color:#5a6272; margin:0 0 10px; }
+.wsec-card input[type=password], .wsec-card input[type=text], .wsec-card select, .wsec-card input[type=file]{ display:block; width:100%; margin-top:5px; padding:10px 12px; font:inherit; font-size:14px; border:1px solid #cfd5df; border-radius:10px; background:#fff; color:#1c2230; }
+.wsec-card section input, .wsec-card section select{ margin-top:0; }
+.wsec-card input:focus, .wsec-card select:focus{ outline:2px solid #2451c9; outline-offset:1px; }
+.wsec-btn{ display:block; width:100%; padding:11px 14px; font:inherit; font-size:14px; font-weight:700; border-radius:10px; border:1px solid #cfd5df; background:#f5f6fa; color:#1c2230; cursor:pointer; }
+.wsec-btn:hover{ background:#eceff5; }
+.wsec-btn.pri{ background:#2451c9; border-color:#2451c9; color:#fff; margin-top:4px; }
+.wsec-btn.pri:hover{ background:#1d43ab; }
+.wsec-btn:disabled{ opacity:.6; cursor:default; }
+.wsec-warn{ font-size:12px; line-height:1.55; color:#8a4b00; background:#fff6e6; border:1px solid #f3d9a6; border-radius:10px; padding:9px 11px; margin:0 0 12px; }
+.wsec-msg{ min-height:18px; font-size:12.5px; color:#d1352b; margin:10px 0 0; }
+.wsec-msg.ok{ color:#2451c9; }
+.wsec-forgot{ text-align:center; margin:4px 0 0; }
+.wsec-forgot button{ background:none; border:0; color:#8a92a3; font:inherit; font-size:12px; text-decoration:underline; cursor:pointer; }
+.wsec-foot{ font-size:11.5px; color:#8a92a3; line-height:1.5; margin:16px 0 0; padding-top:12px; border-top:1px solid #eef0f4; }
+.wsec-head{ display:flex; align-items:center; justify-content:space-between; }
+.wsec-x{ border:0; background:none; font-size:18px; cursor:pointer; color:#5a6272; padding:4px 8px; }
+.wsec-setmsg{ min-height:18px; font-size:12.5px; color:#2451c9; margin:4px 0 8px; }
+#wsecToast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); margin:0 !important; z-index:9500; background:#1c2230; color:#fff; font-size:13px; padding:11px 16px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:.2s; max-width:calc(100% - 32px); }
+#wsecToast.on{ opacity:1; transform:translateX(-50%); }
+
+/* 사이드바 보안 버튼 */
+#globalSidebar{ min-height:100vh; }
+#globalSidebar .gs-sec{ display:flex; gap:6px; margin-top:12px; }
+#globalSidebar .gs-sec button{ flex:1; font:inherit; font-size:12px; padding:7px 6px; border-radius:8px; border:1px solid var(--line); background:#f7f8fb; color:var(--ink-soft); cursor:pointer; }
+#globalSidebar .gs-sec button:hover{ background:#eef1f6; color:var(--ink); }
+
+/* 화기작업 화면 (격리 프레임) */
+#hotworkView{ position:fixed; top:0; right:0; bottom:0; left:250px; margin:0 !important; background:#eef0f5; z-index:1; }
+#hotworkFrame{ display:block; width:100%; height:100%; border:0; }
+
+/* 창이 좁아 사이드바가 숨으면 화기작업 화면을 왼쪽 끝까지 */
+@media (max-width:900px){ #hotworkView{ left:0; } }
+@media print{
+  #wsecLock, #wsecSettings, #wsecToast{ display:none !important; }
+}
+.wsec-card input[hidden]{ display:none !important; }

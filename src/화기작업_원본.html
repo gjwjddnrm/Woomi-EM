@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>화기작업 신청서·허가서 작성</title>
+<style>
+:root{
+  --navy:#0e1a33; --navy2:#16264a; --ink:#1c2538; --mute:#6b7488; --line:#e3e7ef; --bg:#eef0f5; --card:#fff;
+  --accent:#e2562b; --accent-soft:#fdeee8; --blue:#2f55c9; --soft:#e5ecf6; --ok:#1f8a5b; --danger:#c43d33;
+  --shadow:0 1px 2px rgba(14,26,51,.06), 0 6px 18px rgba(14,26,51,.07);
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR","Noto Sans KR",sans-serif; color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; }
+svg.i{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+/* 상단 바 */
+.top{ height:58px; background:linear-gradient(180deg,var(--navy2),var(--navy)); color:#fff; display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25); position:relative; z-index:5; }
+.logo{ width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#ff8a4c,var(--accent)); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(226,86,43,.5); }
+.logo svg{ width:19px; height:19px; stroke:#fff; fill:#fff; stroke-width:1; }
+.brand b{ display:block; font-size:15.5px; letter-spacing:-.2px; }
+.brand span{ display:block; font-size:11.5px; color:#9fb0d6; margin-top:1px; }
+.top .sp{ flex:1; }
+.tb{ display:flex; align-items:center; gap:6px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.07); color:#fff; padding:8px 12px; border-radius:9px; font:inherit; font-size:13px; cursor:pointer; transition:.15s; }
+.tb:hover{ background:rgba(255,255,255,.16); }
+.tb.pri{ background:var(--accent); border-color:var(--accent); font-weight:700; }
+.tb.pri:hover{ background:#f06a3d; }
+.tb:disabled{ opacity:.5; cursor:default; }
+.app{ display:flex; height:calc(100vh - 58px); }
+.panel{ width:420px; max-width:100%; flex:none; background:var(--card); border-right:1px solid var(--line); display:flex; flex-direction:column; }
+.tabs{ display:flex; gap:4px; padding:10px 12px 0; border-bottom:1px solid var(--line); background:#fafbfd; }
+.tab{ flex:1; padding:10px 6px 11px; border:0; background:transparent; font:inherit; font-size:13.5px; font-weight:600; color:var(--mute); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; }
+.tab:hover{ color:var(--ink); }
+.tab.on{ color:var(--navy); border-bottom-color:var(--accent); }
+.pane{ display:none; overflow:auto; padding:14px 14px 40px; flex:1; }
+.pane.on{ display:block; }
+.main{ flex:1; min-width:0; overflow:auto; padding:22px 18px 40px; background:
+  radial-gradient(1200px 400px at 50% -100px, #dfe4f0, transparent), var(--bg); }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 14px 12px; margin:0 0 14px; box-shadow:var(--shadow); }
+.card h3{ margin:0 0 11px; font-size:13.5px; display:flex; align-items:center; gap:8px; color:var(--navy); letter-spacing:-.2px; }
+.card h3::before{ content:""; width:4px; height:14px; border-radius:2px; background:var(--accent); }
+.card h3 small{ font-weight:500; color:var(--mute); font-size:11.5px; }
+.row{ display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.field{ flex:1; min-width:120px; display:flex; flex-direction:column; gap:5px; }
+.field label{ font-size:11.5px; color:var(--mute); font-weight:600; }
+input[type=text],input[type=date],input[type=time],textarea,select{ width:100%; padding:9px 10px; border:1px solid #d3d9e6; border-radius:9px; font:inherit; font-size:14px; background:#fbfcfe; color:var(--ink); transition:.15s; }
+input:focus,textarea:focus,select:focus{ outline:0; border-color:var(--blue); background:#fff; box-shadow:0 0 0 3px rgba(47,85,201,.15); }
+textarea{ min-height:110px; resize:vertical; }
+input[type=file]{ width:100%; font:inherit; font-size:12.5px; padding:14px; border:1.5px dashed #b8c3da; border-radius:11px; background:#f7f9fd; color:var(--mute); }
+input[type=file]::file-selector-button{ border:0; background:var(--navy); color:#fff; padding:7px 12px; border-radius:8px; margin-right:10px; font:inherit; font-size:12.5px; cursor:pointer; }
+button{ font:inherit; cursor:pointer; }
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 13px; border:1px solid #cfd6e5; background:#fff; border-radius:10px; font-size:13px; font-weight:600; color:var(--ink); transition:.15s; }
+.btn:hover{ border-color:#9fb0d6; background:#f6f8fd; }
+.btn.primary{ background:var(--navy); color:#fff; border-color:var(--navy); }
+.btn.primary:hover{ background:var(--navy2); }
+.btn.danger{ color:var(--danger); border-color:#efc3bf; background:#fff; }
+.btn.danger:hover{ background:#fdf1f0; }
+.btn.sm{ padding:6px 10px; font-size:12px; border-radius:8px; }
+.btn:disabled{ opacity:.5; cursor:default; }
+.note{ font-size:12px; color:var(--blue); margin:8px 0 0; line-height:1.45; }
+.note:empty{ display:none; }
+.help{ font-size:12px; color:var(--mute); line-height:1.5; margin:0 0 10px; }
+.chk{ display:grid; grid-template-columns:1fr 70px; gap:6px 10px; align-items:center; font-size:12.5px; }
+.chk .t{ line-height:1.35; padding:2px 0; }
+.chk select{ padding:6px; font-size:14px; text-align:center; font-weight:700; }
+.chk select:not([value=""]){ }
+.loglist{ max-height:300px; overflow:auto; display:flex; flex-direction:column; gap:7px; margin:8px 0 10px; padding-right:2px; }
+.logitem{ display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:11px; padding:9px 10px; background:#fff; transition:.15s; }
+.logitem:hover{ border-color:#b9c5e0; }
+.logitem.active{ border-color:var(--blue); background:#f3f6ff; box-shadow:0 0 0 2px rgba(47,85,201,.12); }
+.logitem .m{ flex:1; cursor:pointer; min-width:0; font-size:13px; font-weight:700; color:var(--navy); }
+.logitem .m small{ display:block; color:var(--mute); font-size:11.5px; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.logitem input[type=checkbox]{ width:18px; height:18px; flex:none; accent-color:var(--navy); }
+.logitem .del{ border:0; background:transparent; color:#b4bccd; padding:4px 6px; border-radius:6px; font-size:12px; }
+.logitem .del:hover{ color:var(--danger); background:#fdf1f0; }
+.empty{ text-align:center; color:var(--mute); font-size:12.5px; padding:22px 8px; border:1px dashed var(--line); border-radius:11px; }
+.pill{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); font-weight:700; margin-left:6px; }
+.statline{ display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--mute); margin-bottom:6px; }
+.tools{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.tools .full{ grid-column:1 / -1; }
+.pvhead{ max-width:210mm; margin:0 auto 10px; display:flex; align-items:center; justify-content:space-between; color:#55607a; font-size:12.5px; }
+.pvhead b{ color:var(--navy); }
+@media screen and (max-width:900px){
+  .app{ flex-direction:column; height:auto; }
+  .panel{ width:100%; border-right:0; }
+  .pane{ overflow:visible; }
+  .top{ flex-wrap:wrap; height:auto; padding:10px 12px; }
+  .brand span{ display:none; }
+}
+.sheet{ box-shadow:0 2px 6px rgba(14,26,51,.12), 0 14px 34px rgba(14,26,51,.14); }
+/* ===== A4 양식 ===== */
+.pvwrap{ transform-origin:top left; }
+.sheet{ width:210mm; height:297mm; background:#fff; padding:21mm 20mm 0; margin:0 auto 14px;  position:relative; overflow:hidden; color:#000; font-size:9pt; line-height:1.25; }
+.sheet,.sheet *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.hd{ display:flex; height:11mm; margin-bottom:3mm; }
+.hd .tag{ white-space:nowrap; background:#000080; color:#fff; font-weight:800; font-size:15pt; width:25mm; display:flex; align-items:center; justify-content:center; border:1px solid #000; }
+.hd .ttl{ flex:1; margin-left:2.4mm; border:1px solid #000; font-weight:800; font-size:15pt; display:flex; align-items:center; padding-left:4mm; letter-spacing:.3mm; }
+.sheet .note8{ font-size:9pt; margin:0 0 2.6mm 2mm; }
+table.f{ width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid #000; }
+table.f td{ border:1px solid #000; padding:0 1.6mm; vertical-align:middle; height:5.6mm; }
+table.f td.lb{ background:#dfeaf5; font-weight:700; text-align:center; letter-spacing:0; padding:0 .4mm; white-space:nowrap; }
+table.f td.hdc{ background:#dfeaf5; font-weight:700; text-align:center; }
+table.f td.rs{ text-align:center; font-size:10pt; padding:0; }
+table.f td.pad0{ padding:0; }
+table.f td.top{ vertical-align:top; padding-top:.8mm; }
+table.in{ width:100%; border-collapse:collapse; table-layout:fixed; border:0; }
+table.in td{ border:0; border-left:1px solid #000; height:5.6mm; padding:0 1.6mm; }
+table.in td:first-child{ border-left:0; }
+.rt{ text-align:right; }
+.sm{ font-size:8.2pt; }
+.val{ font-weight:600; }
+/* 초기대응체계 */
+.org{ position:relative; height:49mm; }
+.org .boss{ position:absolute; left:50%; top:1.5mm; width:46mm; margin-left:-23mm; }
+.org table.b{ border-collapse:collapse; width:100%; table-layout:fixed; }
+.org table.b td{ border:1px solid #000; height:4.4mm; padding:0 .8mm; font-size:8.4pt; white-space:nowrap; overflow:hidden; }
+.org .team{ position:absolute; top:22mm; width:27%; }
+.org .ln{ position:absolute; background:#000; }
+.sigline{ height:11mm; }
+.names td{ height:6mm; text-align:center; border-top:1px solid #000 !important; }
+.names tr:first-child td{ border-top:0 !important; }
+@media screen and (max-width:900px){ .app{ flex-direction:column; } .panel{ width:100%; height:auto; border-right:0; } .main{ height:auto; } }
+/* 서명 이미지 */
+.sgw{ position:relative; display:inline-block; }
+.sgi{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:auto; pointer-events:none; }
+.sigrow{ display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed var(--line); font-size:12.5px; }
+.sigrow:last-child{ border-bottom:0; }
+.sigrow b{ width:92px; flex:none; font-weight:700; color:var(--navy); }
+.sigrow .th{ width:70px; height:34px; border:1px solid var(--line); border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; flex:none; }
+.sigrow .th img{ max-width:100%; max-height:100%; }
+.sigrow input[type=file]{ padding:4px; font-size:11px; border-width:1px; }
+.crowrow{ display:grid; grid-template-columns:72px 1fr; gap:6px 10px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); }
+.crowrow:last-child{ border-bottom:0; }
+.crowrow .rl{ font-weight:800; font-size:12.5px; color:var(--navy); }
+.crowrow .f{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.crowrow .f input[type=text]{ flex:1; min-width:90px; padding:7px 8px; font-size:13px; }
+.crowrow .cr{ height:30px; border:1px solid var(--line); border-radius:5px; }
+.crowrow .sgimg{ height:30px; background:#fff; border:1px solid var(--line); border-radius:5px; }
+/* 인쇄 */
+#printStage{ display:none; }
+#printStage.off{ display:block; position:fixed; left:-99999px; top:0; }
+@page{ size:A4; margin:0; }
+@media print{
+  body.printing > *:not(#printStage){ display:none !important; }
+  body.printing #printStage{ display:block !important; position:static !important; }
+  body.printing{ background:#fff; }
+  #printStage .sheet{ margin:0 !important; box-shadow:none !important; break-after:page; page-break-after:always; }
+  #printStage .sheet:last-child{ break-after:auto; page-break-after:auto; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2c.6 3.2-1.4 4.6-2.7 6.3C8 10 7 11.6 7 13.8A5 5 0 0 0 12 19a5 5 0 0 0 5-5.2c0-2-1-3.3-2-4.6-.5 1.1-1.2 1.7-2 1.9.8-3-.4-5.2 0-9.1z"/></svg></div>
+  <div class="brand"><b>화기작업 신청서 · 허가서</b><span>별지 7 신청서 · 별지 8 허가서 작성</span></div>
+  <div class="sp"></div>
+  <button class="tb" id="newForm" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> 새로 작성</button>
+  <button class="tb" id="printCur" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg> 인쇄</button>
+  <button class="tb" id="pdfCur" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14h6M9 17h4"/></svg> PDF</button>
+  <button class="tb" id="saveUpd" type="button" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16z"/></svg> 덮어쓰기</button>
+  <button class="tb pri" id="saveNew" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg> 새 기록 저장</button>
+</header>
+<div class="app">
+ <div class="panel" id="panel">
+  <div class="tabs">
+    <button class="tab on" data-tab="t1" type="button">기록 · 불러오기</button>
+    <button class="tab" data-tab="t2" type="button">신청서 입력</button>
+    <button class="tab" data-tab="t3" type="button">허가서 입력</button>
+  </div>
+
+  <div class="pane on" id="t1">
+   <div class="card"><h3>PDF에서 화기작업 불러오기</h3>
+    <p class="help">안전작업허가서 PDF를 넣으면 <b>화기작업(용접·절단) 허가서만</b> 골라 신청서로 만들어요. 여러 파일, 여러 날짜가 섞여 있어도 돼요.</p>
+    <input type="file" id="pdfFile" accept="application/pdf,image/*" multiple>
+    <p class="help" style="margin:8px 0 0">허가서 PDF 안의 <b>사진대지(초기대응체계 표)</b>도 함께 읽어요. 표를 찍은 <b>사진 파일(JPG·PNG)</b>만 따로 넣어도 돼요.</p>
+    <div class="row" style="margin:10px 0 0"><button class="btn primary" id="pdfRead" type="button" style="flex:1"><svg class="i" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg> PDF 읽기</button></div>
+    <p class="note" id="impStatus"></p>
+    <div id="crewCard" class="card" style="display:none;margin:12px 0 0;box-shadow:none;background:#fafbfd"><h3>초기대응체계 · 화재감시자 <small>사진대지에서 읽음</small></h3>
+      <p class="help">이름·연락처가 사진과 다르면 고쳐주세요. 아래 <b>저장</b>을 누르면 체크한 신청서에 함께 들어가요.</p>
+      <div id="crewList"></div>
+      <div class="row" style="margin:8px 0 0"><button class="btn sm" id="crewClear" type="button">읽은 내용 지우기</button></div></div>
+    <div id="impList" style="margin-top:8px"></div>
+    <div class="row" id="impAct" style="display:none;margin:6px 0 0"><button class="btn primary" id="impSave" type="button" style="flex:1"><svg class="i" viewBox="0 0 24 24"><path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg> 체크한 항목을 신청서 기록으로 저장</button></div>
+   </div>
+
+   <div class="card"><h3>저장된 기록 <span class="pill"><span id="logcnt">0</span>건</span></h3>
+    <div class="statline"><span><button class="btn sm" id="selall" type="button">전체 선택</button> <button class="btn sm" id="selnone" type="button">선택 해제</button></span><span id="selcnt"></span></div>
+    <div class="loglist" id="loglist"></div>
+    <div class="tools">
+      <button class="btn" id="printAll" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg> 체크한 기록 인쇄</button>
+      <button class="btn" id="pdfAll" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14h6M9 17h4"/></svg> 날짜별 PDF 저장</button>
+      <button class="btn danger full" id="delAll" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg> 체크한 기록 삭제</button>
+    </div>
+    <p class="note" id="status"></p>
+   </div>
+  </div>
+
+  <div class="pane" id="t2">
+   <div class="card"><h3>허가 사항</h3>
+    <div class="row"><div class="field"><label>허가번호</label><input type="text" data-k="permitNo"></div>
+    <div class="field"><label>허가일자</label><input type="date" data-k="permitDate"></div></div>
+   </div>
+   <div class="card"><h3>신청인</h3>
+    <div class="row"><div class="field"><label>업체명</label><input type="text" data-k="company"></div>
+    <div class="field"><label>작업책임자</label><input type="text" data-k="leader"></div></div>
+    <div class="row"><div class="field"><label>휴대폰번호</label><input type="text" data-k="phone" inputmode="tel"></div></div>
+   </div>
+   <div class="card"><h3>작업 내용</h3>
+    <div class="row"><div class="field"><label>작업명</label><input type="text" data-k="workName"></div></div>
+    <div class="row"><div class="field"><label>작업장소</label><input type="text" data-k="place" placeholder="예) 3층 A구역"></div></div>
+    <div class="row"><div class="field" style="flex:2"><label>작업일(시작일)</label><input type="date" data-k="workDate"></div>
+    <div class="field"><label>시작</label><input type="time" data-k="tStart"></div>
+    <div class="field"><label>종료</label><input type="time" data-k="tEnd"></div></div>
+    <div class="row"><div class="field"><label>종료일 <small style="font-weight:400">(여러 날에 걸친 작업일 때만)</small></label><input type="date" data-k="workDateEnd"></div></div>
+   </div>
+   <div class="card"><h3>서명 이미지 <small>사진대지·허가서에서 읽어 온 서명</small></h3>
+    <div id="sigBox"></div>
+   </div>
+   <div class="card"><h3>화재감시자</h3>
+    <div class="row"><div class="field"><label>성명</label><input type="text" data-k="watcher"></div>
+    <div class="field"><label>휴대폰번호</label><input type="text" data-k="watcherPhone" inputmode="tel"></div></div>
+   </div>
+   <div class="card"><h3>초기대응체계</h3>
+    <div class="row"><div class="field"><label>현장책임자 성명</label><input type="text" data-k="boss"></div><div class="field"><label>연락처</label><input type="text" data-k="bossTel" inputmode="tel"></div></div>
+    <div id="teamInputs"></div>
+   </div>
+   <div class="card"><h3>화기작업 체크리스트 <small>작업 전</small></h3>
+    <div class="row"><button class="btn sm" type="button" data-all="a">전체 ○</button><button class="btn sm" type="button" data-all="a-clear">전체 비우기</button></div>
+    <div class="chk" id="chkA"></div>
+    <div class="row" style="margin-top:10px"><div class="field"><label>17. 필요한 구조팀 담당자 성명</label><input type="text" data-k="rescueA"></div></div>
+   </div>
+   <div class="card"><h3>작업자 명단 · 서명</h3>
+    <div class="field" style="margin-bottom:10px"><label>작업자 명단 <small style="font-weight:400">(한 줄에 한 명, 또는 쉼표로 구분)</small></label><textarea data-k="workers"></textarea></div>
+    <div class="field"><label>화기작업자 <small style="font-weight:400">(서명란에 표시할 이름)</small></label><input type="text" data-k="hotWorker"></div>
+   </div>
+  </div>
+
+  <div class="pane" id="t3">
+   <div class="card"><h3>소방안전관리자</h3>
+    <p class="help">한 번 입력하면 계속 저장돼서, 이후 모든 기록의 허가서에 자동으로 들어가요.</p>
+    <div class="field"><label>소방안전관리자 성명</label><input type="text" data-k="safetyMgr"></div>
+    <div class="field" style="margin-top:12px"><label>소방안전관리자 서명 <small style="font-weight:400">(한 번 저장하면 모든 허가서에 자동으로 들어가요)</small></label>
+      <div class="sigrow" style="border:0;padding:4px 0"><div class="th" id="mgrSigTh" style="width:110px;height:46px"></div><button class="btn sm danger" id="mgrSigDel" type="button" style="display:none">삭제</button></div>
+      <canvas id="mgrPad" width="520" height="190" style="width:100%;max-width:300px;height:auto;aspect-ratio:520/190;border:1.5px dashed #b8c3da;border-radius:10px;background:#fff;touch-action:none"></canvas>
+      <div class="row" style="margin:8px 0 6px"><button class="btn sm" id="mgrPadClear" type="button">지우기</button><button class="btn sm primary" id="mgrPadSave" type="button">이 서명 저장</button></div>
+      <input type="file" id="mgrSigUp" accept="image/*"><p class="help" style="margin:6px 0 0">위 칸에 직접 서명하거나, 서명 사진을 올려도 돼요.</p></div>
+   </div>
+   <p class="help" style="padding:0 4px">허가번호·일자·작업명·장소·일시는 신청서와 같은 값이 들어가요. "작업종료 후 안전조치"의 작업책임자 확인란에는 초기대응체계의 <b>현장책임자</b> 이름이 들어가요.</p>
+   <div class="card"><h3>화기작업 체크리스트 <small>작업 중</small></h3>
+    <div class="row"><button class="btn sm" type="button" data-all="b">전체 ○</button><button class="btn sm" type="button" data-all="b-clear">전체 비우기</button></div>
+    <div class="chk" id="chkB"></div>
+    <div class="row" style="margin-top:10px"><div class="field"><label>18. 필요한 구조팀 담당자 성명</label><input type="text" data-k="rescueB"></div></div>
+   </div>
+  </div>
+ </div>
+ <div class="main" id="main"><div class="pvhead"><span><b>미리보기</b> · A4 양식 그대로</span><span>별지 7 → 별지 8</span></div><div class="pvwrap" id="pv"></div></div>
+</div>
+<div id="printStage"></div>
+<script>
+"use strict";
+const $ = (s, r)=> (r || document).querySelector(s);
+const esc = (v)=> String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+const ITEMS_A = ["작업구역 설정 및 출입제한 조치 여부","작업에 맞는 보호구 착용 여부","작업구역 내 가스농도 측정 및 잔류물질 확인 여부","작업구역 11m 內 인화성 및 가연성 물질 제거상태","인화성 물질 취급 작업과 동시작업 유무","인화성·가연성 물질의 1일 작업량 이하 보관 여부","불티 비산방지조치(불티차단막/방화포 등) 실시 여부","화기감시자 임무 숙지 여부","임시소방시설 설치 여부","교육 실시 여부(임시소방시설 사용법, 피난로 위치, 초기대응체계 등)",
+  "밀폐공간 관계자 외 출입제한 여부","밀폐공간 작업에 필요한 보호구 착용 여부","작업자의 개인통신장비 및 휴대용 산소농도측정기 착용 여부","구조장비(구급함/구명줄/삼각대 등) 준비 여부","가스 및 산소농도 측정 여부","전화하면 5분이내 구조할 수 있는 위치에 구조팀 대기"];
+const ITEMS_B = ["화기작업 허가서 발급 및 비치 여부"].concat(ITEMS_A);   // 허가서는 앞에 1항목 추가 → 17항목 + 18번 구조팀 성명
+const AFTER = ["불티잔존 여부(작업 종료 후 30분 후 확인)","전원차단 상태","인화성·가연성 물품의 보관상태","갈탄, 히팅기 등 사용 시 주변 가연물 이격 상태"];
+const TEAMS = ["비상연락","초기소화","피난유도"];
+const NB = " ";
+
+const MGR_KEY = "fireplan_hotwork_mgr_v1";
+const MGR_SIG_KEY = "fireplan_hotwork_mgrsig_v1";
+const defMgrSig = ()=>{ try{ return localStorage.getItem(MGR_SIG_KEY) || ""; }catch(e){ return ""; } };
+const defMgr = ()=>{ try{ return localStorage.getItem(MGR_KEY) || ""; }catch(e){ return ""; } };
+const blank = ()=>{ const d = { permitNo:"",permitDate:"",safetyMgr:defMgr(),company:"",leader:"",phone:"",workName:"",place:"",workDate:"",workDateEnd:"",tStart:"",tEnd:"",watcher:"",watcherPhone:"",boss:"",bossTel:"",rescueA:"",rescueB:"",workers:"",hotWorker:"",sigBoss:"",sigT0:"",sigT1:"",sigT2:"",sigWatcher:"",sigHot:"" };
+  TEAMS.forEach((_, i)=>{ ["n1","c1","n2","c2"].forEach(k => d[`t${i}${k}`] = ""); });
+  for(let i = 1; i <= 17; i++) d["a" + i] = ""; for(let i = 1; i <= 18; i++) d["b" + i] = "";
+  return d; };
+
+const fmtDate = (v)=>{ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ""); return m ? `${m[1]}년 ${m[2]}월 ${m[3]}일` : `${NB.repeat(5)}년${NB.repeat(4)}월${NB.repeat(4)}일`; };
+const periodText = (d)=> `${fmtDate(d.workDate)} ~ ${fmtDate(d.workDateEnd || d.workDate)} (${d.tStart || "00:00"} ~ ${d.tEnd || "00:00"})`;
+const parseWorkers = (t)=> String(t || "").split(/[\n,，、]+/).map(s => s.trim()).filter(Boolean);
+// 서명이 있으면 "(서명)" 글자는 숨기고(자리는 유지), 서명을 크게·진하게(같은 그림을 살짝 겹쳐서) 넣습니다.
+const SG = (d, key, text, h, mwFix)=>{
+  const has = !!d[key], H = +(h * 1.3).toFixed(1), MW = mwFix || Math.round(h * 2.9);
+  const im = (dx, dy)=> `<img class="sgi" src="${d[key]}" style="height:${H}mm;max-width:${MW}mm;object-fit:contain;margin-left:${dx}mm;margin-top:${dy}mm">`;
+  return `<span class="sgw"><span${has ? ' style="visibility:hidden"' : ""}>${text}</span>${has ? im(0, 0) + im(0.12, 0.06) : ""}</span>`;
+};
+const V = (x)=> `<span class="val">${esc(x)}</span>`;
+const head = (tag, title)=> `<div class="hd"><div class="tag">${tag}</div><div class="ttl">${title}</div></div>`;
+
+function teamBox(d, i){
+  const g = k => esc(d[`t${i}${k}`]);
+  return `<div class="team" style="left:${[6, 36.5, 67][i]}%"><table class="b">
+   <tr><td colspan="3" style="text-align:center;height:4.8mm">${TEAMS[i]}</td></tr>
+   <tr><td style="width:10mm;text-align:center">성 명</td><td class="val">${g("n1")}</td><td style="width:10mm;text-align:right">${SG(d, `sigT${i}`, "(서명)", 4.6)}</td></tr>
+   <tr><td style="text-align:center">연락처</td><td colspan="2" class="val">${g("c1")}</td></tr>
+   <tr><td style="text-align:center">성 명</td><td class="val">${g("n2")}</td><td style="text-align:right">(서명)</td></tr>
+   <tr><td style="text-align:center">연락처</td><td colspan="2" class="val">${g("c2")}</td></tr></table></div>`;
+}
+
+function sheet7(d){
+  const workers = parseWorkers(d.workers), cols = 7, rows = Math.max(2, Math.ceil(workers.length / cols));
+  let wk = "";
+  for(let r = 0; r < rows; r++){ wk += "<tr>"; for(let c = 0; c < cols; c++) wk += `<td class="val" style="text-align:center;height:6mm">${esc(workers[r * cols + c] || "")}</td>`; wk += "</tr>"; }
+  const res = (i)=> `<td class="rs val">${esc(d["a" + i])}</td>`;
+  let rowsA = "";
+  for(let i = 1; i <= 10; i++) rowsA += `<tr><td colspan="2">${i}. ${ITEMS_A[i - 1]}</td>${res(i)}</tr>`;
+  for(let i = 11; i <= 16; i++) rowsA += `<tr>${i === 11 ? `<td rowspan="7" class="sm" style="text-align:center;line-height:1.5">밀폐공간<br>작 업 시<br>(체${NB}${NB}크)</td>` : ""}<td>${i}. ${ITEMS_A[i - 1]}</td>${res(i)}</tr>`;
+  rowsA += `<tr><td>17. 필요한 구조팀 담당자 성명 : ${V(d.rescueA)}</td>${res(17)}</tr>`;
+  return `<div class="sheet">${head("별지 7", "화기작업 신청서")}
+  <table class="f"><colgroup><col style="width:24mm"><col style="width:24mm"><col><col style="width:14mm"></colgroup>
+   <tr><td class="lb">허 가 사 항</td><td colspan="3" class="pad0"><table class="in"><tr><td style="width:55%">허가번호 : ${V(d.permitNo)}</td><td>허가일자 : ${V(fmtDate(d.permitDate))}</td></tr></table></td></tr>
+   <tr><td class="lb" rowspan="2">신${NB}${NB}청${NB}${NB}인</td><td colspan="3" class="pad0"><table class="in"><tr><td style="width:55%">업체명 : ${V(d.company)}</td><td>현장책임자 : ${V(d.boss || d.leader)}</td></tr></table></td></tr>
+   <tr><td colspan="3">휴대폰번호 : ${V(d.phone || d.bossTel)}</td></tr>
+   <tr><td class="lb">작${NB}${NB}업${NB}${NB}명</td><td colspan="3" class="val">${esc(d.workName)}</td></tr>
+   <tr><td class="lb">작 업 장 소</td><td colspan="3" style="height:13mm;vertical-align:top;padding-top:.8mm"><span class="sm">(신청서 1건 당 작업장소 범위 : ① 층별 신청, ② 해당 층에서 반경 20m 초과마다 신청)</span><br>${V(d.place)}</td></tr>
+   <tr><td class="lb">작 업 일 시</td><td colspan="3" class="val" style="height:9mm;text-align:right;padding-right:2mm">${esc(periodText(d))}</td></tr>
+   <tr><td class="lb">화재감시자</td><td colspan="3" class="pad0"><table class="in"><tr><td style="width:60%">성명 : ${V(d.watcher)}<span style="float:right">${SG(d, "sigWatcher", "(서명)", 5.2)}</span></td><td>휴대폰번호 : ${V(d.watcherPhone)}</td></tr></table></td></tr>
+   <tr><td class="lb" style="letter-spacing:0;white-space:nowrap;padding:0">초기대응체계</td><td colspan="3" class="pad0"><div class="org">
+      <div class="boss"><table class="b"><tr><td colspan="2" style="text-align:center">현장책임자</td></tr><tr><td style="width:10mm;text-align:center">성 명</td><td class="val" style="text-align:right">${esc(d.boss)}&nbsp;&nbsp;${SG(d, "sigBoss", "(서명, 8.5)", 4.6)}</td></tr><tr><td style="text-align:center">연락처</td><td class="val">${esc(d.bossTel)}</td></tr></table></div>
+      <div class="ln" style="left:50%;top:14.8mm;width:.3mm;height:5.7mm"></div>
+      <div class="ln" style="left:19.5%;top:20.5mm;width:61%;height:.3mm"></div>
+      <div class="ln" style="left:19.5%;top:20.5mm;width:.3mm;height:2mm"></div><div class="ln" style="left:50%;top:20.5mm;width:.3mm;height:2mm"></div><div class="ln" style="left:80.5%;top:20.5mm;width:.3mm;height:2mm"></div>
+      ${[0, 1, 2].map(i => teamBox(d, i)).join("")}</div></td></tr>
+   <tr><td class="lb" rowspan="18" style="line-height:1.7;letter-spacing:0">화 기 작 업<br>체크리스트<br>( 작 업 전 )<br><br><u>화기작업자</u><br><u>작${NB}${NB}${NB}${NB}${NB}성</u></td>
+       <td colspan="2" class="hdc" style="font-size:9.6pt">점검내용</td><td class="hdc sm" style="line-height:1.1">결과<br>[○, ×]</td></tr>
+   ${rowsA}
+   <tr><td class="lb" style="letter-spacing:0;white-space:nowrap;padding:0">작 업 자 명 단</td><td colspan="3" class="pad0"><table class="in names">${wk}</table></td></tr>
+   <tr><td colspan="4" style="height:20mm;padding:0 2mm"><div style="display:flex;align-items:center;height:100%"><b style="font-size:10.5pt;margin-left:44%;white-space:nowrap">화기작업자</b><span class="val" style="flex:1;text-align:center;font-size:10.5pt">${esc(d.hotWorker)}</span><b style="font-size:10.5pt;white-space:nowrap">${SG(d, "sigHot", "(서명)", 14)}</b></div></td></tr>
+  </table></div>`;
+}
+
+function sheet8(d){
+  d = Object.assign({}, d, { sigMgr: d.sigMgr || defMgrSig() });
+  const res = (i)=> `<td class="rs val">${esc(d["b" + i])}</td>`;
+  let rows = "";
+  for(let i = 1; i <= 11; i++) rows += `<tr><td colspan="2" style="height:7.3mm">${i}. ${ITEMS_B[i - 1]}</td>${res(i)}</tr>`;
+  for(let i = 12; i <= 17; i++) rows += `<tr>${i === 12 ? `<td rowspan="7" class="sm" style="text-align:center;line-height:1.5">밀폐공간<br>작 업 시<br>(체${NB}${NB}크)</td>` : ""}<td style="height:7.3mm">${i}. ${ITEMS_B[i - 1]}</td>${res(i)}</tr>`;
+  rows += `<tr><td style="height:7.3mm">18. 필요한 구조팀 담당자 성명 : ${V(d.rescueB)}</td>${res(18)}</tr>`;
+  return `<div class="sheet">${head("별지 8", "화기작업 허가서")}
+  <div class="note8">[본 화기작업 허가서는 반드시 작업현장에 게시하고 작업완료 후 소방안전관리자에게 반납해야 한다.]</div>
+  <table class="f"><colgroup><col style="width:24mm"><col style="width:24mm"><col><col style="width:18mm"></colgroup>
+   <tr><td class="lb">허 가 사 항</td><td colspan="3" class="pad0"><table class="in"><tr><td style="width:33%">허가번호 : ${V(d.permitNo)}</td><td style="width:30%">허가일자 : ${V(fmtDate(d.permitDate))}</td><td style="height:9mm;font-size:7.4pt;vertical-align:top;padding-top:.4mm">(소방안전관리자)<div class="rt" style="font-size:9pt;margin-top:.8mm">${V(d.safetyMgr || defMgr())} ${SG(d, "sigMgr", "(서명)", 5)}</div></td></tr></table></td></tr>
+   <tr><td class="lb">작${NB}${NB}업${NB}${NB}명</td><td colspan="3" class="val">${esc(d.workName)}</td></tr>
+   <tr><td class="lb">작 업 장 소</td><td colspan="3" class="val">${esc(d.place)}</td></tr>
+   <tr><td class="lb">작 업 일 시</td><td colspan="3"><span class="val" style="margin-left:9mm">${esc(periodText(d))}</span></td></tr>
+   <tr><td class="lb" rowspan="19" style="line-height:1.7;letter-spacing:0">화 기 작 업<br>체크리스트<br>( 작 업 중 )<br><br><u style="letter-spacing:0;font-size:8.6pt">소방안전관리자</u><br><u>확${NB}${NB}${NB}${NB}${NB}인</u></td>
+      <td colspan="2" class="hdc" style="font-size:9.6pt;height:7mm">점검내용</td><td class="hdc sm" style="line-height:1.1">결과<br>[○, ×]</td></tr>
+   ${rows}
+   <tr><td class="lb" rowspan="5" style="line-height:1.5;letter-spacing:0">작 업 종 료<br>후 안전조치<br>(작업종료 후<br>작성 → 반납)</td><td colspan="2" class="hdc">확인사항</td><td class="hdc sm" style="line-height:1.1">작업책임자<br>확인</td></tr>
+   ${AFTER.map((t, i) => `<tr><td colspan="2" style="height:7.6mm">${i + 1}. ${t}</td>${i === 0 ? `<td rowspan="4" class="rs" style="vertical-align:middle"><div class="val" style="font-size:9pt;margin-bottom:1mm">${esc(d.boss)}</div>${SG(d, "sigBoss", "(서명)", 6)}</td>` : ""}</tr>`).join("")}
+   <tr><td class="lb">반 납 확 인</td><td colspan="3" style="height:9mm;text-align:right;padding-right:3mm;white-space:nowrap"><b style="display:inline-block;vertical-align:middle">소방안전관리자</b><b style="display:inline-block;vertical-align:middle;width:34mm;text-align:center">${V(d.safetyMgr || defMgr())}</b><b style="display:inline-block;vertical-align:middle">${SG(d, "sigMgr", "(서명)", 6.5)}</b></td></tr>
+  </table>
+  <div style="margin:3mm 0 0 2mm;font-size:9pt">※ 소방안전관리자 → 작업책임자 → 현장에 게시 → 소방안전관리자</div></div>`;
+}
+const sheetsOf = (d)=> sheet7(d) + sheet8(d);
+
+/* ================= 상태 · 입력 연결 ================= */
+const LIB = {
+  html2canvas: "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
+  jspdf: "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
+  jszip: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+};
+const WORK_KEY = "fireplan_hotwork_work_v1";
+let cur = blank(), editingId = null, entries = [];
+const sel = new Set(), seen = new Set();
+
+// 입력칸 만들기 (초기대응체계 · 체크리스트)
+$("#teamInputs").innerHTML = TEAMS.map((t, i)=> `<div style="margin-top:6px;font-size:12px;font-weight:700;color:#16307a">${t}</div>` + [1, 2].map(n => `<div class="row" style="margin-bottom:4px"><div class="field"><input type="text" placeholder="성명 ${n}" data-k="t${i}n${n}"></div><div class="field"><input type="text" inputmode="tel" placeholder="연락처 ${n}" data-k="t${i}c${n}"></div></div>`).join("")).join("");
+const selHtml = (k)=> `<select data-k="${k}"><option value=""></option><option value="○">○</option><option value="×">×</option></select>`;
+$("#chkA").innerHTML = ITEMS_A.map((t, i)=> `<div class="t">${i + 1}. ${t}</div>${selHtml("a" + (i + 1))}`).join("") + `<div class="t">17. 구조팀 담당자 (결과)</div>${selHtml("a17")}`;
+$("#chkB").innerHTML = ITEMS_B.map((t, i)=> `<div class="t">${i + 1}. ${t}</div>${selHtml("b" + (i + 1))}`).join("") + `<div class="t">18. 구조팀 담당자 (결과)</div>${selHtml("b18")}`;
+
+const SIGS = [["sigBoss", "현장책임자"], ["sigT0", "비상연락"], ["sigT1", "초기소화"], ["sigT2", "피난유도"], ["sigWatcher", "화재감시자"], ["sigHot", "화기작업자"]];
+function renderSig(){
+  $("#sigBox").innerHTML = SIGS.map(([k, t]) => `<div class="sigrow"><b>${t}</b><div class="th">${cur[k] ? `<img src="${cur[k]}">` : '<span style="color:#aab">없음</span>'}</div>${cur[k] ? `<button class="btn sm danger" data-sigdel="${k}" type="button">삭제</button>` : ""}<input type="file" accept="image/*" data-sigup="${k}"></div>`).join("");
+}
+function fillInputs(){ document.querySelectorAll("[data-k]").forEach(el => { el.value = cur[el.dataset.k] || ""; }); renderSig(); }
+function render(){
+  $("#pv").innerHTML = sheetsOf(cur);
+  fit();
+  try{ localStorage.setItem(WORK_KEY, JSON.stringify({ cur, editingId })); }catch(e){}
+}
+document.addEventListener("input", (e)=>{ const k = e.target && e.target.dataset && e.target.dataset.k; if(!k) return; cur[k] = e.target.value; if(k === "safetyMgr"){ try{ localStorage.setItem(MGR_KEY, e.target.value); }catch(err){} } render(); });
+document.addEventListener("change", (e)=>{ const k = e.target && e.target.dataset && e.target.dataset.k; if(!k) return; cur[k] = e.target.value; render(); });
+document.addEventListener("click", (e)=>{
+  const a = e.target && e.target.dataset && e.target.dataset.all; if(!a) return;
+  const pre = a[0], clear = a.endsWith("clear"), n = pre === "a" ? 17 : 18;
+  for(let i = 1; i <= n; i++) cur[pre + i] = clear ? "" : "○";
+  fillInputs(); render();
+});
+
+// 미리보기를 화면 폭에 맞춰 줄이기
+function fit(){
+  const main = $("#main"), pv = $("#pv"); if(!main) return;
+  const w = main.clientWidth - 28, need = 210 * 96 / 25.4;
+  const z = Math.min(1, w / need);
+  pv.style.zoom = z < 1 ? String(z) : "";
+}
+addEventListener("resize", fit);
+
+/* ================= 기록 저장(IndexedDB) ================= */
+const idbOpen = ()=> new Promise((res, rej)=>{ const r = indexedDB.open("fireplan_hotwork_db", 1); r.onupgradeneeded = ()=> r.result.createObjectStore("kv"); r.onsuccess = ()=> res(r.result); r.onerror = ()=> rej(r.error); });
+const idbGet = async (k)=>{ const db = await idbOpen(); return new Promise((res, rej)=>{ const r = db.transaction("kv").objectStore("kv").get(k); r.onsuccess = ()=> res(r.result); r.onerror = ()=> rej(r.error); }); };
+const idbSet = async (k, v)=>{ const db = await idbOpen(); return new Promise((res, rej)=>{ const tx = db.transaction("kv", "readwrite"); tx.objectStore("kv").put(v, k); tx.oncomplete = ()=> res(); tx.onerror = tx.onabort = ()=> rej(tx.error); }); };
+let chain = Promise.resolve();
+function persist(){
+  const snap = JSON.parse(JSON.stringify(entries));
+  chain = chain.then(()=> idbSet("entries", snap)).catch(()=> alert("기록 저장에 실패했어요. 저장 공간이 부족할 수 있어요."));
+}
+const status = (t)=>{ $("#status").textContent = t || ""; };
+const byDate = (a, b)=> String(a.data.workDate || "").localeCompare(String(b.data.workDate || "")) || String(a.savedAt).localeCompare(String(b.savedAt));
+
+function renderLog(){
+  entries.forEach(e => { if(!seen.has(e.id)){ seen.add(e.id); sel.add(e.id); } });
+  [...sel].forEach(id => { if(!entries.some(e => e.id === id)) sel.delete(id); });
+  const list = entries.slice().sort((a, b)=> byDate(b, a));
+  $("#logcnt").textContent = entries.length;
+  $("#selcnt").textContent = sel.size ? `${sel.size}건 선택됨` : "";
+  const groups = []; list.forEach(e => { const k = e.data.workDate || ""; let g = groups.find(x => x.k === k); if(!g){ g = { k, items: [] }; groups.push(g); } g.items.push(e); });
+  $("#loglist").innerHTML = groups.map(g => `<div class="dgrp" style="display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:12.5px;font-weight:800;color:#0e1a33"><input type="checkbox" data-grp="${esc(g.k)}" style="width:17px;height:17px;accent-color:#0e1a33" ${g.items.every(e => sel.has(e.id)) ? "checked" : ""}> ${esc(g.k || "작업일 없음")} <small style="font-weight:500;color:#6b7488">${g.items.length}건</small></div>` +
+    g.items.map(e => `<div class="logitem${e.id === editingId ? " active" : ""}" data-id="${e.id}">
+    <input type="checkbox" data-sel="${e.id}" ${sel.has(e.id) ? "checked" : ""}>
+    <div class="m" data-load="${e.id}">${esc(e.data.permitNo || e.data.workDate || "번호 없음")} · ${esc(e.data.company || "업체 미입력")}<small>${esc(e.data.workName || "")} ${esc(e.data.place || "")}</small></div>
+    <button class="del" data-del="${e.id}" type="button">삭제</button></div>`).join("")).join("") || `<div class="empty">저장된 기록이 없어요.<br>위에서 PDF를 읽어 오거나, 직접 입력해 저장하세요.</div>`;
+  $("#saveUpd").style.display = editingId ? "flex" : "none";
+}
+$("#loglist").addEventListener("click", (e)=>{
+  const t = e.target;
+  if(t.dataset.grp !== undefined){ entries.filter(e => (e.data.workDate || "") === t.dataset.grp).forEach(e => t.checked ? sel.add(e.id) : sel.delete(e.id)); renderLog(); return; }
+  if(t.dataset.sel){ if(t.checked) sel.add(t.dataset.sel); else sel.delete(t.dataset.sel); renderLog(); return; }
+  if(t.dataset.del){ if(confirm("이 기록을 삭제할까요?")){ entries = entries.filter(x => x.id !== t.dataset.del); if(editingId === t.dataset.del) editingId = null; persist(); renderLog(); } return; }
+  const m = t.closest("[data-load]"); if(m){ const en = entries.find(x => x.id === m.dataset.load); if(en){ cur = Object.assign(blank(), JSON.parse(JSON.stringify(en.data))); if(!cur.safetyMgr) cur.safetyMgr = defMgr(); editingId = en.id; fillInputs(); render(); renderLog(); } }
+});
+$("#selall").onclick = ()=>{ entries.forEach(e => sel.add(e.id)); renderLog(); };
+$("#selnone").onclick = ()=>{ sel.clear(); renderLog(); };
+$("#saveNew").onclick = ()=>{ const en = { id: "h" + Date.now() + Math.random().toString(36).slice(2, 6), savedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(cur)) }; entries.push(en); editingId = en.id; persist(); renderLog(); status("✅ 새 기록으로 저장했어요."); };
+$("#saveUpd").onclick = ()=>{ const en = entries.find(x => x.id === editingId); if(!en) return; en.data = JSON.parse(JSON.stringify(cur)); en.savedAt = new Date().toISOString(); persist(); renderLog(); status("✅ 기록을 덮어썼어요."); };
+$("#newForm").onclick = ()=>{ if(!confirm("현재 입력 중인 내용을 지우고 새로 작성할까요? (저장된 기록은 삭제되지 않아요)")) return; cur = blank(); editingId = null; fillInputs(); render(); renderLog(); };
+$("#delAll").onclick = ()=>{
+  const ids = [...sel].filter(id => entries.some(e => e.id === id));
+  if(!ids.length){ alert("삭제할 기록을 먼저 체크해주세요."); return; }
+  if(!confirm(`체크한 ${ids.length}건을 삭제할까요?\n삭제하면 되돌릴 수 없어요.`)) return;
+  entries = entries.filter(e => !ids.includes(e.id)); if(ids.includes(editingId)) editingId = null;
+  persist(); renderLog(); status(`🗑️ ${ids.length}건을 삭제했어요.`);
+};
+
+/* ================= 인쇄 · PDF ================= */
+const targets = ()=> entries.filter(e => sel.has(e.id)).sort(byDate).map(e => e.data);
+function doPrint(list){
+  const stage = $("#printStage");
+  stage.innerHTML = list.map(d => sheetsOf(Object.assign(blank(), d))).join("");
+  document.body.classList.add("printing");
+  const done = ()=>{ document.body.classList.remove("printing"); stage.innerHTML = ""; removeEventListener("afterprint", done); };
+  addEventListener("afterprint", done);
+  window.print();
+}
+$("#printAll").onclick = ()=>{ const t = targets(); if(!t.length){ alert("인쇄할 기록을 먼저 체크해주세요."); return; } doPrint(t); };
+$("#printCur").onclick = ()=> doPrint([cur]);
+
+const loadScript = (u)=> new Promise((res, rej)=>{ const s = document.createElement("script"); s.src = u; s.onload = res; s.onerror = ()=> rej(new Error("라이브러리를 불러오지 못했어요: " + u)); document.head.appendChild(s); });
+async function libs(){ if(!window.html2canvas) await loadScript(LIB.html2canvas); if(!window.jspdf) await loadScript(LIB.jspdf); if(!window.JSZip) await loadScript(LIB.jszip); }
+const dl = (blob, name)=>{ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=> URL.revokeObjectURL(a.href), 4000); };
+const safeName = (s)=> String(s || "").replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 30);
+
+async function makePdf(d){
+  const stage = $("#printStage"); stage.innerHTML = (Array.isArray(d) ? d : [d]).map(x => sheetsOf(Object.assign(blank(), x))).join(""); stage.classList.add("off");
+  await new Promise(r => setTimeout(r, 60));
+  const { jsPDF } = window.jspdf, pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+  const nodes = [...stage.children];
+  for(let k = 0; k < nodes.length; k++){
+    const c = await window.html2canvas(nodes[k], { scale: 2, backgroundColor: "#fff", logging: false });
+    if(k) pdf.addPage();
+    pdf.addImage(c.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+  }
+  stage.classList.remove("off"); stage.innerHTML = "";
+  return pdf.output("blob");
+}
+async function savePdfs(list){
+  const btns = ["pdfAll", "pdfCur"].map(i => $("#" + i)); btns.forEach(b => b.disabled = true);
+  try{
+    status("⏳ PDF 만드는 도구를 불러오는 중이에요...");
+    await libs();
+    const files = [], byD = new Map();
+    list.forEach(d => { const k = d.workDate || ""; if(!byD.has(k)) byD.set(k, []); byD.get(k).push(d); });
+    const days = [...byD.entries()].sort((a, b)=> a[0].localeCompare(b[0]));
+    for(let i = 0; i < days.length; i++){
+      status(`⏳ PDF 만드는 중... ${i + 1}/${days.length}일 (${days[i][1].length}건)`);
+      files.push({ name: `화기작업_${days[i][0] || "날짜없음"}_${days[i][1].length}건.pdf`, blob: await makePdf(days[i][1]) });
+    }
+    if(files.length === 1) dl(files[0].blob, files[0].name);
+    else { const z = new JSZip(); files.forEach(f => z.file(f.name, f.blob)); dl(await z.generateAsync({ type: "blob" }), `화기작업_날짜별PDF_${files.length}일.zip`); }
+    status(`✅ ${files.length}일치(${list.length}건)를 PDF로 저장했어요.` + (files.length > 1 ? " (압축 파일 안에 날짜별 PDF가 들어 있어요)" : ""));
+  }catch(err){ console.error(err); status(""); alert("PDF 저장 중 문제가 생겼어요: " + (err && err.message || err)); }
+  finally{ $("#printStage").classList.remove("off"); btns.forEach(b => b.disabled = false); }
+}
+$("#pdfAll").onclick = ()=>{ const t = targets(); if(!t.length){ alert("PDF로 저장할 기록을 먼저 체크해주세요."); return; } savePdfs(t); };
+$("#pdfCur").onclick = ()=> savePdfs([cur]);
+
+
+/* ================= PDF에서 화기작업 허가서 읽기 ================= */
+const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+let found = [];   // 읽어낸 화기작업 허가서 후보
+
+async function pageLines(page){
+  const tc = await page.getTextContent();
+  const rows = new Map();
+  tc.items.forEach(it => {
+    if(!it.str || !it.str.trim()) return;
+    const y = Math.round(it.transform[5] / 3);
+    let key = null; for(const k of rows.keys()) if(Math.abs(k - y) <= 1){ key = k; break; }
+    if(key === null){ key = y; rows.set(key, []); }
+    rows.get(key).push({ x: it.transform[4], w: it.width || 0, h: Math.abs(it.transform[3]) || it.height || 10, s: it.str.trim() });
+  });
+  const meta = [];
+  const lines = [...rows.entries()].sort((a, b)=> b[0] - a[0]).map(([, arr]) => { arr.sort((p, q)=> p.x - q.x); let out = "", prev = null;
+    arr.forEach(o => { if(prev && (o.x - (prev.x + prev.w)) > Math.max(prev.h, 8) * 0.22) out += " "; out += o.s; prev = o; });
+    meta.push({ x0: arr[0].x, right: arr.some(o => o.x > 300) });   // 오른쪽 칸에도 글자가 있으면 체크박스 줄
+    return out.replace(/\s+/g, " ").trim(); });
+  lines.meta = meta; return lines;
+}
+
+// 한 쪽의 글자 줄들에서 화기작업 허가서 내용을 뽑습니다. 화기작업이 아니면 null.
+function parseHotPermit(lines){
+  const text = lines.join("\n");
+  if(!/안전\s*작업\s*허가서/.test(text)) return null;
+  const hi = lines.findIndex(l => /■\s*화기작업/.test(l));
+  if(hi < 0) return null;
+  const g = (re, src)=>{ const m = re.exec(src || text); return m ? m[1].trim() : ""; };
+  const r = { srcNo: g(/허가번호\s*:\s*([A-Za-z0-9-]+)/), srcDate: g(/허가일자\s*:\s*(\d{8})/),
+    company: g(/업체명\s*:\s*(.+?)\s+직책/), leader: g(/성명\s*:\s*([^\s(]+)/) };
+  const pm = /작업허가기간\s*:\s*(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(\d{1,2}):(\d{2})\s*부터\s*(?:(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*)?(\d{1,2}):(\d{2})\s*까지/.exec(text);
+  const p2 = (n)=> String(n).padStart(2, "0");
+  if(pm){
+    r.workDate = `${pm[1]}-${p2(pm[2])}-${p2(pm[3])}`; r.tStart = `${p2(pm[4])}:${pm[5]}`;
+    r.workDateEnd = pm[6] ? `${pm[6]}-${p2(pm[7])}-${p2(pm[8])}` : ""; r.tEnd = `${p2(pm[9])}:${pm[10]}`;
+    if(r.workDateEnd === r.workDate) r.workDateEnd = "";
+  }
+  // 화기작업 블록
+  const blk = lines.slice(hi);
+  const stop = /작업구역설정|차량 등의|소화설비|비산불티|가스농도|밸브파단|추가유해위험요인|화재감시자\s*:|전화번호\s*:/;
+  const pl = blk.find(l => /작업장소\s*:/.test(l)) || "";
+  r.place = pl.replace(/\/?\s*투입인원.*$/, "").replace(/^.*?작업장소\s*:\s*/, "").replace(/^\/\s*/, "").trim();   // 비어 있으면 빈칸
+  const CHK = /작업구역\s*설정|출입\s*제한|소화설비|소화기\s*비치|비산\s*불티|불티\s*비산|화재\s*감시자\s*(의\s*)?배치|가스\s*농도|밸브\s*파단|위험물질의\s*방출|입회|환기\s*조치|인화성\s*물질\s*제거|안면\s*보호구|역화\s*방지기|압력\s*용기|보호복\s*착용|호흡\s*보호구/;
+  const meta = lines.meta || [], off = hi, ci = blk.findIndex(l => /작업내용\s*:/.test(l));
+  if(ci >= 0){
+    const parts = [blk[ci].replace(/^.*?작업내용\s*:\s*/, "")];
+    for(let i = ci + 1; i < blk.length && !stop.test(blk[i]) && !/^■/.test(blk[i]); i++){
+      const m = meta[off + i];
+      if((m && m.right) || CHK.test(blk[i]) || /^[☑✓☐□✔]/.test(blk[i])) break;   // 체크박스 줄이 시작되면 거기까지
+      parts.push(blk[i]);
+    }
+    r.workName = parts.join(" ").replace(/\s+/g, " ").trim();
+  }else r.workName = "";
+  r.watcher = g(/화재감시자\s*:\s*(.+)/, blk.find(l => /화재감시자\s*:/.test(l)) || "");
+  r.watcherPhone = g(/전화번호\s*:\s*([\d-]+)/, blk.find(l => /전화번호\s*:/.test(l)) || "");
+  return r;
+}
+
+async function ensurePdfJs(){
+  if(!window.pdfjsLib) await loadScript(PDFJS_URL);
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+}
+const ymd = (s)=> /^\d{8}$/.test(s || "") ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : "";
+
+/* ---------- 사진대지(초기대응체계 표) 읽기 ---------- */
+const TESS_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const TESS_LANG = "https://cdn.jsdelivr.net/npm/@tesseract.js-data/kor/4.0.0_best_int";
+let tessWorker = null, crew = null;
+async function getTess(){
+  if(tessWorker) return tessWorker;
+  if(!window.Tesseract) await loadScript(TESS_URL);
+  tessWorker = await Tesseract.createWorker("kor", 1, { langPath: TESS_LANG });
+  return tessWorker;
+}
+const ROLES = ["현장책임자", "비상연락", "초기소화", "피난유도", "화재감시자", "화기작업자"];
+const KEYS = ROLES.concat(["구분", "성명", "연락처", "서명"]);
+const mkCanvas = (w, h)=>{ const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+function scaleCanvas(c, maxSide){ const sc = Math.min(1, maxSide / Math.max(c.width, c.height)); if(sc === 1) return c; const o = mkCanvas(c.width * sc, c.height * sc); o.getContext("2d").drawImage(c, 0, 0, o.width, o.height); return o; }
+function rotateCanvas(c, deg){
+  if(!deg) return c;
+  const sw = deg % 180 !== 0, o = mkCanvas(sw ? c.height : c.width, sw ? c.width : c.height), x = o.getContext("2d");
+  x.translate(o.width / 2, o.height / 2); x.rotate(deg * Math.PI / 180); x.drawImage(c, -c.width / 2, -c.height / 2); return o;
+}
+const fileToCanvas = (f)=> new Promise((res, rej)=>{ const u = URL.createObjectURL(f), im = new Image(); im.onload = ()=>{ const c = mkCanvas(im.naturalWidth, im.naturalHeight); c.getContext("2d").drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = ()=> rej(new Error("사진을 열 수 없어요: " + f.name)); im.src = u; });
+
+// 사진이 옆으로 누워 있어도 글자가 바로 서는 방향을 찾습니다.
+async function bestOrientation(c){
+  const w = await getTess(); await w.setParameters({ tessedit_pageseg_mode: "4" });
+  const small = flattenLight(scaleCanvas(c, 1400)); let best = { deg: 0, hit: -1 };
+  for(const deg of [90, 270, 0, 180]){
+    const { data } = await w.recognize(rotateCanvas(small, deg));
+    const t = data.text.replace(/\s+/g, ""), hit = KEYS.filter(k => t.includes(k)).length + (t.match(/010-?\d{4}-?\d{4}/g) || []).length;
+    if(hit > best.hit) best = { deg, hit };
+    if(hit >= 7) break;
+  }
+  return best;
+}
+// 그림자·조명 얼룩을 없애 종이를 고르게 하얗게 만듭니다 (글씨·선만 남김)
+function flattenLight(c){
+  const W = c.width, H = c.height, sc = 1 / 8, sw = Math.max(8, Math.round(W * sc)), sh = Math.max(8, Math.round(H * sc));
+  const sm = mkCanvas(sw, sh), sx = sm.getContext("2d"); sx.drawImage(c, 0, 0, sw, sh);
+  const sd = sx.getImageData(0, 0, sw, sh).data, g = new Float32Array(sw * sh);
+  for(let i = 0; i < g.length; i++) g[i] = 0.299 * sd[i * 4] + 0.587 * sd[i * 4 + 1] + 0.114 * sd[i * 4 + 2];
+  const R = 4, tmp = new Float32Array(g.length), mx = new Float32Array(g.length);
+  for(let y = 0; y < sh; y++) for(let x = 0; x < sw; x++){ let m = 0; for(let k = -R; k <= R; k++){ const v = g[y * sw + Math.min(sw - 1, Math.max(0, x + k))]; if(v > m) m = v; } tmp[y * sw + x] = m; }
+  for(let y = 0; y < sh; y++) for(let x = 0; x < sw; x++){ let m = 0; for(let k = -R; k <= R; k++){ const v = tmp[Math.min(sh - 1, Math.max(0, y + k)) * sw + x]; if(v > m) m = v; } mx[y * sw + x] = m; }
+  const bg = mkCanvas(sw, sh), bx = bg.getContext("2d"), bi = bx.createImageData(sw, sh);   // 배경 밝기 지도(살짝 흐리게)
+  for(let i = 0; i < mx.length; i++){ bi.data[i * 4] = bi.data[i * 4 + 1] = bi.data[i * 4 + 2] = mx[i]; bi.data[i * 4 + 3] = 255; }
+  bx.putImageData(bi, 0, 0);
+  const big = mkCanvas(W, H), gx = big.getContext("2d"); gx.filter = "blur(" + Math.round(Math.max(2, 1 / sc * 1.2)) + "px)"; gx.drawImage(bg, 0, 0, W, H);
+  const bd = gx.getImageData(0, 0, W, H).data, ox = c.getContext("2d"), id = ox.getImageData(0, 0, W, H), d = id.data;
+  const out = mkCanvas(W, H), oc = out.getContext("2d"), oi = oc.createImageData(W, H);
+  for(let i = 0; i < W * H; i++){
+    const b = Math.max(60, bd[i * 4]), k = 255 / b;
+    oi.data[i * 4] = Math.min(255, d[i * 4] * k); oi.data[i * 4 + 1] = Math.min(255, d[i * 4 + 1] * k); oi.data[i * 4 + 2] = Math.min(255, d[i * 4 + 2] * k); oi.data[i * 4 + 3] = 255;
+  }
+  oc.putImageData(oi, 0, 0);
+  return out;
+}
+// 표의 가로·세로 선 찾기 (기울어진 사진은 먼저 바로잡습니다)
+function darkMask(c){
+  const W = c.width, H = c.height, d = c.getContext("2d").getImageData(0, 0, W, H).data, N = W * H;
+  const g = new Float32Array(N); for(let i = 0; i < N; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+  const S = new Float64Array((W + 1) * (H + 1));
+  for(let y = 0; y < H; y++){ let run = 0; for(let x = 0; x < W; x++){ run += g[y * W + x]; S[(y + 1) * (W + 1) + x + 1] = S[y * (W + 1) + x + 1] + run; } }
+  const R = Math.max(6, Math.round(Math.min(W, H) / 50)), m = new Uint8Array(N);
+  for(let y = 0; y < H; y++){ const y0 = Math.max(0, y - R), y1 = Math.min(H, y + R + 1);
+    for(let x = 0; x < W; x++){ const x0 = Math.max(0, x - R), x1 = Math.min(W, x + R + 1);
+      const mean = (S[y1 * (W + 1) + x1] - S[y0 * (W + 1) + x1] - S[y1 * (W + 1) + x0] + S[y0 * (W + 1) + x0]) / ((y1 - y0) * (x1 - x0));
+      if(g[y * W + x] < mean - 28) m[y * W + x] = 1; } }
+  return { W, H, m };
+}
+function skewAngle(c){
+  const small = scaleCanvas(c, 900), mk = darkMask(small), pts = [];
+  for(let y = 0; y < mk.H; y++) for(let x = 0; x < mk.W; x++) if(mk.m[y * mk.W + x]) pts.push(x, y);
+  let best = 0, bs = -1; const off = mk.W + 10, hist = new Float32Array(mk.H + 2 * mk.W + 40);
+  for(let a = -4; a <= 4.001; a += 0.25){
+    const t = a * Math.PI / 180, sn = Math.sin(t), cs = Math.cos(t); hist.fill(0);
+    for(let i = 0; i < pts.length; i += 2){ hist[Math.round(pts[i + 1] * cs - pts[i] * sn + off)]++; }
+    let sc = 0; for(let i = 0; i < hist.length; i++) sc += hist[i] * hist[i];
+    if(sc > bs){ bs = sc; best = a; }
+  }
+  return best;
+}
+function longestRuns(mk, axis){   // 선을 따라가며(조금 기울어져도) 이어진 길이를 잽니다
+  const { W, H, m } = mk, n = axis === "row" ? H : W, len = axis === "row" ? W : H, out = new Float32Array(n), D = [0, -1, 1, -2, 2];
+  for(let k0 = 0; k0 < n; k0++){
+    let k = k0, run = 0, gap = 0, best = 0;
+    for(let t = 0; t < len; t++){
+      let hit = false;
+      for(const dk of D){ const kk = k + dk; if(kk < 0 || kk >= n) continue; if(m[axis === "row" ? kk * W + t : t * W + kk]){ k = kk; hit = true; break; } }
+      if(Math.abs(k - k0) > 70) { run = 0; gap = 0; k = k0; continue; }
+      if(hit){ run += 1 + gap; gap = 0; if(run > best) best = run; } else if(run > 0){ gap++; if(gap > 16){ run = 0; gap = 0; k = k0; } }
+    }
+    out[k0] = best;
+  }
+  return out;
+}
+function runLines(arr){
+  let mx = 0; for(const v of arr) if(v > mx) mx = v;
+  const th = mx * 0.5, out = []; let i = 0;
+  while(i < arr.length){ if(arr[i] >= th){ let j = i, best = i; while(j < arr.length && arr[j] >= th){ if(arr[j] > arr[best]) best = j; j++; } out.push((i + j - 1) / 2); i = j + 4; } else i++; }
+  return out;
+}
+function findGrid(c0){
+  const ang = skewAngle(c0); let c = c0;
+  if(Math.abs(ang) >= 0.2){ c = mkCanvas(c0.width, c0.height); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.translate(c.width / 2, c.height / 2); x.rotate(-ang * Math.PI / 180); x.drawImage(c0, -c0.width / 2, -c0.height / 2); }
+  const mk = darkMask(c);
+  return { h: runLines(longestRuns(mk, "row")), v: runLines(longestRuns(mk, "col")), canvas: c, angle: ang };
+}
+const normName = (t)=> String(t || "").replace(/[^가-힣]/g, "");
+function normTel(t){ let x = String(t || "").replace(/[Oo]/g, "0").replace(/[lI|]/g, "1").replace(/\D/g, ""); if(x.length === 10 && x.startsWith("10")) x = "0" + x; return x.length === 11 ? `${x.slice(0, 3)}-${x.slice(3, 7)}-${x.slice(7)}` : (x.length === 10 ? `${x.slice(0, 3)}-${x.slice(3, 6)}-${x.slice(6)}` : x); }
+function cellCanvas(c, bx, inX, inY){
+  const x0 = bx.x0 + (bx.x1 - bx.x0) * inX, x1 = bx.x1 - (bx.x1 - bx.x0) * inX, y0 = bx.y0 + (bx.y1 - bx.y0) * inY, y1 = bx.y1 - (bx.y1 - bx.y0) * inY;
+  const o = mkCanvas(x1 - x0, y1 - y0); o.getContext("2d").drawImage(c, x0, y0, x1 - x0, y1 - y0, 0, 0, o.width, o.height); return o;
+}
+async function ocrLine(cv){
+  const sc = Math.max(1, 120 / cv.height), o = mkCanvas(cv.width * sc + 60, cv.height * sc + 40), x = o.getContext("2d");
+  x.fillStyle = "#fff"; x.fillRect(0, 0, o.width, o.height); x.filter = "grayscale(1) contrast(1.7)"; x.drawImage(cv, 30, 20, cv.width * sc, cv.height * sc);
+  const w = await getTess(); await w.setParameters({ tessedit_pageseg_mode: "7" });
+  const { data } = await w.recognize(o); return data.text.trim();
+}
+// 서명 칸/그림 → 배경이 투명한 서명 이미지
+function toSig(cv){
+  const W = cv.width, H = cv.height, x = cv.getContext("2d"), id = x.getImageData(0, 0, W, H), d = id.data;
+  let hasAlpha = false; for(let i = 3; i < d.length; i += 4 * 17) if(d[i] < 240){ hasAlpha = true; break; }
+  const lum = new Float32Array(W * H); let a = new Uint8ClampedArray(W * H);
+  if(hasAlpha){ for(let i = 0; i < W * H; i++) a[i] = d[i * 4 + 3]; }
+  else {
+    for(let i = 0; i < W * H; i++) lum[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    const sorted = Float32Array.from(lum).sort(), bg = sorted[Math.floor(sorted.length * 0.9)], ink = sorted[Math.floor(sorted.length * 0.01)];
+    if(bg - ink < 60) return "";
+    const lo = ink + (bg - ink) * 0.28, hi = bg - (bg - ink) * 0.3;   // 그림자 얼룩은 투명하게, 글씨는 진하게
+    for(let i = 0; i < W * H; i++) a[i] = Math.max(0, Math.min(255, Math.round((hi - lum[i]) / (hi - lo) * 255)));
+  }
+  let x0 = W, y0 = H, x1 = -1, y1 = -1, cnt = 0;
+  for(let y = 0; y < H; y++) for(let xx = 0; xx < W; xx++) if(a[y * W + xx] > 90){ cnt++; if(xx < x0) x0 = xx; if(xx > x1) x1 = xx; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+  if(cnt < W * H * 0.004 || x1 < 0) return "";
+  const out = mkCanvas(x1 - x0 + 1, y1 - y0 + 1), ox = out.getContext("2d"), oi = ox.createImageData(out.width, out.height);
+  for(let y = y0; y <= y1; y++) for(let xx = x0; xx <= x1; xx++){ const s = y * W + xx, t = ((y - y0) * out.width + (xx - x0)) * 4;
+    if(hasAlpha){ oi.data[t] = d[s * 4]; oi.data[t + 1] = d[s * 4 + 1]; oi.data[t + 2] = d[s * 4 + 2]; }
+    else { oi.data[t] = 15; oi.data[t + 1] = 18; oi.data[t + 2] = 45; }
+    oi.data[t + 3] = a[s]; }
+  ox.putImageData(oi, 0, 0);
+  return scaleCanvas(out, 360).toDataURL("image/png");
+}
+const roleOf = (t)=>{ t = normName(t); let best = null, bs = 0; ROLES.forEach(r => { const sc = [...r].filter(ch => t.includes(ch)).length; if(sc > bs){ bs = sc; best = r; } }); return bs >= 3 ? best : null; };
+
+async function readCrew(src, st){
+  st && st("⏳ 사진 방향을 확인하는 중이에요...");
+  const base = scaleCanvas(src, 2400), ori = await bestOrientation(base);
+  if(ori.hit < 2) return null;
+  st && st("⏳ 표의 칸을 나누는 중이에요...");
+  const gr = findGrid(flattenLight(rotateCanvas(base, ori.deg))), c = gr.canvas;
+  let hl = gr.h, vl = gr.v;
+  if(hl.length < 4 || vl.length < 3){   // 선을 못 찾으면 사진 전체를 같은 간격으로 나눔
+    const mx = c.width * 0.04, my = c.height * 0.04; hl = []; vl = [];
+    for(let i = 0; i <= 7; i++) hl.push(my + (c.height - 2 * my) * i / 7); for(let i = 0; i <= 4; i++) vl.push(mx + (c.width - 2 * mx) * i / 4);
+  }
+  const boxes = [];
+  for(let r = 0; r + 1 < hl.length; r++){ const row = []; for(let k = 0; k + 1 < vl.length; k++) row.push({ x0: vl[k], x1: vl[k + 1], y0: hl[r], y1: hl[r + 1] }); boxes.push(row); }
+  const roles = {}; let order = 0, n = 0;
+  for(let r = 0; r < boxes.length; r++){
+    st && st(`⏳ ${r + 1}/${boxes.length}번째 줄 글자를 읽는 중이에요...`);
+    const row = boxes[r]; if(row.length < 3) continue;
+    const lab = await ocrLine(cellCanvas(c, row[0], 0.06, 0.12));
+    let role = roleOf(lab);
+    if(!role){ if(/구분|성명|연락/.test(lab.replace(/\s/g, "")) && r === 0) continue; role = ROLES[order]; }
+    if(!role) continue;
+    order = Math.max(order, ROLES.indexOf(role) + 1);
+    const nameCv = cellCanvas(c, row[1], 0.05, 0.1);
+    const name = normName(await ocrLine(nameCv));
+    const tel = row[2] ? normTel(await ocrLine(cellCanvas(c, row[2], 0.04, 0.12))) : "";
+    const sig = row[3] ? toSig(cellCanvas(c, row[3], 0.07, 0.1)) : "";
+    if(!roles[role]){ roles[role] = { name, tel, sig, crop: scaleCanvas(nameCv, 220).toDataURL("image/png") }; if(name) n++; }
+  }
+  return { roles, n, srcNo: "" };
+}
+// 허가서 쪽 안의 서명 그림 (이미지)
+async function pageImgs(page, maxSide){
+  const ops = await page.getOperatorList(), O = window.pdfjsLib.OPS, U = window.pdfjsLib.Util;
+  let ctm = [1, 0, 0, 1, 0, 0]; const stk = [], out = [];
+  for(let i = 0; i < ops.fnArray.length; i++){
+    const f = ops.fnArray[i], a = ops.argsArray[i];
+    if(f === O.save) stk.push(ctm.slice()); else if(f === O.restore){ if(stk.length) ctm = stk.pop(); }
+    else if(f === O.transform) ctm = U.transform(ctm, a);
+    else if(f === O.paintImageXObject || f === O.paintJpegXObject) out.push({ name: a[0], cx: ctm[4] + (ctm[0] + ctm[2]) / 2, cy: ctm[5] + (ctm[1] + ctm[3]) / 2, wpt: Math.hypot(ctm[0], ctm[1]), hpt: Math.hypot(ctm[2], ctm[3]) });
+  }
+  const res = [];
+  for(const im of out){
+    const obj = await new Promise(r => { try{ page.objs.get(im.name, r); }catch(e){ r(null); } }); if(!obj) continue;
+    const w = obj.width, h = obj.height, c = mkCanvas(obj.bitmap ? obj.bitmap.width : w, obj.bitmap ? obj.bitmap.height : h);
+    if(obj.bitmap) c.getContext("2d").drawImage(obj.bitmap, 0, 0);
+    else if(obj.data){
+      const id = new ImageData(w, h), d = id.data, s = obj.data, k = obj.kind;
+      if(k === 3) d.set(s.subarray(0, w * h * 4));
+      else if(k === 2){ for(let p = 0, q = 0; p < w * h; p++, q += 3){ d[p * 4] = s[q]; d[p * 4 + 1] = s[q + 1]; d[p * 4 + 2] = s[q + 2]; d[p * 4 + 3] = 255; } }
+      else { for(let p = 0; p < w * h; p++){ const v = s[p] || 0; d[p * 4] = d[p * 4 + 1] = d[p * 4 + 2] = v; d[p * 4 + 3] = 255; } }
+      c.getContext("2d").putImageData(id, 0, 0);
+    }else continue;
+    im.canvas = scaleCanvas(c, maxSide); res.push(im);
+  }
+  return res;
+}
+async function findSig(page){
+  const imgs = (await pageImgs(page, 800)).filter(i => i.wpt < 260 && i.hpt < 140 && i.wpt > 20);
+  if(!imgs.length) return "";
+  imgs.sort((a, b)=> b.cy - a.cy);
+  return toSig(imgs[0].canvas);
+}
+
+$("#pdfRead").onclick = async ()=>{
+  const files = [...$("#pdfFile").files];
+  if(!files.length){ alert("PDF 또는 사진 파일을 먼저 선택해주세요."); return; }
+  const btn = $("#pdfRead"); btn.disabled = true; found = [];
+  const st = (t)=>{ $("#impStatus").textContent = t; };
+  try{
+    st("⏳ PDF를 읽는 도구를 준비하는 중이에요...");
+    await ensurePdfJs();
+    let total = 0, permits = 0, newCrew = null;
+    for(const f of files){
+      if(/^image\//.test(f.type)){
+        st(`⏳ ${f.name} 사진을 읽는 중이에요...`);
+        const cr = await readCrew(await fileToCanvas(f), st); if(cr && cr.n >= 2) newCrew = cr; continue;
+      }
+      const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+      for(let p = 1; p <= doc.numPages; p++){
+        st(`⏳ ${f.name} ${p}/${doc.numPages}쪽 읽는 중... (화기작업 ${found.length}건 발견)`);
+        const page = await doc.getPage(p), lines = await pageLines(page); total++;
+        const joined = lines.join(" ");
+        if(/사\s*진\s*대\s*지/.test(joined) && !/안전\s*작업\s*허가서/.test(joined)){
+          const imgs = (await pageImgs(page, 2400)).filter(i => i.wpt > 150 && i.hpt > 100).sort((a, b)=> b.wpt * b.hpt - a.wpt * a.hpt);
+          for(const im of imgs.slice(0, 3)){ const cr = await readCrew(im.canvas, st); if(cr && cr.n >= 2){ cr.srcNo = (/허가번호\s*:\s*([A-Za-z0-9-]+)/.exec(joined) || [])[1] || ""; newCrew = cr; break; } }
+          continue;
+        }
+        if(/안전\s*작업\s*허가서/.test(joined)) permits++;
+        const r = parseHotPermit(lines);
+        if(r){ r.file = f.name; r.page = p; try{ r.sigHot = await findSig(page); }catch(e){ r.sigHot = ""; } found.push(r); }
+      }
+    }
+    if(newCrew) crew = newCrew;
+    found.forEach(r => { r.dup = entries.some(e => e.data.srcNo && e.data.srcNo === r.srcNo); r.on = !r.dup; });
+    found.sort((a, b)=> (a.srcDate || "").localeCompare(b.srcDate || "") || (a.srcNo || "").localeCompare(b.srcNo || ""));
+    const cm = newCrew ? ` · 초기대응체계 사진에서 ${newCrew.n}명을 읽었어요` : "";
+    st(found.length ? `✅ 허가서 ${permits}건 중 화기작업 ${found.length}건을 찾았어요${cm}. 확인 후 저장해주세요.` : (newCrew ? `✅ 초기대응체계 사진에서 ${newCrew.n}명을 읽었어요. 허가서 PDF를 함께 넣으면 신청서에 같이 들어가요.` : `ℹ️ 허가서 ${permits}건을 읽었지만 화기작업(용접·절단) 허가서는 없었어요.`));
+  }catch(err){ console.error(err); st("❌ 읽는 중 문제가 생겼어요: " + (err && err.message || err)); }
+  finally{ btn.disabled = false; renderImp(); renderCrew(); }
+};
+function renderCrew(){
+  $("#crewCard").style.display = crew ? "" : "none"; if(!crew) return;
+  $("#crewList").innerHTML = ROLES.map(r => { const x = crew.roles[r] || { name: "", tel: "", sig: "", crop: "" };
+    return `<div class="crowrow"><div class="rl">${r}</div><div class="f">${x.crop ? `<img class="cr" src="${x.crop}" title="사진 속 이름">` : ""}<input type="text" data-crew="${r}|name" value="${esc(x.name)}" placeholder="성명"><input type="text" data-crew="${r}|tel" value="${esc(x.tel)}" placeholder="연락처" inputmode="tel">${x.sig ? `<img class="sgimg" src="${x.sig}" title="서명"><button class="btn sm danger" data-crewsig="${r}" type="button">서명 삭제</button>` : '<span class="help" style="margin:0">서명 없음</span>'}</div></div>`; }).join("");
+}
+$("#crewList").addEventListener("input", (e)=>{ const k = e.target.dataset && e.target.dataset.crew; if(!k || !crew) return; const [r, f] = k.split("|"); crew.roles[r] = crew.roles[r] || { name: "", tel: "", sig: "", crop: "" }; crew.roles[r][f] = e.target.value; });
+$("#crewList").addEventListener("click", (e)=>{ const r = e.target.dataset && e.target.dataset.crewsig; if(r && crew && crew.roles[r]){ crew.roles[r].sig = ""; renderCrew(); } });
+$("#crewClear").onclick = ()=>{ crew = null; renderCrew(); };
+function applyCrew(d){
+  if(!crew) return; const R = crew.roles;
+  if(R["현장책임자"]){ d.boss = R["현장책임자"].name; d.bossTel = R["현장책임자"].tel; d.sigBoss = R["현장책임자"].sig; }
+  TEAMS.forEach((t, i) => { const x = R[t]; if(x){ d[`t${i}n1`] = x.name; d[`t${i}c1`] = x.tel; d[`sigT${i}`] = x.sig; } });
+  const hw = R["화기작업자"];          // 화기작업자(용접·절단 작업자)는 표에 적힌 사람으로
+  if(hw && hw.name){ d.hotWorker = hw.name; d.sigHot = hw.sig || ""; }
+  const w = R["화재감시자"];
+  if(w && w.name){ if(!d.watcher){ d.watcher = w.name; d.watcherPhone = w.tel; d.sigWatcher = w.sig; } else if(d.watcher === w.name){ if(!d.watcherPhone) d.watcherPhone = w.tel; d.sigWatcher = w.sig; } }
+}
+// 서명 이미지 직접 올리기 / 삭제
+document.addEventListener("click", (e)=>{ const k = e.target && e.target.dataset && e.target.dataset.sigdel; if(k){ cur[k] = ""; renderSig(); render(); } });
+document.addEventListener("change", async (e)=>{ const k = e.target && e.target.dataset && e.target.dataset.sigup; if(!k || !e.target.files[0]) return; try{ const sg = toSig(await fileToCanvas(e.target.files[0])); if(!sg){ alert("서명을 찾지 못했어요. 흰 종이에 또렷하게 쓴 서명 사진을 넣어주세요."); return; } cur[k] = sg; renderSig(); render(); }catch(err){ alert(err.message || err); } });
+
+function renderImp(){
+  $("#impList").innerHTML = found.map((r, i)=> `<div class="logitem" style="margin-bottom:6px"><input type="checkbox" data-imp="${i}" ${r.on ? "checked" : ""}>
+    <div class="m" style="cursor:default">${esc(ymd(r.srcDate))} · ${esc(r.company)} ${r.dup ? '<b style="color:#b3261e">(이미 저장됨)</b>' : ""}<small style="white-space:normal">${esc(r.workName)} · ${esc(r.place)}<br>${esc(r.workDate || "")} ${esc(r.tStart || "")} ~ ${esc(r.workDateEnd || "")} ${esc(r.tEnd || "")} · 감시자 ${esc(r.watcher)} ${esc(r.watcherPhone)}</small></div></div>`).join("");
+  $("#impAct").style.display = found.length ? "" : "none";
+}
+$("#impList").addEventListener("change", (e)=>{ const i = e.target.dataset && e.target.dataset.imp; if(i != null) found[Number(i)].on = e.target.checked; });
+
+// 허가번호: YY-MM-DD-NNN (허가일자 기준, 같은 날짜 안에서 001, 002, ... 이어서 번호 매김)
+function nextPermitNo(dateStr, taken){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || ""); if(!m) return "";
+  const prefix = `${m[1].slice(2)}-${m[2]}-${m[3]}-`;
+  let max = 0;
+  entries.forEach(e => { const n = String(e.data.permitNo || ""); if(n.startsWith(prefix)) max = Math.max(max, parseInt(n.slice(prefix.length), 10) || 0); });
+  (taken || []).forEach(n => { if(String(n).startsWith(prefix)) max = Math.max(max, parseInt(String(n).slice(prefix.length), 10) || 0); });
+  return prefix + String(max + 1).padStart(3, "0");
+}
+$("#impSave").onclick = ()=>{
+  const sel2 = found.filter(r => r.on);
+  if(!sel2.length){ alert("저장할 항목을 체크해주세요."); return; }
+  const taken = [];
+  sel2.forEach(r => {
+    const d = blank();
+    const pdate = ymd(r.srcDate) || r.workDate || "";
+    d.permitDate = pdate; d.permitNo = nextPermitNo(pdate, taken); taken.push(d.permitNo);
+    d.srcNo = r.srcNo;
+    d.company = r.company; d.leader = r.leader; d.hotWorker = r.leader;
+    d.workName = r.workName; d.place = r.place;
+    d.workDate = r.workDate || ""; d.workDateEnd = r.workDateEnd || ""; d.tStart = r.tStart || ""; d.tEnd = r.tEnd || "";
+    d.watcher = r.watcher; d.watcherPhone = r.watcherPhone; d.sigHot = r.sigHot || "";
+    applyCrew(d);
+    for(let i = 1; i <= 10; i++) d["a" + i] = "○";       // 밀폐공간 항목(11~17)을 뺀 나머지는 ○
+    for(let i = 1; i <= 11; i++) d["b" + i] = "○";       // 허가서(작업 중)도 밀폐공간 항목(12~17)을 뺀 나머지는 ○
+    d.bInit = true;
+    entries.push({ id: "h" + Date.now() + Math.random().toString(36).slice(2, 6), savedAt: new Date().toISOString(), data: d });
+  });
+  persist(); renderLog();
+  $("#impStatus").textContent = `✅ ${sel2.length}건을 신청서 기록으로 저장했어요. 아래 "저장된 기록"에서 눌러 확인·수정하세요.`;
+  found = []; renderImp();
+};
+
+/* ---------- 소방안전관리자 서명 (한 번 저장하면 계속 사용) ---------- */
+function renderMgrSig(){ const u = defMgrSig(); $("#mgrSigTh").innerHTML = u ? `<img src="${u}">` : '<span style="color:#aab;font-size:12px">저장된 서명 없음</span>'; $("#mgrSigDel").style.display = u ? "" : "none"; }
+const setMgrSig = (u)=>{ try{ if(u) localStorage.setItem(MGR_SIG_KEY, u); else localStorage.removeItem(MGR_SIG_KEY); }catch(e){ alert("서명을 저장하지 못했어요."); } renderMgrSig(); render(); };
+(function(){
+  const cv = $("#mgrPad"), cx = cv.getContext("2d"); let draw = false, last = null, dirty = false;
+  cx.lineWidth = 5; cx.lineCap = "round"; cx.lineJoin = "round"; cx.strokeStyle = "#0f122d";
+  const pos = (e)=>{ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener("pointerdown", (e)=>{ draw = true; last = pos(e); dirty = true; cv.setPointerCapture(e.pointerId); cx.beginPath(); cx.moveTo(last[0], last[1]); cx.lineTo(last[0] + .1, last[1] + .1); cx.stroke(); e.preventDefault(); });
+  cv.addEventListener("pointermove", (e)=>{ if(!draw) return; const p = pos(e); cx.beginPath(); cx.moveTo(last[0], last[1]); cx.lineTo(p[0], p[1]); cx.stroke(); last = p; e.preventDefault(); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => cv.addEventListener(ev, ()=>{ draw = false; }));
+  $("#mgrPadClear").onclick = ()=>{ cx.clearRect(0, 0, cv.width, cv.height); dirty = false; };
+  $("#mgrPadSave").onclick = ()=>{ if(!dirty){ alert("먼저 위 칸에 서명해주세요."); return; } const sg = toSig(cv); if(!sg){ alert("서명을 찾지 못했어요. 다시 써주세요."); return; } setMgrSig(sg); cx.clearRect(0, 0, cv.width, cv.height); dirty = false; };
+  $("#mgrSigDel").onclick = ()=>{ if(confirm("저장된 서명을 지울까요?")) setMgrSig(""); };
+  $("#mgrSigUp").onchange = async (e)=>{ const f = e.target.files[0]; if(!f) return; try{ const sg = toSig(await fileToCanvas(f)); if(!sg){ alert("서명을 찾지 못했어요. 흰 종이에 또렷하게 쓴 사진을 넣어주세요."); return; } setMgrSig(sg); }catch(err){ alert(err.message || err); } e.target.value = ""; };
+  renderMgrSig();
+})();
+
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", ()=>{
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === t));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab));
+}));
+
+/* ================= 시작 ================= */
+try{ const w = JSON.parse(localStorage.getItem(WORK_KEY) || "null"); if(w && w.cur) cur = Object.assign(blank(), w.cur); if(w) editingId = w.editingId || null; }catch(e){}
+fillInputs(); render(); renderLog();
+idbGet("entries").then(v => { if(Array.isArray(v)) entries = v;
+  let mig = false; entries.forEach(e => { const d = e.data; if(!d.bInit){ d.bInit = true; let any = false; for(let i = 1; i <= 18; i++) if(d["b" + i]) any = true; if(!any){ for(let i = 1; i <= 11; i++) d["b" + i] = "○"; mig = true; } } }); if(mig) persist(); if(editingId && !entries.some(e => e.id === editingId)) editingId = null; renderLog(); }).catch(()=>{});
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+</script>
+</body>
+</html>

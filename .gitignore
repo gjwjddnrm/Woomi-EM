@@ -1,0 +1,3 @@
+*.woomi
+*.pdf
+__pycache__/
