@@ -46,10 +46,18 @@ nav button.on{color:var(--brand);font-weight:700}
 h2{font-size:17px;margin:4px 0 12px}
 h3{font-size:15px;margin:0 0 8px}
 .qtext{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;margin:10px 0 12px;font-weight:600}
-.qimg{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;background:#fff}
+.qimg{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;background:#fff;cursor:zoom-in}
+.zoomhint{font-size:12px;color:var(--sub);margin:-6px 0 8px}
+.zoom{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.85);overflow:auto;-webkit-overflow-scrolling:touch}
+.zoom img{display:block;background:#fff;margin:56px auto 24px;max-width:none}
+.zoom button{position:fixed;top:max(10px,env(safe-area-inset-top));right:12px;z-index:31;border:0;border-radius:20px;background:#fff;color:#000;
+  font:inherit;font-size:15px;font-weight:700;padding:8px 14px;cursor:pointer}
 .opt{display:flex;gap:8px;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
   border-radius:10px;padding:11px 12px;margin:6px 0;font:inherit;cursor:pointer;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
 .opt .n{flex:none;font-weight:700}
+.optgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+.optgrid .opt{justify-content:center;flex-wrap:wrap;margin:0;font-size:18px;padding:12px 4px}
+.optgrid .opt b,.optgrid .opt span:not(.n){font-size:12px}
 .opt:hover:not(:disabled){border-color:var(--brand)}
 .opt:disabled{cursor:default}
 .opt.correct{border-color:var(--ok);background:var(--ok-soft)}
@@ -207,6 +215,29 @@ function toast(msg){
   toastEl.textContent = msg; toastEl.classList.remove("hidden");
   clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.add("hidden"); }, 2400);
 }
+/* 그림 누르면 크게 보기 (좌우로 밀어서 보기, 두 손가락 확대 가능) */
+document.addEventListener("click", function(e){
+  var t = e.target;
+  if(!(t && t.classList && t.classList.contains("qimg"))) return;
+  var big = h("img",{src:t.src, alt:t.alt});
+  var w = Math.max(window.innerWidth - 16, Math.round((t.naturalWidth || 800) / 1.35));
+  big.style.width = w + "px";
+  var ov = h("div",{class:"zoom"}, h("button",{type:"button", text:"✕ 닫기", onclick:function(){ ov.remove(); }}), big);
+  document.body.appendChild(ov);
+});
+function zoomHint(){ return h("div",{class:"zoomhint", text:"🔍 그림을 누르면 크게 볼 수 있어요"}); }
+/* 문제 본문: 그림만 있는 문제(imgOnly)는 그림으로, 아니면 글 + 그림 */
+function qBody(q){
+  var out = [];
+  if(!(q.imgOnly && q.img)) out.push(h("div",{class:"qtext", text:q.q}));
+  else out.push(h("div",{style:"height:8px"}));
+  if(q.img){ out.push(h("img",{class:"qimg", src:q.img, alt:"문제 그림"})); if(q.imgOnly) out.push(zoomHint()); }
+  return out;
+}
+function expBody(q){
+  if(q.expImg) return h("img",{class:"qimg", src:q.expImg, alt:"해설", style:"margin:4px 0 0"});
+  return q.exp ? h("div",{class:"exp", text:q.exp}) : h("div",{class:"muted", text:"(해설 없음)"});
+}
 function chip(s){ return h("span",{class:"chip s"+s, text:SUBJECTS[s]}); }
 
 /* ===================== 오늘의 문제 뽑기 ===================== */
@@ -260,14 +291,14 @@ function questionCard(q, o){
   var head = h("div",{class:"row"}, chip(q.s), o.label ? h("span",{class:"chip rv", text:o.label}) : null,
                h("span",{class:"grow"}), q.src ? h("span",{class:"muted", text:q.src}) : null);
   card.appendChild(head);
-  card.appendChild(h("div",{class:"qtext", text:q.q}));
-  if(q.img) card.appendChild(h("img",{class:"qimg", src:q.img, alt:"문제 그림"}));
-  var btns = [], resBox = h("div");
+  add(card, qBody(q));
+  var btns = [], resBox = h("div"), optWrap = q.optImg ? h("div",{class:"optgrid"}) : card;
   q.opts.forEach(function(t, i){
     var b = h("button",{class:"opt", type:"button", onclick:function(){ choose(i+1); }},
-              h("span",{class:"n", text:NUMS[i]}), h("span",{text:t}));
-    btns.push(b); card.appendChild(b);
+              h("span",{class:"n", text:NUMS[i]}), q.optImg ? null : h("span",{text:t}));
+    btns.push(b); optWrap.appendChild(b);
   });
+  if(q.optImg) card.appendChild(optWrap);
   card.appendChild(resBox);
   function show(pick){
     btns.forEach(function(b, i){
@@ -279,7 +310,7 @@ function questionCard(q, o){
     resBox.innerHTML = "";
     var r = h("div",{class:"result "+(ok?"ok":"bad")},
       h("div",{class:"t", text: ok ? "⭕ 정답입니다!" : "❌ 틀렸어요. 정답은 "+NUMS[q.a-1]+" — 오답노트에 저장했어요"}),
-      q.exp ? h("div",{class:"exp", text:q.exp}) : h("div",{class:"muted", text:"(해설 없음)"}));
+      expBody(q));
     resBox.appendChild(r);
     if(S.wrong[q.id] && o.showMemo !== false) resBox.appendChild(memoBox(q.id));
   }
@@ -431,15 +462,14 @@ function viewNotes(root){
     var q = qById(id), w = S.wrong[id];
     var card = h("div",{class:"card"},
       h("div",{class:"row"}, chip(q.s), h("span",{class:"grow"}), h("span",{class:"muted", text:"틀린 횟수 "+w.times})),
-      h("div",{class:"qtext", text:q.q}),
-      q.img ? h("img",{class:"qimg", src:q.img, alt:"문제 그림"}) : null,
-      q.opts.map(function(t, i){
+      qBody(q),
+      h("div",{class: q.optImg ? "optgrid" : ""}, q.opts.map(function(t, i){
         var mine = w.picks.indexOf(i+1) >= 0;
         return h("div",{class:"opt"+(i+1===q.a?" correct":mine?" wrong":""), style:"cursor:default"},
-          h("span",{class:"n", text:NUMS[i]}), h("span",{class:"grow", text:t}),
-          i+1===q.a ? h("b",{text:"정답"}) : mine ? h("span",{text:"내 답"}) : null);
-      }),
-      q.exp ? h("div",{class:"result ok"}, h("div",{class:"t", text:"해설"}), h("div",{class:"exp", text:q.exp})) : null);
+          h("span",{class:"n", text:NUMS[i]}), q.optImg ? null : h("span",{class:"grow", text:t}),
+          i+1===q.a ? h("b",{text:"정답", style:q.optImg?"margin-left:4px":""}) : mine ? h("span",{text:"내 답"}) : null);
+      })),
+      (q.exp || q.expImg) ? h("div",{class:"result ok"}, h("div",{class:"t", text:"해설"}), expBody(q)) : null);
     var memoWrap = h("div");
     memoWrap.appendChild(memoBox(id));
     card.appendChild(memoWrap);
@@ -677,6 +707,8 @@ function editForm(q){
       h("button",{class:"btn pri", text:"저장", onclick:function(){
         var nq = { s:+sSel.value, q:qt.value.trim(), opts:ops.map(function(o){ return o.value.trim(); }), a:+aSel.value, exp:ex.value.trim(), src:src.value.trim() };
         if(img) nq.img = img;
+        ["imgOnly","optImg","expImg"].forEach(function(k){ if(q[k]) nq[k] = q[k]; });
+        if(!img) delete nq.imgOnly;
         if(!nq.q || nq.opts.some(function(x){ return !x; }) || !nq.a){ toast("문제, 보기 4개, 정답을 모두 넣어주세요"); return; }
         if(isNew){ nq.id = S.seq++; S.questions.push(nq); }
         else { var old = qById(q.id); Object.keys(old).forEach(function(k){ if(k!=="id") delete old[k]; }); Object.assign(old, nq); }
@@ -716,6 +748,9 @@ function importJson(txt, msgEl){
     var k = s+"|"+norm(q); if(have[k]) return; have[k] = 1;
     var nq = { id:S.seq++, s:s, q:String(q), opts:opts.map(String), a:a, exp:String(it.exp || it.explanation || it.해설 || ""), src:String(it.src || it.source || it.출처 || "") };
     if(typeof it.img === "string" && /^data:image\//.test(it.img)) nq.img = it.img;
+    if(typeof it.expImg === "string" && /^data:image\//.test(it.expImg)) nq.expImg = it.expImg;
+    if(it.imgOnly && nq.img) nq.imgOnly = true;
+    if(it.optImg) nq.optImg = true;
     S.questions.push(nq); n++;
   });
   save();
