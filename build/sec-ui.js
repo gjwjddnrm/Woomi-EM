@@ -20,6 +20,7 @@
     }
     if(document.readyState === "complete") window.dispatchEvent(new Event("load"));
     S.guardUnload();
+    setTimeout(S.checkDark, 600); setInterval(S.checkDark, 3000); window.addEventListener("hashchange", function(){ setTimeout(S.checkDark, 800); });
   }
 
   /* ---------- 화기작업(별지 7·8) 화면: 같은 파일 안의 격리된 프레임 ---------- */

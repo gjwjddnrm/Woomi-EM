@@ -218,7 +218,70 @@
     NP.insertBefore = function(n, r){ fix(n); return ib.call(this, n, r); };
   }
 
-  function installAll(win){ installStorage(win); installSanitizer(win); installSRI(win); trackActivity(win); }
+
+  /* ---------------- 브라우저 강제 다크모드 감지·차단 ----------------
+     서식은 흰 종이로 보여야 하고 그대로 인쇄됩니다. 브라우저·확장 프로그램이 색을 바꾸면
+     1) 알려진 다크모드 스타일을 끄고, 2) 그래도 어두우면 화면 위에 끄는 방법을 안내합니다. */
+  var DARK_SEL = 'style.darkreader,style[class*="darkreader"],link[class*="darkreader"],style[id*="nighteye"],style[class*="nighteye"],' +
+                 'style[id*="dark-mode"],style[id*="darkmode"],style[class*="dark-mode"],style[class*="darkmode"],style[data-darkmode],style[id*="night-mode"],style[id*="nightmode"]';
+  var DARK_ATTRS = ["data-darkreader-mode", "data-darkreader-scheme", "data-darkreader-proxy-injected", "nighteye", "data-nighteye", "dark-mode", "data-dark-mode"];
+  function neutralizeDark(doc){
+    try{
+      doc.querySelectorAll(DARK_SEL).forEach(function(st){ st.media = "not all"; try{ st.disabled = true; }catch(e){} });
+      var h = doc.documentElement;
+      DARK_ATTRS.forEach(function(a){ if(h.hasAttribute(a)) h.removeAttribute(a); });
+      h.style.setProperty("filter", "none", "important");
+      h.style.setProperty("color-scheme", "only light", "important");
+      if(doc.body) doc.body.style.setProperty("filter", "none", "important");
+    }catch(e){}
+  }
+  function isDarkened(doc){
+    if(!doc || !doc.body) return false;
+    var p = doc.getElementById("wsecProbe");
+    if(!p){
+      p = doc.createElement("div"); p.id = "wsecProbe"; p.setAttribute("aria-hidden", "true");
+      p.style.cssText = "position:fixed;left:-9999px;top:0;width:4px;height:4px;margin:0;background-color:#ffffff;color:#000000;";
+      doc.body.appendChild(p);
+    }
+    var w = doc.defaultView, cs = w.getComputedStyle(p);
+    var f1 = w.getComputedStyle(doc.documentElement).filter || "", f2 = w.getComputedStyle(doc.body).filter || "";
+    return cs.backgroundColor !== "rgb(255, 255, 255)" || cs.color !== "rgb(0, 0, 0)" || /invert/.test(f1 + f2);
+  }
+  function darkDocs(){
+    var out = [document], f = document.getElementById("hotworkFrame");
+    try{ if(f && f.contentDocument && f.contentDocument.body) out.push(f.contentDocument); }catch(e){}
+    return out;
+  }
+  function darkBanner(on){
+    var b = document.getElementById("wsecDark");
+    if(!on){ if(b) b.remove(); return; }
+    if(b) return;
+    b = document.createElement("div"); b.id = "wsecDark"; b.setAttribute("role", "alert");
+    b.innerHTML = '<b>⚠️ 브라우저의 다크 모드가 서식을 검게 바꾸고 있어요. 이대로 인쇄하면 검게 나와요.</b>' +
+      '<span>이 사이트에서는 다크 모드를 꺼 주세요. ① 주소창 오른쪽 <b>확장 프로그램(퍼즐 모양)</b> 중 다크 모드 확장 프로그램 → 이 사이트 끄기 ' +
+      '② 크롬·엣지: 주소창에 <b>chrome://flags</b>(엣지는 <b>edge://flags</b>) → "<b>Auto Dark Mode for Web Contents</b>" → Disabled ' +
+      '③ 웨일: 설정 → <b>다크 모드</b>에서 "웹 페이지에 적용" 끄기. 끈 뒤 <b>Ctrl+F5</b>로 새로고침하세요.</span>' +
+      '<button type="button" aria-label="닫기">✕</button>';
+    b.querySelector("button").onclick = function(){ b.remove(); darkDismissed = true; };
+    document.body.appendChild(b);
+  }
+  var darkDismissed = false;
+  function checkDark(){
+    var docs = darkDocs(), dark = false;
+    docs.forEach(function(d){ if(isDarkened(d)){ neutralizeDark(d); } });
+    setTimeout(function(){
+      docs.forEach(function(d){ if(isDarkened(d)) dark = true; });
+      if(!dark) darkDismissed = false;
+      darkBanner(dark && !darkDismissed);
+    }, 300);
+    return docs.some(isDarkened);
+  }
+  function guardPrint(){
+    if(checkDark()) alert("⚠️ 브라우저의 다크 모드 때문에 서식이 검게 인쇄될 수 있어요.\n화면 위쪽 안내대로 이 사이트의 다크 모드를 끈 뒤 다시 인쇄해 주세요.");
+  }
+
+  function installAll(win){ installStorage(win); installSanitizer(win); installSRI(win); trackActivity(win);
+    win.addEventListener("beforeprint", guardPrint); if(win !== window) win.addEventListener("load", function(){ setTimeout(checkDark, 500); }); }
 
   /* ---------------- 자동 잠금 ---------------- */
   var lastAct = Date.now();
@@ -403,7 +466,8 @@
     installFrame: function(win){ installAll(win); },
     idleMinutes: idleMinutes,
     setIdleMinutes: function(m){ raw.set.call(realLS, IDLE_KEY, String(m)); },
-    notify: notify
+    notify: notify,
+    checkDark: checkDark
   };
   Object.freeze(window.WoomiSec);
 })();
