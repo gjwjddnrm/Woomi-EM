@@ -29,7 +29,7 @@ CSP = ("default-src 'none'; "
        "object-src 'none'; base-uri 'none'; form-action 'none'")
 
 # ---------------- B (화기작업) : 프레임용으로 가공 ----------------
-B = rep(B, "<head>\n", "<head>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window);</script>\n")
+B = rep(B, "<head>\n", "<head>\n<meta name=\"color-scheme\" content=\"only light\">\n<meta name=\"darkreader-lock\">\n<style>:root{ color-scheme: only light; }</style>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window);</script>\n")
 B = rep(B, "const idbGet = async (k)=>", "const idbGetRaw = async (k)=>")
 B = rep(B, "const idbSet = async (k, v)=>", "const idbSetRaw = async (k, v)=>")
 B = rep(B, "let chain = Promise.resolve();\n",
@@ -47,6 +47,9 @@ s = rep(s, '<meta name="viewport" content="width=device-width, initial-scale=1.0
         f'<meta http-equiv="Content-Security-Policy" content="{CSP}" />\n'
         '<meta name="referrer" content="no-referrer" />\n'
         '<meta name="robots" content="noindex, nofollow" />\n'
+        '<meta name="color-scheme" content="only light" />\n'   # 브라우저 강제 다크모드 끄기(서식은 항상 흰 종이)
+        '<meta name="darkreader-lock" />\n'                      # 다크 리더 확장 프로그램 끄기
+        '<style>:root{ color-scheme: only light; }</style>\n'
         f'<script>\n{core}</script>\n')
 s = rep(s, "</head>", f"<style>\n{css}</style>\n</head>")
 
