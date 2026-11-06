@@ -55,4 +55,11 @@ PAIRS = [
     # 저장된 기록을 불러오면 서명 미리 보정
     ('idbGet("entries").then(v => { if(Array.isArray(v)) entries = v;',
      'idbGet("entries").then(v => { if(Array.isArray(v)) entries = v; try{ sigPrewarm(entries); sigPrewarm(defMgrSig()); }catch(e){}'),
+    # 서명이 칸을 넘어 테두리·이름 글자를 덮던 문제: 칸 높이에 맞추고(1.3배 → 0.95배), 진하게 보정했으므로 두 번 겹쳐 그리지 않음
+    ('const has = !!d[key], H = +(h * 1.3).toFixed(1), MW = mwFix || Math.round(h * 2.9);',
+     'const has = !!d[key], H = +(h * 0.95).toFixed(1), MW = mwFix || Math.round(h * 2.9);'),
+    ('${has ? im(0, 0) + im(0.12, 0.06) : ""}', '${has ? im(0, 0) : ""}'),
+    # 화기작업자 서명이 오른쪽 테두리를 넘던 문제: 서명 너비를 30mm로 제한하고 "(서명)" 자리를 왼쪽으로 10mm 당김
+    ('<b style="font-size:10.5pt;white-space:nowrap">${SG(d, "sigHot", "(서명)", 14)}</b>',
+     '<b style="font-size:10.5pt;white-space:nowrap;margin-right:10mm">${SG(d, "sigHot", "(서명)", 14, 30)}</b>'),
 ]
