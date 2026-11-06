@@ -7328,6 +7328,8 @@ html.wsec-locked #wsecLock{ display:flex; }
       const hist = new Uint32Array(256); let n = 0;
       for(let y = y0; y < y1; y += sy * 2) for(let x = x0; x < x1; x += sx * 2){ hist[Math.round(lumAt(x, y))]++; n++; }
       let bgv = 0, best = -1; for(let v = 0; v < 256; v++) if(hist[v] > best){ best = hist[v]; bgv = v; }
+      { let near = 0; for(let v = Math.max(0, bgv - 3); v <= Math.min(255, bgv + 3); v++) near += hist[v];
+        if(near / Math.max(1, n) < 0.35) return false; }   // 바탕이 고르지 않음 = 사진이 많은 쪽 → 뒤집지 않음
       const k = 255 / Math.max(20, 255 - bgv);
       for(let y = Math.floor(y0); y < y1; y++){
         let i = (y * W + Math.floor(x0)) * 4;

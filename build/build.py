@@ -97,6 +97,11 @@ s = rep(s, """document.querySelectorAll("#globalSidebar .gs-navlink").forEach(el
 s = rep(s, "  async function b3IdbGet(key){\n", "  async function b3IdbGet(key){ return WoomiSec.decVal(await b3IdbGetRaw(key)); }\n  function b3IdbSet(key, val){ return WoomiSec.trackIdb((async ()=> b3IdbSetRaw(key, await WoomiSec.encVal(val)))()); }\n  async function b3IdbGetRaw(key){\n")
 s = rep(s, "  async function b3IdbSet(key, val){\n    const db", "  async function b3IdbSetRaw(key, val){\n    const db")
 
+# 별지 3-1: 사진 많은 쪽을 어두운 쪽으로 잘못 판단해 사진이 반전되던 문제
+import importlib.util as _u3
+_sp3 = _u3.spec_from_file_location("patch_b3a_darkpage", HERE / "patch_b3a_darkpage.py"); _m3 = _u3.module_from_spec(_sp3); _sp3.loader.exec_module(_m3)
+for _o, _n in _m3.PAIRS: s = rep(s, _o, _n)
+
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u
 _sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
