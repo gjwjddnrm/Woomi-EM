@@ -29,7 +29,7 @@ CSP = ("default-src 'none'; "
        "object-src 'none'; base-uri 'none'; form-action 'none'")
 
 # ---------------- B (화기작업) : 프레임용으로 가공 ----------------
-B = rep(B, "<head>\n", "<head>\n<meta name=\"color-scheme\" content=\"only light\">\n<meta name=\"darkreader-lock\">\n<style>:root{ color-scheme: only light; }</style>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window);</script>\n")
+B = rep(B, "<head>\n", "<head>\n<meta name=\"color-scheme\" content=\"only light\">\n<meta name=\"darkreader-lock\">\n<style>:root{ color-scheme: only light; } *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3), *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::before, *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::after{ filter:none !important; -webkit-filter:none !important; mix-blend-mode:normal !important; }</style>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window);</script>\n")
 B = rep(B, "const idbGet = async (k)=>", "const idbGetRaw = async (k)=>")
 B = rep(B, "const idbSet = async (k, v)=>", "const idbSetRaw = async (k, v)=>")
 B = rep(B, "let chain = Promise.resolve();\n",

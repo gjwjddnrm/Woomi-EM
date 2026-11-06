@@ -68,3 +68,6 @@ html.wsec-locked #wsecLock{ display:flex; }
 #wsecDark span{ flex-basis:100%; }
 #wsecDark button{ position:absolute; right:10px; top:8px; border:0; background:none; font-size:16px; cursor:pointer; color:#5c3c00 !important; }
 @media print{ #wsecDark{ display:none !important; } }
+
+/* 다크모드 도구의 화면·사진 색 반전을 모두 무효화 (서식은 CSS 필터를 쓰지 않음) */
+*:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3), *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::before, *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::after{ filter:none !important; -webkit-filter:none !important; mix-blend-mode:normal !important; }
