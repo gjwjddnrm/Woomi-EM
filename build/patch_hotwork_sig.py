@@ -12,11 +12,11 @@ function sigBoostCanvas(cv){
   const a = new Uint8ClampedArray(N); let trans = 0;
   for(let i = 0; i < N; i++){ a[i] = d[i * 4 + 3]; if(a[i] < 250) trans++; }
   if(trans < N * 0.05) return null;                      // 투명 배경 서명이 아니면 손대지 않음
-  const r = Math.max(1, Math.round(Math.max(W, H) / 220)), t = new Uint8ClampedArray(N), b = new Uint8ClampedArray(N);
+  const r = Math.floor(Math.max(W, H) / 400), t = new Uint8ClampedArray(N), b = new Uint8ClampedArray(N);
   for(let y = 0; y < H; y++) for(let xx = 0; xx < W; xx++){ let m = 0; for(let k = -r; k <= r; k++){ const v = a[y * W + Math.min(W - 1, Math.max(0, xx + k))]; if(v > m) m = v; } t[y * W + xx] = m; }
   for(let y = 0; y < H; y++) for(let xx = 0; xx < W; xx++){ let m = 0; for(let k = -r; k <= r; k++){ const v = t[Math.min(H - 1, Math.max(0, y + k)) * W + xx]; if(v > m) m = v; } b[y * W + xx] = m; }
   for(let i = 0; i < N; i++){
-    const v = b[i] < 14 ? 0 : Math.min(255, Math.round(Math.pow(b[i] / 255, 0.4) * 1.5 * 255));
+    const v = b[i] < 8 ? 0 : Math.min(255, Math.round(Math.pow(b[i] / 255, 0.4) * 1.5 * 255));
     d[i * 4] = 12; d[i * 4 + 1] = 14; d[i * 4 + 2] = 40; d[i * 4 + 3] = v;
   }
   x.putImageData(id, 0, 0);
@@ -62,4 +62,10 @@ PAIRS = [
     # 화기작업자 서명이 오른쪽 테두리를 넘던 문제: 서명 너비를 30mm로 제한하고 "(서명)" 자리를 왼쪽으로 10mm 당김
     ('<b style="font-size:10.5pt;white-space:nowrap">${SG(d, "sigHot", "(서명)", 14)}</b>',
      '<b style="font-size:10.5pt;white-space:nowrap;margin-right:10mm">${SG(d, "sigHot", "(서명)", 14, 30)}</b>'),
+    # 서명을 오려낼 때 얇고 연한 획이 배경으로 지워지던 문제: 배경 판단 기준을 바탕색 쪽으로 옮기고,
+    # 중간 밝기 획은 더 진하게(감마 0.6) 남깁니다. (저해상도 PDF 사진대지의 가는 선 보존)
+    ('const lo = ink + (bg - ink) * 0.28, hi = bg - (bg - ink) * 0.3;',
+     'const lo = ink + (bg - ink) * 0.45, hi = bg - (bg - ink) * 0.1;'),
+    ('for(let i = 0; i < W * H; i++) a[i] = Math.max(0, Math.min(255, Math.round((hi - lum[i]) / (hi - lo) * 255)));',
+     'for(let i = 0; i < W * H; i++) a[i] = Math.round(Math.pow(Math.max(0, Math.min(1, (hi - lum[i]) / (hi - lo))), 0.6) * 255);'),
 ]
