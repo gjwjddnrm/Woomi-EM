@@ -36,6 +36,10 @@ B = rep(B, "let chain = Promise.resolve();\n",
         "const idbGet = async (k)=> WoomiSec.decVal(await idbGetRaw(k));   // 기록은 암호화해서 보관\n"
         "const idbSet = (k, v)=> WoomiSec.trackIdb((async ()=> idbSetRaw(k, await WoomiSec.encVal(v)))());\n"
         "let chain = Promise.resolve();\n")
+# 화기작업 허가서 칸 비율
+import importlib.util as _u4
+_sp4 = _u4.spec_from_file_location("patch_hotwork_layout", HERE / "patch_hotwork_layout.py"); _m4 = _u4.module_from_spec(_sp4); _sp4.loader.exec_module(_m4)
+for _o, _n in _m4.PAIRS: B = rep(B, _o, _n)
 # 화기작업 서명 진하게 보정
 import importlib.util as _u2
 _sp2 = _u2.spec_from_file_location("patch_hotwork_sig", HERE / "patch_hotwork_sig.py"); _m2 = _u2.module_from_spec(_sp2); _sp2.loader.exec_module(_m2)
