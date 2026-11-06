@@ -36,6 +36,10 @@ B = rep(B, "let chain = Promise.resolve();\n",
         "const idbGet = async (k)=> WoomiSec.decVal(await idbGetRaw(k));   // 기록은 암호화해서 보관\n"
         "const idbSet = (k, v)=> WoomiSec.trackIdb((async ()=> idbSetRaw(k, await WoomiSec.encVal(v)))());\n"
         "let chain = Promise.resolve();\n")
+# 화기작업 서명 진하게 보정
+import importlib.util as _u2
+_sp2 = _u2.spec_from_file_location("patch_hotwork_sig", HERE / "patch_hotwork_sig.py"); _m2 = _u2.module_from_spec(_sp2); _sp2.loader.exec_module(_m2)
+for _o, _n in _m2.PAIRS: B = rep(B, _o, _n)
 # PC 전용: 화면(프레임)이 좁아도 입력창·미리보기를 좌우로 유지
 B = rep(B, "@media screen and (max-width:900px){", "@media screen and (max-width:0px){", count=2)
 B_b64 = base64.b64encode(B.encode("utf-8")).decode("ascii")
