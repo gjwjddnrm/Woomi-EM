@@ -40,6 +40,10 @@ B = rep(B, "let chain = Promise.resolve();\n",
 import importlib.util as _u4
 _sp4 = _u4.spec_from_file_location("patch_hotwork_layout", HERE / "patch_hotwork_layout.py"); _m4 = _u4.module_from_spec(_sp4); _sp4.loader.exec_module(_m4)
 for _o, _n in _m4.PAIRS: B = rep(B, _o, _n)
+# 화기작업: 입력 탭 저장 버튼, 허가번호 이어서 매기기
+import importlib.util as _u5
+_sp5 = _u5.spec_from_file_location("patch_hotwork_save", HERE / "patch_hotwork_save.py"); _m5 = _u5.module_from_spec(_sp5); _sp5.loader.exec_module(_m5)
+for _o, _n in _m5.PAIRS: B = rep(B, _o, _n)
 # 화기작업 서명 진하게 보정
 import importlib.util as _u2
 _sp2 = _u2.spec_from_file_location("patch_hotwork_sig", HERE / "patch_hotwork_sig.py"); _m2 = _u2.module_from_spec(_sp2); _sp2.loader.exec_module(_m2)
