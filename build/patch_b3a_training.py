@@ -23,8 +23,9 @@ TRAIN_REVIEW_NEW = TRAIN_REVIEW_OLD + '''
 
 TRAIN_CSS = """
   .pv-name-img{ max-height:7mm; max-width:100%; vertical-align:middle; }
-  .b3b-table.b3b-hand td{ text-align:center; vertical-align:middle; }
-  .b3b-table.b3b-hand .pv-name-img{ height:6mm; max-height:6mm; width:auto; max-width:100%; object-fit:contain; display:block; margin:0 auto; }
+  .b3b-table.b3b-hand td{ text-align:center; vertical-align:middle; height:var(--rh, 8.9mm); padding:0 1mm; }
+  .b3b-table.b3b-hand td.sig-td{ padding:0 1mm; }
+  .b3b-table.b3b-hand .pv-name-img{ height:6.2mm; max-height:6.2mm; width:auto; max-width:100%; object-fit:contain; display:block; margin:0 auto; }
   .b3b-table.b3b-hand .sig-td img{ height:7mm !important; max-height:7mm !important; width:auto !important; max-width:100% !important; object-fit:contain; display:block; margin:0 auto; }
   .report-table .photo-box.has-cap{ display:flex; flex-direction:column; }
   .report-table .photo-row .photo-box.has-photo.has-cap img{ flex:1 1 auto; min-height:0; height:auto; }
@@ -81,18 +82,18 @@ TRAIN_JS = r"""
   function b3aTrNoSpace(t){ return String(t || "").replace(/\s+/g, ""); }
 
   // 손글씨 칸 → 배경이 투명한 글씨 그림 (형광펜 색은 지움)
-  function b3aTrInk(cell){
+  function b3aTrInk(cell, soft){
     const W = cell.width, H = cell.height, x = cell.getContext("2d"), d = x.getImageData(0, 0, W, H).data, N = W * H;
     const lum = new Float32Array(N); for(let i = 0; i < N; i++) lum[i] = Math.max(d[i*4], d[i*4+1], d[i*4+2]);
     const s = Float32Array.from(lum).sort(), bg = s[Math.floor(N * 0.9)], ink = s[Math.floor(N * 0.01)];
-    if(bg - ink < 60) return null;
+    if(bg - ink < (soft ? 35 : 60)) return null;
     const lo = ink + (bg - ink) * 0.45, hi = bg - (bg - ink) * 0.18, a = new Uint8ClampedArray(N);
     let x0 = W, y0 = H, x1 = -1, y1 = -1, cnt = 0;
     for(let i = 0; i < N; i++){
       a[i] = Math.round(Math.pow(Math.max(0, Math.min(1, (hi - lum[i]) / (hi - lo))), 0.6) * 255);
       if(a[i] > 110){ cnt++; const yy = (i / W) | 0, xx = i - yy * W; if(xx < x0) x0 = xx; if(xx > x1) x1 = xx; if(yy < y0) y0 = yy; if(yy > y1) y1 = yy; }
     }
-    if(cnt < N * 0.003 || x1 < 0) return null;
+    if(cnt < N * (soft ? 0.0012 : 0.003) || x1 < 0) return null;
     x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2); x1 = Math.min(W - 1, x1 + 2); y1 = Math.min(H - 1, y1 + 2);
     const o = document.createElement("canvas"); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
     const ox = o.getContext("2d"), oi = ox.createImageData(o.width, o.height);
@@ -325,9 +326,9 @@ TRAIN_JS = r"""
         const cut = (cc)=>{ const px = Math.max(4, (cc[1] - cc[0]) * 0.05); return b3aTrSub(c, cc[0] + px, y0 + py, cc[1] - px, y1 - py); };
         const nm = b3aTrInk(cut(cName));
         if(!nm) continue;   // 성명이 비어 있으면 빈 줄
-        const og = b3aTrInk(cut(cOrg)), sg = b3aTrInk(cut(cSig));
+        const og = b3aTrInk(cut(cOrg), true), sg = b3aTrInk(cut(cSig));
         const orgKind = !og ? "empty" : (og.w < og.cellW * 0.35 ? "ditto" : "name");
-        out.push({ org: "", name: "", sig: sg ? sg.url : "", orgImg: og ? og.url : "", nameImg: nm.url, _orgKind: orgKind, _orgCanvas: og && orgKind === "name" ? og.canvas : null });
+        out.push({ org: "", name: "", sig: sg ? sg.url : "", orgImg: og ? og.url : "", nameImg: nm.url, slot: side * rows + r, slotRows: rows, _orgKind: orgKind, _orgCanvas: og && orgKind === "name" ? og.canvas : null });
       }
     }
     return out;
@@ -416,9 +417,7 @@ TRAIN_JS = r"""
           day.groups = await b3aTrGroups(rows);
           day.trade = b3aTrTradeText(day.groups);
           day.attendSheet = await b3aOcrShrink(c.toDataURL("image/jpeg", 0.9), 1400, 0.78);   // 참석확인서 원본 (별지 3-2 뒤에 첨부)
-          // 별지 3-2는 좌우로 번갈아 채워서 "〃"가 뜻을 잃으므로, 〃·빈칸은 윗줄 업체명 그림으로 바꿈
-          let last = "";
-          rows.forEach(r => { if(r._orgKind === "name") last = r.orgImg; else if(last) r.orgImg = last; });
+          // 소속 칸은 원본 그대로("〃"·빈칸 포함). 별지 3-2도 참석확인서와 같은 자리(25줄×2열)에 넣으므로 뜻이 통함
           day.rosterRows = rows;
         }
       }else if(cls.kind === "photo"){
@@ -558,7 +557,7 @@ PAIRS = [
      '    b3aOcrRosterRows = d.rosterRows;'),
     ('    d.trade = document.getElementById("b3a-ocr-r-trade").value.trim();\n    d.selected = b3aOcrSelected.slice();',
      '    d.trade = document.getElementById("b3a-ocr-r-trade").value.trim();\n'
-     '    if(d.kind === "training"){ d.done = document.getElementById("b3a-ocr-r-done").value.trim(); d.lack = document.getElementById("b3a-ocr-r-lack").value.trim(); d.improve = document.getElementById("b3a-ocr-r-improve").value.trim(); (d.rosterRows || []).forEach(r => { const g = (d.groups || [])[r.g]; if(g && String(g.name || "").trim()) r.org = String(g.name).trim(); }); }\n'
+     '    if(d.kind === "training"){ d.done = document.getElementById("b3a-ocr-r-done").value.trim(); d.lack = document.getElementById("b3a-ocr-r-lack").value.trim(); d.improve = document.getElementById("b3a-ocr-r-improve").value.trim(); }\n'
      '    d.selected = b3aOcrSelected.slice();'),
     # 적용: 훈련용 값 넣기
     ("\n    return rosterAppliedCount;\n  }\n", TRAIN_APPLY),
@@ -570,9 +569,9 @@ PAIRS = [
         .forEach(r=>{
           const key = (!(r.name||"").trim() && r.nameImg) ? "img:" + seenKeys.size : b3bRosterKey(r.org, r.name);"""),
     ("""          replaced.push({ org: r.org||"", name: r.name||"", sig: r.sig || (old && old.sig) || "" });""",
-     """          replaced.push({ org: r.org||"", name: r.name||"", sig: r.sig || (old && old.sig) || "", orgImg: r.orgImg || "", nameImg: r.nameImg || "" });"""),
+     """          replaced.push({ org: r.org||"", name: r.name||"", sig: r.sig || (old && old.sig) || "", orgImg: r.orgImg || "", nameImg: r.nameImg || "", slot: r.slot, slotRows: r.slotRows });"""),
     ("""    const rows = (Array.isArray(arr) ? arr : []).map(r => ({ org: r.org||"", name: r.name||"", sig: r.sig||"" }));""",
-     """    const rows = (Array.isArray(arr) ? arr : []).map(r => ({ org: r.org||"", name: r.name||"", sig: r.sig||"", orgImg: r.orgImg||"", nameImg: r.nameImg||"" }));"""),
+     """    const rows = (Array.isArray(arr) ? arr : []).map(r => ({ org: r.org||"", name: r.name||"", sig: r.sig||"", orgImg: r.orgImg||"", nameImg: r.nameImg||"", slot: r.slot, slotRows: r.slotRows }));"""),
     ("""      || roster.some(r => (r.name||"").trim() || (r.org||"").trim()));""",
      """      || roster.some(r => (r.name||"").trim() || (r.org||"").trim() || r.nameImg));"""),
     ("""      const roster = (data._roster || []).filter(r => r.name || r.org || r.sig);""",
@@ -580,7 +579,12 @@ PAIRS = [
     # 별지 3-2 미리보기: 글자가 없으면 그림으로
     ("""    const people = b3bRows.filter(r => (r.org||"").trim() || (r.name||"").trim() || r.sig);""",
      """    const people = b3bRows.filter(r => (r.org||"").trim() || (r.name||"").trim() || r.sig || r.nameImg || r.orgImg);
-    const colwise = people.some(r => r.nameImg);   // 손글씨 명단(훈련): 업체 순서가 흩어지지 않게 열 단위로 채움
+    const colwise = people.some(r => r.nameImg);   // 손글씨 명단(훈련): 참석확인서와 같은 줄 수(보통 25줄×2열), 같은 자리에 배치
+    const SR = colwise ? (people.find(r => r.slotRows) || {}).slotRows || 25 : B3B_ROWS_PER_PAGE;
+    const bySlot = colwise && people.every(r => Number.isInteger(r.slot));
+    const slotOf = (r, i)=> bySlot ? r.slot : i;
+    const slotMap = new Map(); people.forEach((r, i)=> slotMap.set(slotOf(r, i), r));
+    const maxSlot = people.reduce((m, r, i)=> Math.max(m, slotOf(r, i)), -1);
     const txtOrImg = (r, t, im)=> (r[t]||"").trim() ? esc3a(r[t]) : (r[im] ? `<img src="${r[im]}" class="pv-name-img" alt="" />` : "");"""),
     ("""          <td>${left ? esc3a(left.org || "") : ""}</td><td>${left ? esc3a(left.name || "") : ""}</td><td class="sig-td">${sigCell(left)}</td>
           <td>${right ? esc3a(right.org || "") : ""}</td><td>${right ? esc3a(right.name || "") : ""}</td><td class="sig-td">${sigCell(right)}</td>""",
@@ -627,9 +631,9 @@ PAIRS = [
     # 별지 3-2: 손글씨 명단은 업체별로 왼쪽 열 → 오른쪽 열 순서, 크기 통일, 뒤에 참석확인서 원본 첨부
     ('''        const i = (pg * B3B_ROWS_PER_PAGE + k) * 2;
         const left = people[i], right = people[i+1];''',
-     '''        const i = colwise ? pg * B3B_ROWS_PER_PAGE * 2 + k : (pg * B3B_ROWS_PER_PAGE + k) * 2;
-        const left = people[i], right = colwise ? people[i + B3B_ROWS_PER_PAGE] : people[i+1];'''),
-    ('''        <table class="ch1-table b3b-table">''', '''        <table class="ch1-table b3b-table${colwise ? " b3b-hand" : ""}">'''),
+     '''        const i = colwise ? pg * SR * 2 + k : (pg * B3B_ROWS_PER_PAGE + k) * 2;
+        const left = colwise ? slotMap.get(i) : people[i], right = colwise ? slotMap.get(i + SR) : people[i+1];'''),
+    ('''        <table class="ch1-table b3b-table">''', '''        <table class="ch1-table b3b-table${colwise ? " b3b-hand" : ""}"${colwise ? ` style="--rh:${(224 / SR).toFixed(2)}mm"` : ""}>'''),
     ('''    wrap.innerHTML = html;
     renderDashboard();''',
      '''    (window.b3aAttachSheets || []).forEach((u, ai)=>{
@@ -643,4 +647,9 @@ PAIRS = [
     });
     wrap.innerHTML = html;
     renderDashboard();'''),
+    # 손글씨 명단: 쪽 수·줄 수를 참석확인서 기준으로
+    ('    const pageCount = Math.ceil(rowCount / B3B_ROWS_PER_PAGE);',
+     '    const pageCount = colwise ? Math.max(1, Math.floor(maxSlot / (SR * 2)) + 1) : Math.ceil(rowCount / B3B_ROWS_PER_PAGE);'),
+    ('      for(let k = 0; k < B3B_ROWS_PER_PAGE; k++){\n        const i = colwise',
+     '      for(let k = 0; k < (colwise ? SR : B3B_ROWS_PER_PAGE); k++){\n        const i = colwise'),
 ]
