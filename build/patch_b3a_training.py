@@ -427,7 +427,6 @@ TRAIN_JS = r"""
         if(rows && rows.length){
           day.groups = await b3aTrGroups(rows);
           day.trade = b3aTrTradeText(day.groups);
-          day.attendSheet = await b3aOcrShrink(c.toDataURL("image/jpeg", 0.9), 1400, 0.78);   // 참석확인서 원본 (별지 3-2 뒤에 첨부)
           // 소속 칸은 원본 그대로("〃"·빈칸 포함). 별지 3-2도 참석확인서와 같은 자리(25줄×2열)에 넣으므로 뜻이 통함
           day.rosterRows = rows;
         }
@@ -549,7 +548,7 @@ TRAIN_APPLY = r"""
         const caps = {};
         (td.photos || []).forEach(p => { if(p.caption && b3aOcrSelected.includes(p.url)) caps[p.url.length + ":" + p.url.slice(-40)] = p.caption; });
         window.b3aPhotoCaps = caps;
-        window.b3aAttachSheets = td.attendSheet ? [td.attendSheet] : [];
+        window.b3aAttachSheets = [];
         b3aTrCoSave((td.groups || []).map(g => g.name));
         renderB3a(); renderB3bPreview();
       }
@@ -664,16 +663,7 @@ PAIRS = [
     ('''        <table class="ch1-table b3b-table">''', '''        <table class="ch1-table b3b-table${colwise ? " b3b-hand" : ""}"${colwise ? ` style="--rh:${(224 / SR).toFixed(2)}mm"` : ""}>'''),
     ('''    wrap.innerHTML = html;
     renderDashboard();''',
-     '''    (window.b3aAttachSheets || []).forEach((u, ai)=>{
-      html += `<div class="ch1-paper b3b-page">
-        <div class="byeolji-header">
-          <div class="byeolji-badge">별지 3-2</div>
-          <div class="byeolji-title-box">이수자 명단 첨부 · 참석확인서 원본${window.b3aAttachSheets.length > 1 ? " (" + (ai + 1) + ")" : ""}</div>
-        </div>
-        <img src="${u}" alt="참석확인서 원본" style="display:block;max-width:100%;max-height:238mm;margin:4mm auto 0;border:1px solid #ccc" />
-      </div>`;
-    });
-    wrap.innerHTML = html;
+     '''    wrap.innerHTML = html;
     renderDashboard();'''),
     # 손글씨 명단: 쪽 수·줄 수를 참석확인서 기준으로
     ('    const pageCount = Math.ceil(rowCount / B3B_ROWS_PER_PAGE);',
