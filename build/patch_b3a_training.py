@@ -37,6 +37,17 @@ TRAIN_CSS = """
   .b3a-tr-grow b{ flex:none; font-size:12px; width:38px; text-align:right; }
   .b3a-tr-crow span{ flex:none; width:16px; font-size:12px; color:#27407f; font-weight:700; }
   .b3a-tr-crow img{ width:56px; height:42px; object-fit:cover; border:1px solid #ccc; border-radius:4px; flex:none; }
+  .b3b-row .b3b-img-cell{ position:relative; height:32px; min-width:0; border:1px solid #d5dbe5; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 14px 0 4px; }
+  .b3b-row .b3b-img-cell img{ max-height:28px; max-width:100%; object-fit:contain; }
+  .b3b-row .b3b-img-cell button{ position:absolute; top:1px; right:1px; border:0; background:none; color:#98a2b3; font-size:10px; cursor:pointer; padding:1px 2px; line-height:1; }
+  .b3b-row .b3b-img-cell button:hover{ color:#c0392b; }
+  #b3a-photo-caps-edit{ margin-top:8px; }
+  .b3a-plist-title{ font-size:12px; color:#5a6272; margin:0 0 6px; }
+  .b3a-plist-row{ display:grid; grid-template-columns:18px 64px 1fr 24px; gap:6px; align-items:center; margin-bottom:6px; }
+  .b3a-plist-row .no{ font-size:12px; font-weight:700; color:#27407f; text-align:center; }
+  .b3a-plist-row img{ width:64px; height:48px; object-fit:cover; border:1px solid #d5dbe5; border-radius:4px; }
+  .b3a-plist-row input{ width:100%; min-width:0; padding:7px 8px; font-size:13px; border:1px solid #d5dbe5; border-radius:6px; }
+  .b3a-plist-row button{ border:0; background:none; color:#c0392b; cursor:pointer; font-size:14px; }
   .b3b-row .b3b-img-thumb{ height:26px; max-width:70px; border:1px solid var(--line,#ccc); border-radius:4px; background:#fff; object-fit:contain; }
 """
 
@@ -482,6 +493,13 @@ TRAIN_JS = r"""
     return day;
   }
 
+  document.getElementById("b3bRowsContainer").addEventListener("click", (e)=>{
+    const b = e.target.closest && e.target.closest("[data-b3b-clrimg]"); if(!b) return;
+    const row = b3bRows[Number(b.getAttribute("data-b3b-idx"))]; if(!row) return;
+    row[b.getAttribute("data-b3b-clrimg")] = "";
+    saveB3bRows(); renderB3bForm(); renderB3bPreview();
+  });
+
   document.getElementById("b3a-tr-start-btn").addEventListener("click", async ()=>{
     const files = b3aOcrSelectedFiles.slice();
     if(!files.length){ alert("먼저 위 칸에 훈련 보고서 PDF를 끌어다 놓거나 선택해주세요."); return; }
@@ -593,8 +611,8 @@ PAIRS = [
     # 별지 3-2 입력 칸: 그림 미리보기
     ("""        <input type="text" placeholder="소속" data-b3b-field="org" data-b3b-idx="${idx}" value="${(row.org||"").replace(/"/g,"&quot;")}" />
         <input type="text" placeholder="성명" data-b3b-field="name" data-b3b-idx="${idx}" value="${(row.name||"").replace(/"/g,"&quot;")}" />""",
-     """        ${row.orgImg ? `<img src="${row.orgImg}" class="b3b-img-thumb" alt="소속" title="손글씨 소속 (글자를 입력하면 글자로 바뀌어요)" />` : ""}<input type="text" placeholder="소속" data-b3b-field="org" data-b3b-idx="${idx}" value="${(row.org||"").replace(/"/g,"&quot;")}" />
-        ${row.nameImg ? `<img src="${row.nameImg}" class="b3b-img-thumb" alt="성명" title="손글씨 성명 (글자를 입력하면 글자로 바뀌어요)" />` : ""}<input type="text" placeholder="성명" data-b3b-field="name" data-b3b-idx="${idx}" value="${(row.name||"").replace(/"/g,"&quot;")}" />"""),
+     """        ${row.orgImg && !(row.org||"").trim() ? `<div class="b3b-img-cell" title="원본 손글씨 소속 (✕를 누르면 글자로 입력)"><img src="${row.orgImg}" alt="소속" /><button type="button" data-b3b-clrimg="orgImg" data-b3b-idx="${idx}" title="그림 지우고 글자로 입력">✕</button></div>` : `<input type="text" placeholder="소속" data-b3b-field="org" data-b3b-idx="${idx}" value="${(row.org||"").replace(/"/g,"&quot;")}" />`}
+        ${row.nameImg && !(row.name||"").trim() ? `<div class="b3b-img-cell" title="원본 손글씨 성명 (✕를 누르면 글자로 입력)"><img src="${row.nameImg}" alt="성명" /><button type="button" data-b3b-clrimg="nameImg" data-b3b-idx="${idx}" title="그림 지우고 글자로 입력">✕</button></div>` : `<input type="text" placeholder="성명" data-b3b-field="name" data-b3b-idx="${idx}" value="${(row.name||"").replace(/"/g,"&quot;")}" />`}"""),
     # 검토 화면 명단: 그림 미리보기
     ("""        <input type="text" data-roster-field="org" data-roster-idx="${idx}" value="${(r.org||"").replace(/"/g,"&quot;")}" placeholder="소속" style="flex:1.3" />
         <input type="text" data-roster-field="name" data-roster-idx="${idx}" value="${(r.name||"").replace(/"/g,"&quot;")}" placeholder="성명" style="flex:1" />""",
@@ -620,13 +638,23 @@ PAIRS = [
     ('''    ).join("") + ((b3aPhotoMore || []).length ? `<span class="save-note" style="align-self:center">${(b3aPhotoMore||[]).length}장 추가됨</span>` : "");''',
      '''    ).join("") + ((b3aPhotoMore || []).length ? `<span class="save-note" style="align-self:center">${(b3aPhotoMore||[]).length}장 추가됨</span>` : "");
     {
+      // 사진 목록을 한 곳에: 번호 · 사진 · 설명 · 삭제 (예전 작은 사진 목록은 숨김)
+      wrap.innerHTML = ""; wrap.style.display = "none";
+      const row = wrap.closest(".field-row") || wrap.parentNode;
       let ed = document.getElementById("b3a-photo-caps-edit");
-      if(!ed){ ed = document.createElement("div"); ed.id = "b3a-photo-caps-edit"; ed.style.flexBasis = "100%"; wrap.parentNode.insertBefore(ed, wrap.nextSibling); }
+      if(!ed){ ed = document.createElement("div"); ed.id = "b3a-photo-caps-edit"; row.parentNode.insertBefore(ed, row.nextSibling); }
       const allP = [b3aPhoto1, b3aPhoto2].concat(b3aPhotoMore || []).filter(Boolean), caps = window.b3aPhotoCaps || (window.b3aPhotoCaps = {});
       const keyOf = (u)=> u.length + ":" + u.slice(-40);
-      ed.innerHTML = allP.length ? '<p class="save-note" style="margin:8px 0 4px">사진 설명 (보고서의 사진 아래에 들어가요 · 비우면 설명 없음)</p>'
-        + allP.map((u, i)=> `<div class="b3a-tr-crow"><span>${i + 1}</span><img src="${u}" alt=""><input type="text" data-pcap="${i}" value="${esc3a(caps[keyOf(u)] || "")}" placeholder="사진 ${i + 1} 설명"></div>`).join("") : "";
+      ed.innerHTML = allP.length ? `<p class="b3a-plist-title">사진 ${allP.length}장 · 설명은 보고서의 사진 아래에 들어가요 (비우면 설명 없음)</p>`
+        + allP.map((u, i)=> `<div class="b3a-plist-row"><span class="no">${i + 1}</span><img src="${u}" alt="사진 ${i + 1}"><input type="text" data-pcap="${i}" value="${esc3a(caps[keyOf(u)] || "")}" placeholder="사진 ${i + 1} 설명"><button type="button" data-pdel="${i}" title="이 사진 빼기">✕</button></div>`).join("") : "";
       ed.querySelectorAll("[data-pcap]").forEach(el => el.addEventListener("change", ()=>{ const k = keyOf(allP[Number(el.dataset.pcap)]); if(el.value.trim()) caps[k] = el.value.trim(); else delete caps[k]; renderB3a(); }));
+      ed.querySelectorAll("[data-pdel]").forEach(el => el.addEventListener("click", ()=>{
+        const u = allP[Number(el.dataset.pdel)];
+        if(u === b3aPhoto1) b3aPhoto1 = null; else if(u === b3aPhoto2) b3aPhoto2 = null; else { const j = (b3aPhotoMore || []).indexOf(u); if(j >= 0) b3aPhotoMore.splice(j, 1); }
+        if(!b3aPhoto1 && b3aPhoto2){ b3aPhoto1 = b3aPhoto2; b3aPhoto2 = null; }
+        if(!b3aPhoto2 && (b3aPhotoMore || []).length) b3aPhoto2 = b3aPhotoMore.shift();
+        renderB3a();
+      }));
     }'''),
     # 별지 3-2: 손글씨 명단은 업체별로 왼쪽 열 → 오른쪽 열 순서, 크기 통일, 뒤에 참석확인서 원본 첨부
     ('''        const i = (pg * B3B_ROWS_PER_PAGE + k) * 2;
