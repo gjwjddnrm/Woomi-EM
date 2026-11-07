@@ -94,4 +94,15 @@ PAIRS = [
     ('cur = blank(); editingId = null; fillInputs(); render(); renderLog(); };',
      'cur = blank(); editingId = null; fillInputs(); render(); renderLog(); try{ __sbClean(); }catch(e){} };'),
     ("</body>", SAVEBAR_JS + "</body>"),
+    # 체크한 기록 인쇄·PDF 때, 지금 고치고 있는 기록에 저장 안 한 변경(허가번호 등)이 있으면 먼저 저장할지 묻기
+    ('const targets = ()=> entries.filter(e => sel.has(e.id)).sort(byDate).map(e => e.data);',
+     'const targets = ()=>{\n'
+     '  const ed = editingId && entries.find(e => e.id === editingId);\n'
+     '  if(ed && sel.has(ed.id) && JSON.stringify(ed.data) !== JSON.stringify(cur)){\n'
+     '    if(confirm("지금 고치고 있는 기록(" + (cur.permitNo || "번호 없음") + ")에 저장하지 않은 변경 내용이 있어요.\\n저장한 뒤 인쇄할까요?\\n(취소하면 저장된 예전 내용으로 인쇄돼요)")){\n'
+     '      document.getElementById("saveUpd").click(); try{ __sbClean(); refreshSaveBars("✅ 저장했어요."); }catch(e){}\n'
+     '    }\n'
+     '  }\n'
+     '  return entries.filter(e => sel.has(e.id)).sort(byDate).map(e => e.data);\n'
+     '};'),
 ]
