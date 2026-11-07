@@ -110,6 +110,11 @@ import importlib.util as _u3
 _sp3 = _u3.spec_from_file_location("patch_b3a_darkpage", HERE / "patch_b3a_darkpage.py"); _m3 = _u3.module_from_spec(_sp3); _sp3.loader.exec_module(_m3)
 for _o, _n in _m3.PAIRS: s = rep(s, _o, _n)
 
+# 별지 3-1: 비상대비훈련 보고서(스캔본) 불러오기 + 별지 3-2 손글씨 소속·성명 그림
+import importlib.util as _u6
+_sp6 = _u6.spec_from_file_location("patch_b3a_training", HERE / "patch_b3a_training.py"); _m6 = _u6.module_from_spec(_sp6); _sp6.loader.exec_module(_m6)
+for _o, _n in _m6.PAIRS: s = rep(s, _o, _n)
+
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u
 _sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
