@@ -51,10 +51,12 @@ TRAIN_CSS = """
   .b3a-imp-row textarea{ width:100%; min-width:0; min-height:64px; padding:6px 8px; font:inherit; font-size:12.5px; line-height:1.5; border:1px solid #d5dbe5; border-radius:6px; resize:vertical; }
   .b3a-imp-row button{ border:0; background:none; color:#c0392b; cursor:pointer; font-size:14px; }
   .b3a-imp-row input[type=checkbox]{ margin:0; }
-  .report-table.b3a-imp-table th{ background:#e9eef7; font-weight:700; height:8mm; font-size:10.5pt; }
-  .report-table.b3a-imp-table td.imp-kind{ width:17mm; text-align:center; vertical-align:middle; font-weight:700; font-size:10.5pt; }
-  .report-table.b3a-imp-table td.imp-photo{ width:72mm; height:64mm; padding:1.5mm; }
+  #b3a-pv-lack, #b3a-pv-improve{ white-space:pre-line; vertical-align:top; padding-top:2.5mm; line-height:1.65; }
+  .report-table.b3a-imp-table td.imp-head{ background:#e9eef7; font-weight:700; text-align:center; vertical-align:middle; height:8mm; padding:0; font-size:10.5pt; }
+  .report-table.b3a-imp-table td.imp-photo{ width:80mm; padding:1.5mm 1.5mm 0; vertical-align:top; }
+  .report-table.b3a-imp-table td.imp-photo .imp-img{ height:58mm; }
   .report-table.b3a-imp-table td.imp-photo img{ display:block; width:100%; height:100%; object-fit:contain; }
+  .report-table.b3a-imp-table td.imp-photo .imp-cap{ height:7mm; line-height:7mm; margin:1.5mm -1.5mm 0; border-top:1px solid #555; text-align:center; font-weight:700; font-size:10.5pt; }
   .report-table.b3a-imp-table td.imp-text{ white-space:pre-line; font-size:10pt; line-height:1.6; vertical-align:middle; padding:2mm 3mm; }
   .b3a-ocr-roster-row.b3a-rrow{ display:grid; grid-template-columns:18px 1fr 1fr 1fr 40px; gap:4px; align-items:center; }
   .b3a-rrow .no{ font-size:11px; color:#98a2b3; text-align:center; }
@@ -240,6 +242,7 @@ TRAIN_JS = r"""
   // 스캔본 글자 다듬기: 줄 합치기, "20KG"가 "20<6"·"206"·"20(<6"로 읽힌 것 바로잡기(소화기 앞 숫자만, 원본 표기 KG)
   function b3aTrJoin(t){
     let s = String(t || "").replace(/[|｜_]/g, " ").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, " ").trim();
+    s = s.replace(/(\d{1,2}(?:\.\d)?)\s*[(1lI|]?\s*<\s*(?:[kK][gG]?|[6Gg9])(\s*)(?=소화기)/g, "$1KG$2");   // "201<6" 등
     return s.replace(/(\d{1,2}(?:\.\d)?)\s*\(?\s*<?\s*(?:[kK][gG]|[6Gg9])(\s*)(?=소화기)/g, "$1KG$2");
   }
   // "1. … 2. …"를 줄마다 나눔 (renumber가 아니면 원본 번호 그대로)
@@ -728,14 +731,20 @@ PAIRS = [
     ('''    const row = document.getElementById("b3a-pv-photo-row");
     row.classList.remove("single");''',
      '''    {
-      const imp = window.b3aImprovePhotos || [];
-      for(let k = imp.length ? 0 : 1; k < imp.length; k += 3){
+      const imp = window.b3aImprovePhotos || [], R = window.__b3aOff;
+      let lastImp = null;
+      for(let k = 0; k < imp.length; k += 3){
         const part = imp.slice(k, k + 3), ish = document.createElement("div");
         ish.className = "ch1-paper b3-sheet-break b3a-photo-extra";
-        ish.innerHTML = headHtml + `<table class="report-table b3a-imp-table"><tr><td class="label" rowspan="${part.length + 1}">개선<br>전·후</td><th>구분</th><th>사진</th><th>내용</th></tr>`
-          + part.map(it => `<tr><td class="imp-kind">${it.kind === "before" ? "개선 전" : "개선 후"}</td><td class="imp-photo"><img src="${it.url}" alt="${it.kind === "before" ? "개선 전" : "개선 후"} 사진" /></td><td class="imp-text">${esc3a(it.text || "")}</td></tr>`).join("") + `</table>`;
-        let after = lastSheet; for(let q = lastSheet.nextElementSibling; q && q.classList.contains("b3a-photo-extra") && q.querySelector(".b3a-imp-table"); q = q.nextElementSibling) after = q;
-        after.parentNode.insertBefore(ish, after.nextSibling);
+        ish.innerHTML = headHtml + `<table class="report-table b3a-imp-table"><tr><td class="label" rowspan="${part.length + 1}">사진</td><td class="imp-head">사진</td><td class="imp-head">내용</td></tr>`
+          + part.map(it => { const kn = it.kind === "before" ? "개선 전" : "개선 후"; return `<tr><td class="imp-photo"><div class="imp-img"><img src="${it.url}" alt="${kn} 사진" /></div><div class="imp-cap">${kn}</div></td><td class="imp-text">${esc3a(it.text || "")}</td></tr>`; }).join("") + `</table>`;
+        (lastImp || lastSheet).parentNode.insertBefore(ish, (lastImp || lastSheet).nextSibling);
+        lastImp = ish;
+      }
+      // 교육/훈련 실시자 줄과 "※ 별지 3-2" 안내는 개선 전·후 쪽 맨 끝으로
+      if(lastImp && R){
+        lastImp.querySelector("table").appendChild(R.row); R.row.cells[1].colSpan = 2;
+        if(R.note) lastImp.appendChild(R.note);
       }
     }
     const row = document.getElementById("b3a-pv-photo-row");
@@ -759,4 +768,45 @@ PAIRS = [
         ${r.sig ? `<img src="${r.sig}" class="b3a-ocr-roster-sig" alt="서명" />` : `<span class="b3a-ocr-roster-sig-empty">서명없음</span>`}
         <button type="button" data-roster-remove="${idx}">삭제</button>
       </div>`}'''),
+    # 미비점·개선사항: 번호(1. 2. …)와 [문제점 N]마다 줄 바꿈, 그 뒤에 칸 크기 맞추기
+    ('''    document.getElementById("b3a-pv-main").textContent = document.getElementById("b3a-main").value || "\\u00A0";
+    fitB3aMain();
+    document.getElementById("b3a-pv-lack").textContent = document.getElementById("b3a-lack").value || "\\u00A0";
+    document.getElementById("b3a-pv-improve").textContent = document.getElementById("b3a-improve").value || "\\u00A0";''',
+     '''    document.getElementById("b3a-pv-main").textContent = document.getElementById("b3a-main").value || "\\u00A0";
+    {
+      const fmtLines = (t)=> String(t || "").replace(/\\s*(\\[문제점\\s*\\d+\\])\\s*/g, "\\n$1\\n").replace(/([^\\n])[ \\t]+(?=\\d{1,2}\\.\\s)/g, "$1\\n").replace(/\\n{2,}/g, "\\n").trim();
+      document.getElementById("b3a-pv-lack").textContent = fmtLines(document.getElementById("b3a-lack").value) || "\\u00A0";
+      document.getElementById("b3a-pv-improve").textContent = fmtLines(document.getElementById("b3a-improve").value) || "\\u00A0";
+    }
+    fitB3aMain();'''),
+    # 훈련(미비점·개선사항 칸이 보일 때): 주요내용은 글 만큼만, 남는 공간은 미비점 4 : 개선사항 6
+    ('''      td.style.height = ""; td.style.minHeight = "0"; td.style.fontSize = ""; td.style.lineHeight = "";
+      const other = table.offsetHeight - tr.offsetHeight;''',
+     '''      td.style.height = ""; td.style.minHeight = "0"; td.style.fontSize = ""; td.style.lineHeight = "";
+      const lkTd = document.getElementById("b3a-pv-lack"), imTd = document.getElementById("b3a-pv-improve"), lkRow = document.getElementById("b3a-pv-lack-row");
+      const trainMode = lkRow && lkRow.style.display !== "none";
+      lkTd.style.height = ""; imTd.style.height = "";
+      const other = table.offsetHeight - tr.offsetHeight;'''),
+    ('''      if(avail > tr.offsetHeight){                          // 남는 만큼 빈칸으로 채움''',
+     '''      if(trainMode && avail > tr.offsetHeight){            // 훈련: 남는 공간을 미비점·개선사항에 나눠 줌
+        const spare = avail - tr.offsetHeight, mainExtra = Math.round(spare * 0.12), rest = spare - mainExtra;
+        td.style.height = (td.offsetHeight + mainExtra) + "px";
+        lkTd.style.height = (lkTd.offsetHeight + Math.round(rest * 0.4)) + "px";
+        imTd.style.height = (imTd.offsetHeight + Math.round(rest * 0.6)) + "px";
+        return;
+      }
+      if(avail > tr.offsetHeight){                          // 남는 만큼 빈칸으로 채움'''),
+    # 실시자 줄: 다시 그릴 때마다 먼저 원래 자리(마지막 사진 쪽)로 되돌림
+    ('''    document.querySelectorAll(".b3a-photo-extra").forEach(e => e.remove());''',
+     '''    {
+      const R = window.__b3aOff || (window.__b3aOff = (()=>{
+        const row = document.getElementById("b3a-pv-officer-title").closest("tr"), sheet = row.closest(".ch1-paper");
+        const note = [...sheet.querySelectorAll("p.ch1-body")].find(x => /별지 3-2\\./.test(x.textContent)) || null;
+        return { row, home: row.parentNode, note, noteHome: note && note.parentNode };
+      })());
+      if(R.row.closest(".b3a-photo-extra")){ R.home.appendChild(R.row); R.row.cells[1].colSpan = 4; }
+      if(R.note && R.note.closest(".b3a-photo-extra")) R.noteHome.appendChild(R.note);
+    }
+    document.querySelectorAll(".b3a-photo-extra").forEach(e => e.remove());'''),
 ]
