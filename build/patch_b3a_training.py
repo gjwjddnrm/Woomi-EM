@@ -13,13 +13,29 @@ TRAIN_REVIEW_OLD = '<div class="field"><label for="b3a-ocr-r-trade">대상 공�
 TRAIN_REVIEW_NEW = TRAIN_REVIEW_OLD + '''
         <div id="b3a-tr-extra" style="display:none">
           <div class="field"><label for="b3a-ocr-r-done">실시 근로자수 (실참석)</label><input type="number" id="b3a-ocr-r-done" /></div>
+          <div class="field"><label>업체별 인원 (참석확인서)</label><div id="b3a-tr-groups"></div><datalist id="b3a-tr-co-list"></datalist>
+            <p class="save-note" style="margin:4px 0 0">손글씨 업체명을 보고 업체명을 입력하거나 목록에서 고르세요. 같은 업체는 자동으로 합쳐서 "대상 공종"에 들어가요. 한 번 입력한 업체명은 다음부터 목록에 나와요.</p></div>
           <div class="field"><label for="b3a-ocr-r-lack">미비점 (보고서의 문제점)</label><textarea id="b3a-ocr-r-lack" rows="3"></textarea></div>
-          <div class="field"><label for="b3a-ocr-r-improve">개선사항</label><textarea id="b3a-ocr-r-improve" rows="4"></textarea></div>
+          <div class="field"><label for="b3a-ocr-r-improve">개선사항</label><textarea id="b3a-ocr-r-improve" rows="6"></textarea></div>
+          <div class="field"><label>사진 설명 (선택한 사진 순서대로, 보고서의 사진 아래에 들어가요)</label><div id="b3a-tr-caps"></div></div>
           <p class="save-note" style="margin:4px 0 0">🚒 훈련 보고서: 구분은 <b>화재 시 대피훈련 + 초기대응체계 기본 훈련</b>으로 들어가요. 스캔본이라 글자를 잘못 읽은 곳이 있으면 여기서 고쳐 주세요.</p>
         </div>'''
 
 TRAIN_CSS = """
   .pv-name-img{ max-height:7mm; max-width:100%; vertical-align:middle; }
+  .b3b-table.b3b-hand td{ text-align:center; vertical-align:middle; }
+  .b3b-table.b3b-hand .pv-name-img{ height:6mm; max-height:6mm; width:auto; max-width:100%; object-fit:contain; display:block; margin:0 auto; }
+  .b3b-table.b3b-hand .sig-td img{ height:7mm !important; max-height:7mm !important; width:auto !important; max-width:100% !important; object-fit:contain; display:block; margin:0 auto; }
+  .report-table .photo-box.has-cap{ display:flex; flex-direction:column; }
+  .report-table .photo-row .photo-box.has-photo.has-cap img{ flex:1 1 auto; min-height:0; height:auto; }
+  .report-table .photo-cap{ flex:none; text-align:center; font-size:10pt; font-weight:600; padding-top:1.5mm; color:#1c2230; }
+  .b3a-tr-grow, .b3a-tr-crow{ display:flex; align-items:center; gap:6px; margin:4px 0; }
+  .b3a-tr-grow .b3a-tr-gimg{ width:96px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line,#ccc); border-radius:4px; background:#fff; font-size:11px; color:#888; flex:none; }
+  .b3a-tr-grow .b3a-tr-gimg img{ max-width:92px; max-height:28px; object-fit:contain; }
+  .b3a-tr-grow input, .b3a-tr-crow input{ flex:1; min-width:0; }
+  .b3a-tr-grow b{ flex:none; font-size:12px; width:38px; text-align:right; }
+  .b3a-tr-crow span{ flex:none; width:16px; font-size:12px; color:#27407f; font-weight:700; }
+  .b3a-tr-crow img{ width:56px; height:42px; object-fit:cover; border:1px solid #ccc; border-radius:4px; flex:none; }
   .b3b-row .b3b-img-thumb{ height:26px; max-width:70px; border:1px solid var(--line,#ccc); border-radius:4px; background:#fff; object-fit:contain; }
 """
 
@@ -169,7 +185,7 @@ TRAIN_JS = r"""
       out.push(b);
     });
     out.sort((a, b)=> (Math.abs(a[1] - b[1]) < H * 0.05 ? a[0] - b[0] : a[1] - b[1]));
-    return out.map(b => b3aTrSub(c, b[0] * S + 2, b[1] * S + 2, b[2] * S - 2, b[3] * S - 2));
+    return out.map(b => ({ canvas: b3aTrSub(c, b[0] * S + 2, b[1] * S + 2, b[2] * S - 2, b[3] * S - 2), box: [b[0] * S, b[1] * S, b[2] * S, b[3] * S] }));
   }
   // 쪽 맨 위 제목으로 쪽 종류 구분
   async function b3aTrClassify(c){
@@ -190,13 +206,17 @@ TRAIN_JS = r"""
     const p2 = (n)=> String(n).padStart(2, "0");
     return `${m[1]}-${p2(m[2])}-${p2(m[3])}`;
   }
-  function b3aTrItems(t){
+  // 스캔본 글자 다듬기: 줄 합치기, "20KG"가 "20<6"·"206"·"20(<6"로 읽힌 것 바로잡기(소화기 앞 숫자만, 원본 표기 KG)
+  function b3aTrJoin(t){
     let s = String(t || "").replace(/[|｜_]/g, " ").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, " ").trim();
-    // 스캔본에서 "20kg"가 "20<6"·"206"·"20(<6"처럼 읽히는 것 바로잡기 (소화기 앞 숫자만)
-    s = s.replace(/(\d{1,2}(?:\.\d)?)\s*\(?\s*<?\s*(?:[kK][gG]|[6Gg9])\s*(?=소화기)/g, "$1kg ").trim();
+    return s.replace(/(\d{1,2}(?:\.\d)?)\s*\(?\s*<?\s*(?:[kK][gG]|[6Gg9])(\s*)(?=소화기)/g, "$1KG$2");
+  }
+  // "1. … 2. …"를 줄마다 나눔 (renumber가 아니면 원본 번호 그대로)
+  function b3aTrItems(t, renumber){
+    const s = b3aTrJoin(t);
     const parts = s.split(/(?:^|\s)(?=\d\s*[.,]\s*\S)/).map(x => x.trim()).filter(x => x.replace(/^\d\s*[.,]\s*/, "").length >= 2);
-    if(parts.length <= 1) return s;
-    return parts.map((x, i)=> (i + 1) + ". " + x.replace(/^\d\s*[.,]\s*/, "")).join("\n");   // 번호는 1부터 차례로
+    if(parts.length <= 1) return s.replace(/^(\d)\s*[.,]\s*/, "$1. ");
+    return parts.map((x, i)=> renumber ? (i + 1) + ". " + x.replace(/^\d\s*[.,]\s*/, "") : x.replace(/^(\d)\s*[.,]\s*/, "$1. ")).join("\n");
   }
 
   // 보고서 쪽: 일자, 실참석·출역인원, 문제점·개선사항
@@ -238,9 +258,29 @@ TRAIN_JS = r"""
           if(on){ yEnd = y; gap = 0; } else if(++gap > 14) break;
         }
         if(yEnd - yH > 40 && L2 - L1 > 60 && L3 - L2 > 60){
-          const pT = (await b3aTrOcr(b3aTrSub(clean, L1 + 8, yH + 6, L2 - 8, yEnd - 4), 6)).text;
-          const iT = (await b3aTrOcr(b3aTrSub(clean, L2 + 8, yH + 6, L3 - 8, yEnd - 4), 6)).text;
-          out.lack = b3aTrItems(pT); out.improve = b3aTrItems(iT);
+          // 문제점 칸의 가로선으로 문제점 행을 나누고, 같은 높이의 개선사항 칸을 함께 읽음
+          const hs = [];
+          for(let y = yH + 4; y < yEnd; y++){ let n = 0; for(let x = L1 + 6; x < L2 - 6; x++) n += dm.m[y * W + x]; if(n / Math.max(1, L2 - L1 - 12) > 0.8) hs.push(y); }
+          const cuts = [yH, ...b3aTrGroup(hs, 4), yEnd], probs = [], imps = [];
+          for(let i = 0; i + 1 < cuts.length; i++){
+            const ya = cuts[i] + 5, yb = cuts[i + 1] - 4;
+            if(yb - ya < 25) continue;
+            const pT = b3aTrJoin((await b3aTrOcr(b3aTrSub(clean, L1 + 8, ya, L2 - 8, yb), 6)).text);
+            if(b3aTrNoSpace(pT).replace(/[-–—_.,·]/g, "").length < 2) continue;   // 빈 행
+            const num = (/^(\d)\s*[.,]/.exec(pT) || [])[1] || String(probs.length + 1);
+            probs.push(/^\d\s*[.,]/.test(pT) ? pT.replace(/^(\d)\s*[.,]\s*/, "$1. ") : num + ". " + pT);
+            const items = b3aTrItems((await b3aTrOcr(b3aTrSub(clean, L2 + 8, ya, L3 - 8, yb), 6)).text, false);
+            if(items) imps.push(`[문제점 ${num}]\n` + items);
+          }
+          if(probs.length > 1){ out.lack = probs.join("\n"); out.improve = imps.join("\n"); }
+          else {   // 행을 못 나눴으면: 개선사항 번호가 1로 다시 시작하는 곳에서 문제점별로 묶음
+            out.lack = b3aTrItems((await b3aTrOcr(b3aTrSub(clean, L1 + 8, yH + 6, L2 - 8, yEnd - 4), 6)).text, false);
+            const its = b3aTrItems((await b3aTrOcr(b3aTrSub(clean, L2 + 8, yH + 6, L3 - 8, yEnd - 4), 6)).text, false).split("\n").filter(Boolean);
+            const pn = out.lack.split("\n").map(x => (/^(\d)\./.exec(x) || [])[1]).filter(Boolean);
+            const grp = []; let prev = 99;
+            its.forEach(x => { const n = +((/^(\d)\./.exec(x) || [])[1] || 0); if(!grp.length || (n && n <= prev)) grp.push([]); grp[grp.length - 1].push(x); if(n) prev = n; });
+            out.improve = grp.length > 1 ? grp.map((g, i)=> `[문제점 ${pn[i] || i + 1}]\n` + g.join("\n")).join("\n") : its.join("\n");
+          }
         }
       }
     }
@@ -293,20 +333,60 @@ TRAIN_JS = r"""
     return out;
   }
 
-  // 참석확인서 소속 칸으로 업체별 인원 묶기 ("〃"·빈칸은 윗줄 업체와 같음)
-  async function b3aTrTrade(rows){
-    const groups = [];
+  // 현장 협력업체 목록 (한 번 입력하면 기억, 저장 자료와 함께 암호화됨)
+  function b3aTrCoList(){ try{ const a = JSON.parse(localStorage.getItem("fireplan_companies_v1") || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+  function b3aTrCoSave(names){
+    const set = new Set(b3aTrCoList());
+    (names || []).forEach(n => { n = String(n || "").trim(); if(n && !/확인필요/.test(n)) set.add(n); });
+    try{ localStorage.setItem("fireplan_companies_v1", JSON.stringify([...set].slice(0, 80))); }catch(e){}
+  }
+  // 참석확인서 소속 칸으로 업체 묶음 만들기 ("〃"·빈칸은 윗줄 업체와 같음)
+  async function b3aTrGroups(rows){
+    const groups = [], saved = b3aTrCoList();
     for(const r of rows){
       if(r._orgKind === "name" || !groups.length){
         let nm = "";
-        if(r._orgCanvas){ try{ const od = await b3aTrOcr(b3aTrClean(r._orgCanvas), 7); if((od.confidence || 0) >= 75) nm = (od.text || "").replace(/[^가-힣A-Za-z0-9()（）]/g, ""); }catch(e){} }   // 손글씨는 확실할 때만
-        groups.push({ name: nm, count: 1 });
-      }else groups[groups.length - 1].count++;
+        if(r._orgCanvas){
+          try{
+            const od = await b3aTrOcr(b3aTrClean(r._orgCanvas), 7), t = (od.text || "").replace(/[^가-힣A-Za-z0-9()（）]/g, "");
+            const hit = t && saved.find(x => x.replace(/\s/g, "") === t);   // 등록된 업체명과 똑같이 읽힌 경우
+            if(hit) nm = hit; else if((od.confidence || 0) >= 80 && t.length >= 2) nm = t;
+          }catch(e){}
+        }
+        groups.push({ name: nm, count: 0, orgImg: r.orgImg || "" });
+      }
+      groups[groups.length - 1].count++;
+      r.g = groups.length - 1;
     }
-    const merged = [];
-    groups.forEach(g => { const k = g.name; const ex = k && merged.find(m => m.name === k); if(ex) ex.count += g.count; else merged.push({ ...g }); });
-    let k = 0;
-    return merged.map(g => `${g.name && g.name.length >= 2 ? g.name : "업체" + "①②③④⑤⑥⑦⑧⑨⑩"[Math.min(9, k++)] + "(이름 확인)"}(${g.count})`).join(", ");
+    return groups;
+  }
+  // 대상 공종 글: "대창강업 7, 강구토건 10, …" (같은 업체는 합침)
+  function b3aTrTradeText(groups){
+    const m = [];
+    (groups || []).forEach(g => { const k = String(g.name || "").trim() || "업체확인필요"; const ex = m.find(x => x.k === k); if(ex) ex.n += g.count; else m.push({ k, n: g.count }); });
+    m.sort((a, b)=> (/우미/.test(a.k) ? 1 : 0) - (/우미/.test(b.k) ? 1 : 0));   // 원청(우미건설)은 맨 뒤, 나머지는 참석확인서 순서
+    return m.map(x => `${x.k} ${x.n}`).join(", ");
+  }
+  function b3aTrRenderGroups(d){
+    const wrap = document.getElementById("b3a-tr-groups"), dl = document.getElementById("b3a-tr-co-list");
+    if(!wrap) return;
+    dl.innerHTML = b3aTrCoList().map(n => `<option value="${esc3a(n)}"></option>`).join("");
+    const gs = (d && d.groups) || [];
+    wrap.innerHTML = gs.length ? gs.map((g, i)=> `<div class="b3a-tr-grow"><span class="b3a-tr-gimg">${g.orgImg ? `<img src="${g.orgImg}" alt="손글씨 업체명">` : "(업체명 칸 비어 있음)"}</span><input type="text" list="b3a-tr-co-list" data-trg="${i}" value="${esc3a(g.name || "")}" placeholder="업체명 입력·선택"><b>${g.count}명</b></div>`).join("")
+      : '<p class="save-note">참석확인서를 찾지 못했어요.</p>';
+    wrap.querySelectorAll("[data-trg]").forEach(el => el.addEventListener("input", ()=>{
+      gs[Number(el.dataset.trg)].name = el.value;
+      d.trade = b3aTrTradeText(gs); document.getElementById("b3a-ocr-r-trade").value = d.trade;
+    }));
+  }
+  function b3aTrRenderCaps(){
+    const wrap = document.getElementById("b3a-tr-caps"), d = b3aOcrDays[b3aOcrDayIdx];
+    if(!wrap) return;
+    if(!d || d.kind !== "training"){ wrap.innerHTML = ""; return; }
+    const sel = b3aOcrSelected.map(u => d.photos.find(p => p.url === u)).filter(Boolean);
+    wrap.innerHTML = sel.length ? sel.map((p, i)=> `<div class="b3a-tr-crow"><span>${i + 1}</span><img src="${p.url}" alt=""><input type="text" data-trc="${d.photos.indexOf(p)}" value="${esc3a(p.caption || "")}" placeholder="사진 설명 (예: 상황발생)"></div>`).join("")
+      : '<p class="save-note">선택한 사진이 없어요.</p>';
+    wrap.querySelectorAll("[data-trc]").forEach(el => el.addEventListener("input", ()=>{ d.photos[Number(el.dataset.trc)].caption = el.value; }));
   }
 
   async function b3aTrReadFile(file, fi, total){
@@ -333,14 +413,16 @@ TRAIN_JS = r"""
         b3aOcrSetStatus(`⏳ ${tag}참석확인서에서 소속·이름·서명을 오려 내는 중...`);
         const rows = await b3aTrAttendance(c);
         if(rows && rows.length){
-          day.trade = await b3aTrTrade(rows);
+          day.groups = await b3aTrGroups(rows);
+          day.trade = b3aTrTradeText(day.groups);
+          day.attendSheet = await b3aOcrShrink(c.toDataURL("image/jpeg", 0.9), 1400, 0.78);   // 참석확인서 원본 (별지 3-2 뒤에 첨부)
           // 별지 3-2는 좌우로 번갈아 채워서 "〃"가 뜻을 잃으므로, 〃·빈칸은 윗줄 업체명 그림으로 바꿈
           let last = "";
           rows.forEach(r => { if(r._orgKind === "name") last = r.orgImg; else if(last) r.orgImg = last; });
           day.rosterRows = rows;
         }
       }else if(cls.kind === "photo"){
-        photoPages.push({ n, c, first: /훈련실시/.test(b3aTrNoSpace(cls.text)) });
+        photoPages.push({ n, c, first: /훈련실시/.test(b3aTrNoSpace(cls.text)), cap: true });
       }
     }
     day.date = day.date || anyDate;
@@ -352,14 +434,50 @@ TRAIN_JS = r"""
     for(const pp of photoPages){
       b3aOcrSetStatus(`⏳ ${tag}${pp.n}쪽 사진을 찾는 중...`);
       try{
-        b3aTrFindPhotos(pp.c).forEach(oc => {
-          if(oc.width < 120 || oc.height < 90) return;
-          photos.push({ url: b3aOcrCanvasToDataUrl(oc), pageLabel: `${pp.n}p`, main: !!pp.first });
-        });
+        const found = b3aTrFindPhotos(pp.c), cleanPage = pp.cap ? b3aTrClean(pp.c) : null;
+        for(const ph of found){
+          const oc = ph.canvas;
+          if(oc.width < 120 || oc.height < 90) continue;
+          let caption = "";
+          if(cleanPage){   // 사진 바로 아래 "내 용 | - 상황발생" 칸
+            try{
+              const b = ph.box, Hc = pp.c.height, dmc = pp.dm || (pp.dm = b3aTrDark(pp.c, 200)), lines = [];
+              for(let y = b[3]; y < Math.min(Hc, b[3] + Math.round(Hc * 0.1)); y++){ let n = 0; for(let x = b[0]; x < b[2]; x++) n += dmc.m[y * dmc.W + x]; if(n / Math.max(1, b[2] - b[0]) > 0.6) lines.push(y); }
+              const LN = b3aTrGroup(lines, 4);
+              // 후보 띠 여러 개(표 선 사이 칸 / 사진 바로 아래 / 조금 더 아래)를 읽고 한글이 가장 많이 나온 것을 씀
+              const bands = [];
+              for(let i = 0; i + 1 < LN.length; i++){ if(LN[i + 1] - LN[i] > Hc * 0.012){ bands.push([LN[i] + 4, LN[i + 1] - 3]); break; } }
+              bands.push([b[3] + 4, b[3] + Math.round(Hc * 0.055)], [b[3] + Math.round(Hc * 0.015), b[3] + Math.round(Hc * 0.075)]);
+              const tidy = (t)=>{
+                let ct = b3aTrJoin(t); const dash = ct.search(/[-–—]\s*[가-힣A-Za-z0-9]/); if(dash >= 0) ct = ct.slice(dash); else ct = ct.replace(/^.*?내\s*용/, "");
+                return ct.replace(/^[\s\-–—:·|】\]]+/, "").replace(/[^가-힣A-Za-z0-9()·,.\s].*$/, "").replace(/\s{2,}/g, " ").trim().slice(0, 40);
+              };
+              let best = "", bestK = 0;
+              for(const [ya, yb] of bands){
+                if(yb - ya < 12 || yb > Hc) continue;
+                const od = await b3aTrOcr(b3aTrSub(cleanPage, b[0], ya, b[2], yb), 6, true);
+                let ws = [];
+                (od.blocks || []).forEach(bl => (bl.paragraphs || []).forEach(pg => (pg.lines || []).forEach(ln => (ln.words || []).forEach(w => ws.push(w)))));
+                // 앞·뒤 끝의 확신 낮은 글자(사진 가장자리 잡글)만 버리고, 가운데는 그대로
+                while(ws.length && (ws[ws.length - 1].confidence || 0) < 60) ws.pop();
+                while(ws.length && (ws[0].confidence || 0) < 60 && !/[-–—]/.test(ws[0].text)) ws.shift();
+                // 글자 사이 간격으로 띄어쓰기 복원 (낱자로 잘려 읽혀도)
+                let txt = "";
+                ws.forEach((w, i)=>{ if(i){ const pv = ws[i - 1], gap = w.bbox.x0 - pv.bbox.x1, h = Math.max(8, pv.bbox.y1 - pv.bbox.y0); txt += (gap > h * 0.45 || Math.abs(w.bbox.y0 - pv.bbox.y0) > h) ? " " : ""; } txt += w.text; });
+                const cand = tidy(txt);
+                const k = (cand.match(/[가-힣]/g) || []).length;
+                if(k > bestK){ best = cand; bestK = k; }
+                if(k >= 4) break;
+              }
+              caption = bestK >= 2 ? best : "";
+            }catch(e){}
+          }
+          photos.push({ url: b3aOcrCanvasToDataUrl(oc), pageLabel: `${pp.n}p`, main: !!pp.first, caption });
+        }
       }catch(e){ console.warn("훈련 사진 추출 실패", e); }
     }
     day.photos = await b3aOcrDedupePhotos(photos);
-    for(const ph of day.photos) ph.url = await b3aOcrShrink(ph.url, 1000, 0.8);
+    for(const ph of day.photos) ph.url = await b3aOcrShrink(ph.url, 1000, 0.8);   // 설명(caption)은 같은 객체에 있으므로 그대로 따라감
     { const mains = day.photos.filter(ph => ph.main).map(ph => ph.url); if(mains.length) day.selected = mains; }   // "훈련실시" 쪽 사진만 기본 선택
     day.rosterRows.forEach(r => { delete r._orgCanvas; });
     return day;
@@ -411,7 +529,12 @@ TRAIN_APPLY = r"""
         try{ updateB3aLackImproveVisibility(); }catch(e){}
         document.getElementById("b3a-lack").value = td.lack || "";
         document.getElementById("b3a-improve").value = td.improve || "";
-        renderB3a();
+        const caps = {};
+        (td.photos || []).forEach(p => { if(p.caption && b3aOcrSelected.includes(p.url)) caps[p.url.length + ":" + p.url.slice(-40)] = p.caption; });
+        window.b3aPhotoCaps = caps;
+        window.b3aAttachSheets = td.attendSheet ? [td.attendSheet] : [];
+        b3aTrCoSave((td.groups || []).map(g => g.name));
+        renderB3a(); renderB3bPreview();
       }
     }
 
@@ -431,11 +554,11 @@ PAIRS = [
     ('    document.getElementById("b3a-ocr-r-trade").value = d.trade || "";\n    b3aOcrRosterRows = d.rosterRows;',
      '    document.getElementById("b3a-ocr-r-trade").value = d.trade || "";\n'
      '    { const tr = d.kind === "training", ex = document.getElementById("b3a-tr-extra"); ex.style.display = tr ? "" : "none";\n'
-     '      document.getElementById("b3a-ocr-r-done").value = tr ? (d.done || "") : ""; document.getElementById("b3a-ocr-r-lack").value = tr ? (d.lack || "") : ""; document.getElementById("b3a-ocr-r-improve").value = tr ? (d.improve || "") : ""; }\n'
+     '      document.getElementById("b3a-ocr-r-done").value = tr ? (d.done || "") : ""; document.getElementById("b3a-ocr-r-lack").value = tr ? (d.lack || "") : ""; document.getElementById("b3a-ocr-r-improve").value = tr ? (d.improve || "") : ""; if(tr) b3aTrRenderGroups(d); else document.getElementById("b3a-tr-groups").innerHTML = ""; }\n'
      '    b3aOcrRosterRows = d.rosterRows;'),
     ('    d.trade = document.getElementById("b3a-ocr-r-trade").value.trim();\n    d.selected = b3aOcrSelected.slice();',
      '    d.trade = document.getElementById("b3a-ocr-r-trade").value.trim();\n'
-     '    if(d.kind === "training"){ d.done = document.getElementById("b3a-ocr-r-done").value.trim(); d.lack = document.getElementById("b3a-ocr-r-lack").value.trim(); d.improve = document.getElementById("b3a-ocr-r-improve").value.trim(); }\n'
+     '    if(d.kind === "training"){ d.done = document.getElementById("b3a-ocr-r-done").value.trim(); d.lack = document.getElementById("b3a-ocr-r-lack").value.trim(); d.improve = document.getElementById("b3a-ocr-r-improve").value.trim(); (d.rosterRows || []).forEach(r => { const g = (d.groups || [])[r.g]; if(g && String(g.name || "").trim()) r.org = String(g.name).trim(); }); }\n'
      '    d.selected = b3aOcrSelected.slice();'),
     # 적용: 훈련용 값 넣기
     ("\n    return rosterAppliedCount;\n  }\n", TRAIN_APPLY),
@@ -457,6 +580,7 @@ PAIRS = [
     # 별지 3-2 미리보기: 글자가 없으면 그림으로
     ("""    const people = b3bRows.filter(r => (r.org||"").trim() || (r.name||"").trim() || r.sig);""",
      """    const people = b3bRows.filter(r => (r.org||"").trim() || (r.name||"").trim() || r.sig || r.nameImg || r.orgImg);
+    const colwise = people.some(r => r.nameImg);   // 손글씨 명단(훈련): 업체 순서가 흩어지지 않게 열 단위로 채움
     const txtOrImg = (r, t, im)=> (r[t]||"").trim() ? esc3a(r[t]) : (r[im] ? `<img src="${r[im]}" class="pv-name-img" alt="" />` : "");"""),
     ("""          <td>${left ? esc3a(left.org || "") : ""}</td><td>${left ? esc3a(left.name || "") : ""}</td><td class="sig-td">${sigCell(left)}</td>
           <td>${right ? esc3a(right.org || "") : ""}</td><td>${right ? esc3a(right.name || "") : ""}</td><td class="sig-td">${sigCell(right)}</td>""",
@@ -474,4 +598,49 @@ PAIRS = [
         ${r.nameImg ? `<img src="${r.nameImg}" class="b3a-ocr-roster-sig" alt="성명" />` : ""}<input type="text" data-roster-field="name" data-roster-idx="${idx}" value="${(r.name||"").replace(/"/g,"&quot;")}" placeholder="${r.nameImg ? "(손글씨 그대로)" : "성명"}" style="flex:1" />"""),
     ('<td colspan="4" id="b3a-pv-lack">&nbsp;</td>', '<td colspan="4" id="b3a-pv-lack" style="white-space:pre-line">&nbsp;</td>'),
     ('<td colspan="4" id="b3a-pv-improve">&nbsp;</td>', '<td colspan="4" id="b3a-pv-improve" style="white-space:pre-line">&nbsp;</td>'),
+    # 사진 설명 칸: 검토 화면 갤러리가 바뀌면 설명 목록도 다시
+    ('    wrap.querySelector("#b3a-ocr-sel-none").addEventListener("click", ()=>{ b3aOcrSelected = []; b3aOcrRenderGallery(); });\n',
+     '    wrap.querySelector("#b3a-ocr-sel-none").addEventListener("click", ()=>{ b3aOcrSelected = []; b3aOcrRenderGallery(); });\n    try{ b3aTrRenderCaps(); }catch(e){}\n'),
+    # 기록 저장·불러오기: 사진 설명, 참석확인서 원본
+    ('    data["b3a-signature"] = b3aSignature;\n    try{ data["_roster"]',
+     '    data["b3a-signature"] = b3aSignature;\n    data["b3a-photo-caps"] = window.b3aPhotoCaps || {};\n    data["b3a-attach"] = window.b3aAttachSheets || [];\n    try{ data["_roster"]'),
+    ('    b3aSignature = data["b3a-signature"] || null;\n    fixB3aOfficer();',
+     '    b3aSignature = data["b3a-signature"] || null;\n    window.b3aPhotoCaps = (data["b3a-photo-caps"] && typeof data["b3a-photo-caps"] === "object") ? data["b3a-photo-caps"] : {};\n    window.b3aAttachSheets = Array.isArray(data["b3a-attach"]) ? data["b3a-attach"] : [];\n    fixB3aOfficer();'),
+    # 보고서 사진 아래 설명
+    ('''    const box = (url, n)=> url
+      ? `<div class="photo-box has-photo"><img src="${url}" alt="사진 ${n}" /></div>`''',
+     '''    const capOf = (u)=>{ const c = u && (window.b3aPhotoCaps || {})[u.length + ":" + u.slice(-40)]; return c ? esc3a(c) : ""; };
+    const box = (url, n)=> url
+      ? `<div class="photo-box has-photo${capOf(url) ? " has-cap" : ""}"><img src="${url}" alt="사진 ${n}" />${capOf(url) ? `<div class="photo-cap">${capOf(url)}</div>` : ""}</div>`'''),
+    # "직접 작성" 사진 칸 아래 사진 설명 편집
+    ('''    ).join("") + ((b3aPhotoMore || []).length ? `<span class="save-note" style="align-self:center">${(b3aPhotoMore||[]).length}장 추가됨</span>` : "");''',
+     '''    ).join("") + ((b3aPhotoMore || []).length ? `<span class="save-note" style="align-self:center">${(b3aPhotoMore||[]).length}장 추가됨</span>` : "");
+    {
+      let ed = document.getElementById("b3a-photo-caps-edit");
+      if(!ed){ ed = document.createElement("div"); ed.id = "b3a-photo-caps-edit"; ed.style.flexBasis = "100%"; wrap.parentNode.insertBefore(ed, wrap.nextSibling); }
+      const allP = [b3aPhoto1, b3aPhoto2].concat(b3aPhotoMore || []).filter(Boolean), caps = window.b3aPhotoCaps || (window.b3aPhotoCaps = {});
+      const keyOf = (u)=> u.length + ":" + u.slice(-40);
+      ed.innerHTML = allP.length ? '<p class="save-note" style="margin:8px 0 4px">사진 설명 (보고서의 사진 아래에 들어가요 · 비우면 설명 없음)</p>'
+        + allP.map((u, i)=> `<div class="b3a-tr-crow"><span>${i + 1}</span><img src="${u}" alt=""><input type="text" data-pcap="${i}" value="${esc3a(caps[keyOf(u)] || "")}" placeholder="사진 ${i + 1} 설명"></div>`).join("") : "";
+      ed.querySelectorAll("[data-pcap]").forEach(el => el.addEventListener("change", ()=>{ const k = keyOf(allP[Number(el.dataset.pcap)]); if(el.value.trim()) caps[k] = el.value.trim(); else delete caps[k]; renderB3a(); }));
+    }'''),
+    # 별지 3-2: 손글씨 명단은 업체별로 왼쪽 열 → 오른쪽 열 순서, 크기 통일, 뒤에 참석확인서 원본 첨부
+    ('''        const i = (pg * B3B_ROWS_PER_PAGE + k) * 2;
+        const left = people[i], right = people[i+1];''',
+     '''        const i = colwise ? pg * B3B_ROWS_PER_PAGE * 2 + k : (pg * B3B_ROWS_PER_PAGE + k) * 2;
+        const left = people[i], right = colwise ? people[i + B3B_ROWS_PER_PAGE] : people[i+1];'''),
+    ('''        <table class="ch1-table b3b-table">''', '''        <table class="ch1-table b3b-table${colwise ? " b3b-hand" : ""}">'''),
+    ('''    wrap.innerHTML = html;
+    renderDashboard();''',
+     '''    (window.b3aAttachSheets || []).forEach((u, ai)=>{
+      html += `<div class="ch1-paper b3b-page">
+        <div class="byeolji-header">
+          <div class="byeolji-badge">별지 3-2</div>
+          <div class="byeolji-title-box">이수자 명단 첨부 · 참석확인서 원본${window.b3aAttachSheets.length > 1 ? " (" + (ai + 1) + ")" : ""}</div>
+        </div>
+        <img src="${u}" alt="참석확인서 원본" style="display:block;max-width:100%;max-height:238mm;margin:4mm auto 0;border:1px solid #ccc" />
+      </div>`;
+    });
+    wrap.innerHTML = html;
+    renderDashboard();'''),
 ]
