@@ -9008,6 +9008,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     }
     day.date = day.date || anyDate;
     if(!day.done && day.rosterRows.length) day.done = String(day.rosterRows.length);
+    if(day.done) day.cnt = day.done;   // 대상 근로자수 = 실시 근로자수(실참석)
     if(!day.cnt) day.cnt = day.done;
     // 사진: "훈련실시" 쪽을 먼저, 그다음 보고서·다른 사진대지 쪽
     photoPages.sort((a, b)=> (b.first - a.first) || (a.n - b.n));
@@ -9064,6 +9065,9 @@ html.wsec-locked #wsecLock{ display:flex; }
     return day;
   }
 
+  // 검토 화면: 훈련이면 실시 근로자수를 고칠 때 대상 근로자수도 같이
+  document.getElementById("b3a-ocr-r-done").addEventListener("input", (e)=>{ const dd = b3aOcrDays[b3aOcrDayIdx]; if(dd && dd.kind === "training"){ dd.cnt = e.target.value; document.getElementById("b3a-ocr-r-cnt").value = e.target.value; } });
+
   document.getElementById("b3bRowsContainer").addEventListener("click", (e)=>{
     const b = e.target.closest && e.target.closest("[data-b3b-clrimg]"); if(!b) return;
     const row = b3bRows[Number(b.getAttribute("data-b3b-idx"))]; if(!row) return;
@@ -9089,7 +9093,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       days.sort((a, b)=> String(a.date).localeCompare(String(b.date)));
       b3aOcrDays = days; b3aOcrFillDaySelect(); b3aOcrDayIdx = 0; b3aOcrLoadDay(0);
       const d0 = days[0];
-      b3aOcrSetStatus(`✅ 훈련 보고서 ${days.length}건 → ${d0.date || "날짜 미확인"} · 실참석 ${d0.done || "?"}명 / 출역 ${d0.cnt || "?"}명 · 참석확인서 ${d0.rosterRows.length}명 · 사진 ${d0.photos.length}장을 찾았어요. 검토 후 저장해주세요.`
+      b3aOcrSetStatus(`✅ 훈련 보고서 ${days.length}건 → ${d0.date || "날짜 미확인"} · 대상·실시 근로자수 ${d0.done || "?"}명(실참석) · 참석확인서 ${d0.rosterRows.length}명 · 사진 ${d0.photos.length}장을 찾았어요. 검토 후 저장해주세요.`
         + (failed.length ? ` (읽지 못한 파일: ${failed.join(", ")})` : ""));
       document.getElementById("b3a-ocr-review").style.display = "block";
     }catch(err){
@@ -9215,11 +9219,10 @@ html.wsec-locked #wsecLock{ display:flex; }
         const setC = (id, v)=>{ const el = document.getElementById(id); if(el) el.checked = v; };
         ["b3a-chk-edu","b3a-chk-recruit","b3a-chk-fire","b3a-chk-init-edu"].forEach(id => setC(id, false));
         ["b3a-chk-training","b3a-chk-evac","b3a-chk-init-training"].forEach(id => setC(id, true));
-        const tgt = String(td.cnt || "").trim(), dn = String(td.done || "").trim();
-        if(tgt) document.getElementById("b3a-target-cnt").value = tgt;
-        if(dn) document.getElementById("b3a-done-cnt").value = dn;
+        const dn = String(td.done || "").trim() || String(td.cnt || "").trim();   // 대상 근로자수 = 실시 근로자수
+        if(dn){ document.getElementById("b3a-target-cnt").value = dn; document.getElementById("b3a-done-cnt").value = dn; }
         const miss = document.getElementById("b3a-miss-cnt");
-        if(miss && tgt && dn && !isNaN(+tgt) && !isNaN(+dn)) miss.value = String(Math.max(0, +tgt - +dn));
+        if(miss) miss.value = "";
         updateB3aMainFromChecks();
         try{ updateB3aLackImproveVisibility(); }catch(e){}
         document.getElementById("b3a-lack").value = td.lack || "";
