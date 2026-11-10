@@ -2713,33 +2713,37 @@
   .paste-zone{ white-space:normal; word-break:keep-all; }
 </style>
 <style>
-  /* 별지 5·6 인쇄용 A4 쪽 (원래 미리보기는 숨기고 쪽 단위로 다시 그림) */
+  /* 별지 5·6 인쇄용 A4 쪽 — 원래 서식(별지 5·6) 모양 그대로, 쪽 단위로 다시 그림 */
   #b56Main .b56-src{ display:none !important; }
-  #b56Main .b56-page{ width:210mm; max-width:none; height:297mm; min-height:0; padding:15mm 14mm 13mm; box-sizing:border-box; margin:0 auto 20px; display:flex; flex-direction:column; }
-  .b56-page .byeolji-header{ flex:none; }
-  .b56-page .ch1-table{ margin-top:0; table-layout:fixed; }
-  .b56-page .ch1-table th{ font-size:13px; padding:6px 4px; line-height:1.3; text-align:center; vertical-align:middle; word-break:keep-all; }
-  .b56-page .ch1-table td{ font-size:13px; padding:6px 7px; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
-  .b56-page .ch1-table td.c{ text-align:center; vertical-align:middle; }
-  .b56-page .b56-meta{ flex:none; margin-top:4mm; }
-  .b56-page .b56-meta th, .b56-page .b56-meta td{ white-space:nowrap; vertical-align:middle; }
-  .b56-page .b56-fill{ flex:1 1 auto; min-height:0; margin-top:3mm; display:flex; flex-direction:column; }
+  #b56Main .b56-page{ width:210mm; max-width:none; height:297mm; min-height:0; padding:14mm 13mm 12mm; box-sizing:border-box; margin:0 auto 20px; display:flex; flex-direction:column; }
+  .b56-page .byeolji-header{ flex:none; margin-bottom:0; }
+  .b56-page .ch1-table{ margin-top:0; table-layout:fixed; border:1.5px solid #333; }
+  .b56-page .ch1-table th{ background:#dce6f1; border:1px solid #555; font-size:12.5px; padding:4px 3px; line-height:1.3; text-align:center; vertical-align:middle; word-break:keep-all; font-weight:700; }
+  .b56-page .ch1-table td{ border:1px solid #777; font-size:12px; padding:4px 6px; line-height:1.45; word-break:keep-all; overflow-wrap:anywhere; vertical-align:middle; }
+  .b56-page .ch1-table td.c{ text-align:center; }
+  .b56-page .ch1-table td.r{ text-align:right; padding-right:3mm; }
+  .b56-page .b56-meta{ flex:none; margin-top:3mm; }
+  .b56-page .b56-meta th, .b56-page .b56-meta td{ height:9mm; white-space:nowrap; font-size:13px; }
+  .b56-page .b56-fill{ flex:1 1 auto; min-height:0; margin-top:2.5mm; display:flex; flex-direction:column; }
   .b56-page .b56-fill > table{ flex:1 1 auto; height:100%; }
-  .b56-page thead tr{ height:13mm; }
-  .b56-page .b56-t5 tbody tr{ height:27mm; }
+  .b56-page .b56-foot{ flex:none; margin-top:2.5mm; }
+  .b56-page .b56-foot th, .b56-page .b56-foot td{ height:11mm; font-size:13px; }
+  .b56-page .b56-sn{ display:inline-flex; align-items:center; gap:1mm; white-space:nowrap; }
+  .b56-page .b56-sn img{ max-height:9mm; max-width:24mm; vertical-align:middle; }
+  .b56-page .b56-sn .ph{ color:#333; }
+  .b56-page .b56-kd{ font-size:11.5px; line-height:1.35; }
+  .b56-page .b56-kd div{ display:flex; justify-content:space-between; white-space:nowrap; }
+  .b56-page .b56-iss{ white-space:pre-line; }
+  .b56-page .b56-t5 td.done{ text-align:center; padding:2px; }
+  .b56-page .b56-t5 td.done .b56-sn{ flex-wrap:wrap; justify-content:center; white-space:normal; }
   .b56-page .b56-t6 tbody tr{ height:50%; }
-  .b56-page .b56-foot{ flex:none; margin-top:3mm; }
-  .b56-page .b56-foot td{ vertical-align:middle; height:14mm; }
-  .b56-page .b56-t5 td.iss{ vertical-align:middle; white-space:pre-line; }
-  .b56-page .b56-t5 td.small{ font-size:11.5px; }
-  .b56-page .b56-done{ display:flex; flex-direction:column; align-items:center; gap:1mm; }
-  .b56-page .b56-done img{ max-height:11mm; max-width:100%; }
-  .b56-page .b56-sigph{ color:#9aa1ad; font-size:11px; }
   .b56-page .b56-t6 td.pc{ vertical-align:top; padding:2mm; }
-  .b56-page .b56-pbox{ height:68mm; display:flex; align-items:center; justify-content:center; }
+  .b56-page .b56-t6 td.pc.iss{ vertical-align:middle; }
+  .b56-page .b56-pbox{ display:flex; align-items:center; justify-content:center; }
   .b56-page .b56-pbox img{ display:block; max-width:100%; max-height:100%; object-fit:contain; }
-  .b56-page .b56-txt{ margin-top:2mm; white-space:pre-line; font-size:12.5px; line-height:1.45; }
-  .b56-page .b56-subm img{ max-height:11mm; }
+  .b56-page .b56-t6 td.iss .b56-pbox{ height:60mm; margin-bottom:2mm; }
+  .b56-page .b56-t6 td.res .b56-pbox{ height:86mm; }
+  .b56-page .b56-txt{ margin-top:2mm; white-space:pre-line; font-size:11.5px; line-height:1.4; text-align:center; }
   @media print{
     #b56Main .b56-page{ margin:0 !important; height:296mm; box-shadow:none !important; overflow:hidden; }
     #b56Pages6 > .b56-page:first-child{ break-before:page; page-break-before:always; }
@@ -11917,7 +11921,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   })();
 
 
-  /* ---- 별지 5·6: A4 한 쪽을 꽉 채운 인쇄용 쪽 ---- */
+  /* ---- 별지 5·6: 원래 서식 모양 그대로, A4 한 쪽을 꽉 채운 인쇄용 쪽 ---- */
   function b56Host(id, tbodyId){
     const tb = document.getElementById(tbodyId); const src = tb && tb.closest(".ch1-paper"); if(!src) return null;
     src.classList.add("b56-src");
@@ -11926,40 +11930,58 @@ html.wsec-locked #wsecLock{ display:flex; }
     return h;
   }
   function b56Chunk(a, n){ const out = []; for(let i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out.length ? out : [[]]; }
-  function b56Txt(id){ const e = document.getElementById(id); const t = e ? e.textContent.trim() : ""; return t === " " ? "" : t; }
+  function b56DateKo(v){ const m = String(v || "").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}년 ${+m[2]}월 ${+m[3]}일` : ""; }
+  function b56OfficerSig(name){ try{ return String(name || "").replace(/\s/g, "") === B5_FIXED_INSPECTOR ? (localStorage.getItem(B3A_SIGNATURE_DEFAULT_KEY) || "") : ""; }catch(e){ return ""; } }
+  // 이름 + 서명 (서명이 없으면 "(서명)" 자리)
+  function b56NameSig(name, sig){
+    name = String(name || "").trim(); if(!name) return "";
+    return `<span class="b56-sn">${esc3a(name)}${sig ? `<img src="${sig}" alt="서명" />` : '<span class="ph">(서명)</span>'}</span>`;
+  }
+  function b56Items(t){ return String(t || "").split(/\n+/).map(x => x.trim()).filter(Boolean); }
+  function b56IssueHtml(r){
+    const pre = b6CompanyPrefix(r);
+    return `<div class="b56-iss">· ${pre}${esc3a(String(r.issue || "").trim())}</div>`;
+  }
   function b56PageHtml(badge, title, meta, body, foot){
     return `<div class="ch1-paper b56-page"><div class="byeolji-header"><div class="byeolji-badge">${badge}</div><div class="byeolji-title-box">${title}</div></div>${meta}<div class="b56-fill">${body}</div>${foot || ""}</div>`;
   }
+  // 줄 높이 어림(mm): 지적사항 칸 글자 수로
+  function b56RowMm(r){
+    const cpl = 22, lines = b56Items((r.issue || "") + " " + ((r.company || "") + (r.trade || ""))).reduce((n, l) => n + Math.max(1, Math.ceil(l.length / cpl)), 0);
+    return Math.max(15, lines * 4.4 + 3);
+  }
   function b56Pages5(){
     const host = b56Host("b56Pages5", "b5TableBody"); if(!host) return;
-    const PER = 8;
+    let m5 = {}; try{ m5 = JSON.parse(localStorage.getItem(B5_META_KEY) || "{}"); }catch(e){}
     const rows = b5Rows.filter(r => r.place || r.issue || r.doneBy || r.noticeNo || r.tempFacility || r.evacRoute || r.fireSupervise);
-    const meta = `<table class="ch1-table b56-meta"><tr><th style="width:15%">점검일</th><td>${esc3a(b56Txt("b5-pv-date"))}</td><th style="width:15%">점검자</th><td style="width:35%">${esc3a(b56Txt("b5-pv-inspector"))}</td></tr></table>`;
-    const head = `<colgroup><col style="width:10%"><col style="width:16%"><col><col style="width:15%"><col style="width:16%"></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>완료<br>(확인자)</th><th>불가<br>(통보서번호)</th></tr></thead>`;
-    const one = r => {
-      const types = []; if(r.tempFacility) types.push("임시소방시설(✓)"); if(r.evacRoute) types.push("피난로 등(✓)"); if(r.fireSupervise) types.push("화기취급감독(✓)");
-      const n = String(r.doneBy || "").trim(), sg = n ? b56SigOf(n) : "";
-      const done = n ? `<div class="b56-done"><span>${esc3a(n)}</span>${sg ? `<img src="${sg}" alt="서명" />` : '<span class="b56-sigph">(서명)</span>'}</div>` : "";
-      return `<tr><td class="c">${esc3a(r.place || "")}</td><td class="c">${types.join("<br/>")}</td><td class="iss">${b6CompanyPrefix(r)}${esc3a(r.issue || "")}</td><td class="c">${done}</td><td class="c small">${esc3a(r.noticeNo || "")}</td></tr>`;
-    };
-    const blank = "<tr><td></td><td></td><td></td><td></td><td></td></tr>";
-    host.innerHTML = b56Chunk(rows, PER).map(pr => b56PageHtml("별지 5", "안전점검 결과 지적내역서", meta,
-      `<table class="ch1-table b56-t5">${head}<tbody>${pr.map(one).join("") + blank.repeat(PER - pr.length)}</tbody></table>`)).join("");
+    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">${b56NameSig(B5_FIXED_INSPECTOR, b56OfficerSig(B5_FIXED_INSPECTOR))}</td></tr></table>`;
+    const head = `<colgroup><col style="width:10%"><col style="width:20%"><col><col style="width:16%"><col style="width:16%"></colgroup>`
+      + `<thead><tr><th rowspan="3">장소<br>(구역)</th><th rowspan="3">점검종류</th><th rowspan="3">지적사항</th><th colspan="2">현장조치 결과</th></tr><tr><th>완료</th><th>불가</th></tr><tr><th>확인자</th><th>통보서 번호</th></tr></thead>`;
+    const kd = r => `<div class="b56-kd"><div><span>■ 임시소방시설</span><span>(${r.tempFacility ? " ○ " : "  "})</span></div><div><span>■ 피난로 등</span><span>(${r.evacRoute ? " ○ " : "  "})</span></div><div><span>■ 화기취급감독</span><span>(${r.fireSupervise ? " ○ " : "  "})</span></div></div>`;
+    const one = r => { const n = String(r.doneBy || "").trim();
+      return `<tr style="height:${b56RowMm(r)}mm"><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td>${kd(r)}</td><td>${b56IssueHtml(r)}</td><td class="done">${n ? b56NameSig(n, b56SigOf(n)) : ""}</td><td class="c">${esc3a(r.noticeNo || "")}</td></tr>`; };
+    const BODY = 216, BLANK = 15;   // 본문 높이(mm), 빈 줄 높이
+    const pages = []; let cur = [], used = 0;
+    rows.forEach(r => { const h = b56RowMm(r); if(cur.length && used + h > BODY){ pages.push([cur, used]); cur = []; used = 0; } cur.push(r); used += h; });
+    pages.push([cur, used]);
+    host.innerHTML = pages.map(([pr, u]) => b56PageHtml("별지 5", "안전점검 결과 지적내역서", meta,
+      `<table class="ch1-table b56-t5">${head}<tbody>${pr.map(one).join("") + "<tr style=\"height:15mm\"><td></td><td></td><td></td><td></td><td></td></tr>".repeat(Math.max(0, Math.floor((BODY - u) / BLANK)))}</tbody></table>`)).join("");
   }
   function b56Pages6(){
     const host = b56Host("b56Pages6", "b6TableBody"); if(!host) return;
-    const PER = 2;
+    let m6 = {}; try{ m6 = JSON.parse(localStorage.getItem(B6_META_KEY) || "{}"); }catch(e){}
     const rows = b6Rows.filter(r => r.place || r.kind || r.issue || r.result || r.photo || r.photoBefore);
-    const meta = `<table class="ch1-table b56-meta"><tr><th style="width:15%">점검일</th><td>${esc3a(b56Txt("b6-pv-date"))}</td><th style="width:18%">통보서 번호</th><td style="width:32%">${esc3a(b56Txt("b6-pv-notice-no"))}</td></tr></table>`;
-    const head = `<colgroup><col style="width:10%"><col style="width:15%"><col style="width:37.5%"><col style="width:37.5%"></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진/설명</th></tr></thead>`;
-    const ph = u => `<div class="b56-pbox">${u ? `<img src="${u}" alt="" />` : ""}</div>`;
-    const one = r => `<tr><td class="c">${esc3a(r.place || "")}</td><td class="c">${esc3a(r.kind || "").replace(/\s*,\s*/g, "<br/>")}</td>`
-      + `<td class="pc">${ph(r.photoBefore)}<div class="b56-txt">${b6CompanyPrefix(r)}${esc3a(r.issue || "")}</div></td>`
-      + `<td class="pc">${ph(r.photo)}<div class="b56-txt">${esc3a(r.result || "")}</div></td></tr>`;
-    const blank = "<tr><td></td><td></td><td></td><td></td></tr>";
-    const foot = `<table class="ch1-table b56-foot"><tr><td class="role-name" style="width:15%">제출자</td><td>${document.getElementById("b6-pv-submitter").innerHTML}</td><td class="role-name" style="width:15%">확인자</td><td style="width:22%">${esc3a(b56Txt("b6-pv-confirmer"))}</td></tr></table>`;
-    host.innerHTML = b56Chunk(rows, PER).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
-      `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + blank.repeat(PER - pr.length)}</tbody></table>`, foot)).join("");
+    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m6.date)}</td><th>통보서 번호</th><td class="c">${esc3a(m6.noticeNo || "")}</td></tr></table>`;
+    const head = `<colgroup><col style="width:9%"><col style="width:15%"><col style="width:30%"><col></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진</th></tr></thead>`;
+    const ph = u => u ? `<div class="b56-pbox"><img src="${u}" alt="" /></div>` : "";
+    const kinds = r => String(r.kind || "").split(/\s*,\s*/).filter(Boolean).map(k => `<div>■ ${esc3a(k)}</div>`).join("");
+    const one = r => `<tr><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td><div class="b56-kd">${kinds(r)}</div></td>`
+      + `<td class="pc iss">${ph(r.photoBefore)}${b56IssueHtml(r)}</td>`
+      + `<td class="pc res">${ph(r.photo)}${r.result ? `<div class="b56-txt">${esc3a(r.result)}</div>` : ""}</td></tr>`;
+    const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => b56NameSig(n, b56SigOf(n))).join(" ");
+    const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">${b56NameSig(m6.confirmer, b56OfficerSig(m6.confirmer))}</td></tr></table>`;
+    host.innerHTML = b56Chunk(rows, 2).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
+      `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + "<tr><td></td><td></td><td></td><td></td></tr>".repeat(2 - pr.length)}</tbody></table>`, foot)).join("");
   }
   load();
   wireHomeCoverInputs();
