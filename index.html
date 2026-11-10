@@ -2713,6 +2713,39 @@
   .paste-zone{ white-space:normal; word-break:keep-all; }
 </style>
 <style>
+  /* 별지 5·6 인쇄용 A4 쪽 (원래 미리보기는 숨기고 쪽 단위로 다시 그림) */
+  #b56Main .b56-src{ display:none !important; }
+  #b56Main .b56-page{ width:210mm; max-width:none; height:297mm; min-height:0; padding:15mm 14mm 13mm; box-sizing:border-box; margin:0 auto 20px; display:flex; flex-direction:column; }
+  .b56-page .byeolji-header{ flex:none; }
+  .b56-page .ch1-table{ margin-top:0; table-layout:fixed; }
+  .b56-page .ch1-table th{ font-size:13px; padding:6px 4px; line-height:1.3; text-align:center; vertical-align:middle; word-break:keep-all; }
+  .b56-page .ch1-table td{ font-size:13px; padding:6px 7px; line-height:1.5; word-break:keep-all; overflow-wrap:anywhere; }
+  .b56-page .ch1-table td.c{ text-align:center; vertical-align:middle; }
+  .b56-page .b56-meta{ flex:none; margin-top:4mm; }
+  .b56-page .b56-meta th, .b56-page .b56-meta td{ white-space:nowrap; vertical-align:middle; }
+  .b56-page .b56-fill{ flex:1 1 auto; min-height:0; margin-top:3mm; display:flex; flex-direction:column; }
+  .b56-page .b56-fill > table{ flex:1 1 auto; height:100%; }
+  .b56-page thead tr{ height:13mm; }
+  .b56-page .b56-t5 tbody tr{ height:27mm; }
+  .b56-page .b56-t6 tbody tr{ height:50%; }
+  .b56-page .b56-foot{ flex:none; margin-top:3mm; }
+  .b56-page .b56-foot td{ vertical-align:middle; height:14mm; }
+  .b56-page .b56-t5 td.iss{ vertical-align:middle; white-space:pre-line; }
+  .b56-page .b56-t5 td.small{ font-size:11.5px; }
+  .b56-page .b56-done{ display:flex; flex-direction:column; align-items:center; gap:1mm; }
+  .b56-page .b56-done img{ max-height:11mm; max-width:100%; }
+  .b56-page .b56-sigph{ color:#9aa1ad; font-size:11px; }
+  .b56-page .b56-t6 td.pc{ vertical-align:top; padding:2mm; }
+  .b56-page .b56-pbox{ height:68mm; display:flex; align-items:center; justify-content:center; }
+  .b56-page .b56-pbox img{ display:block; max-width:100%; max-height:100%; object-fit:contain; }
+  .b56-page .b56-txt{ margin-top:2mm; white-space:pre-line; font-size:12.5px; line-height:1.45; }
+  .b56-page .b56-subm img{ max-height:11mm; }
+  @media print{
+    #b56Main .b56-page{ margin:0 !important; height:296mm; box-shadow:none !important; overflow:hidden; }
+    #b56Pages6 > .b56-page:first-child{ break-before:page; page-break-before:always; }
+  }
+</style>
+<style>
   /* 화면 미리보기도 인쇄와 똑같이: A4 한 장씩 따로, 같은 여백 */
   #b3CombinedView .ch1-paper{ width:210mm; max-width:none; min-height:297mm; padding:16mm 16mm 14mm; box-sizing:border-box; margin:0 auto 20px; }
   #b3CombinedView .preview-toolbar{ width:210mm; max-width:100%; }
@@ -10132,6 +10165,7 @@ html.wsec-locked #wsecLock{ display:flex; }
         <td>${r.noticeNo||""}</td>
       </tr>`;
     }).join("");
+    try{ b56Pages5(); }catch(e){}
     renderDashboard();
   }
   document.getElementById("b5AddBtn").addEventListener("click", ()=>{
@@ -10531,6 +10565,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     document.getElementById("b6-pv-submitter").innerHTML = b56SubmitterCell(meta.submitter);
     document.getElementById("b6-pv-confirmer").textContent = meta.confirmer || "\u00A0";
     document.getElementById("b6TableBody").innerHTML = b6Rows.map(r=>`<tr><td>${r.place||""}</td><td>${r.kind||""}</td><td style="white-space:pre-line">${b6CompanyPrefix(r)}${r.issue||""}</td><td style="white-space:pre-line">${b56ResultCell(r)}</td></tr>`).join("");
+    try{ b56Pages6(); }catch(e){}
   }
   document.getElementById("b6AddBtn").addEventListener("click", ()=>{
     b6Rows.push({place:"",kind:"",issue:"",result:""});
@@ -11881,6 +11916,51 @@ html.wsec-locked #wsecLock{ display:flex; }
     b56Load();
   })();
 
+
+  /* ---- 별지 5·6: A4 한 쪽을 꽉 채운 인쇄용 쪽 ---- */
+  function b56Host(id, tbodyId){
+    const tb = document.getElementById(tbodyId); const src = tb && tb.closest(".ch1-paper"); if(!src) return null;
+    src.classList.add("b56-src");
+    let h = document.getElementById(id);
+    if(!h){ h = document.createElement("div"); h.id = id; h.className = "b56-pages"; src.parentNode.insertBefore(h, src.nextSibling); }
+    return h;
+  }
+  function b56Chunk(a, n){ const out = []; for(let i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out.length ? out : [[]]; }
+  function b56Txt(id){ const e = document.getElementById(id); const t = e ? e.textContent.trim() : ""; return t === " " ? "" : t; }
+  function b56PageHtml(badge, title, meta, body, foot){
+    return `<div class="ch1-paper b56-page"><div class="byeolji-header"><div class="byeolji-badge">${badge}</div><div class="byeolji-title-box">${title}</div></div>${meta}<div class="b56-fill">${body}</div>${foot || ""}</div>`;
+  }
+  function b56Pages5(){
+    const host = b56Host("b56Pages5", "b5TableBody"); if(!host) return;
+    const PER = 8;
+    const rows = b5Rows.filter(r => r.place || r.issue || r.doneBy || r.noticeNo || r.tempFacility || r.evacRoute || r.fireSupervise);
+    const meta = `<table class="ch1-table b56-meta"><tr><th style="width:15%">점검일</th><td>${esc3a(b56Txt("b5-pv-date"))}</td><th style="width:15%">점검자</th><td style="width:35%">${esc3a(b56Txt("b5-pv-inspector"))}</td></tr></table>`;
+    const head = `<colgroup><col style="width:10%"><col style="width:16%"><col><col style="width:15%"><col style="width:16%"></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>완료<br>(확인자)</th><th>불가<br>(통보서번호)</th></tr></thead>`;
+    const one = r => {
+      const types = []; if(r.tempFacility) types.push("임시소방시설(✓)"); if(r.evacRoute) types.push("피난로 등(✓)"); if(r.fireSupervise) types.push("화기취급감독(✓)");
+      const n = String(r.doneBy || "").trim(), sg = n ? b56SigOf(n) : "";
+      const done = n ? `<div class="b56-done"><span>${esc3a(n)}</span>${sg ? `<img src="${sg}" alt="서명" />` : '<span class="b56-sigph">(서명)</span>'}</div>` : "";
+      return `<tr><td class="c">${esc3a(r.place || "")}</td><td class="c">${types.join("<br/>")}</td><td class="iss">${b6CompanyPrefix(r)}${esc3a(r.issue || "")}</td><td class="c">${done}</td><td class="c small">${esc3a(r.noticeNo || "")}</td></tr>`;
+    };
+    const blank = "<tr><td></td><td></td><td></td><td></td><td></td></tr>";
+    host.innerHTML = b56Chunk(rows, PER).map(pr => b56PageHtml("별지 5", "안전점검 결과 지적내역서", meta,
+      `<table class="ch1-table b56-t5">${head}<tbody>${pr.map(one).join("") + blank.repeat(PER - pr.length)}</tbody></table>`)).join("");
+  }
+  function b56Pages6(){
+    const host = b56Host("b56Pages6", "b6TableBody"); if(!host) return;
+    const PER = 2;
+    const rows = b6Rows.filter(r => r.place || r.kind || r.issue || r.result || r.photo || r.photoBefore);
+    const meta = `<table class="ch1-table b56-meta"><tr><th style="width:15%">점검일</th><td>${esc3a(b56Txt("b6-pv-date"))}</td><th style="width:18%">통보서 번호</th><td style="width:32%">${esc3a(b56Txt("b6-pv-notice-no"))}</td></tr></table>`;
+    const head = `<colgroup><col style="width:10%"><col style="width:15%"><col style="width:37.5%"><col style="width:37.5%"></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진/설명</th></tr></thead>`;
+    const ph = u => `<div class="b56-pbox">${u ? `<img src="${u}" alt="" />` : ""}</div>`;
+    const one = r => `<tr><td class="c">${esc3a(r.place || "")}</td><td class="c">${esc3a(r.kind || "").replace(/\s*,\s*/g, "<br/>")}</td>`
+      + `<td class="pc">${ph(r.photoBefore)}<div class="b56-txt">${b6CompanyPrefix(r)}${esc3a(r.issue || "")}</div></td>`
+      + `<td class="pc">${ph(r.photo)}<div class="b56-txt">${esc3a(r.result || "")}</div></td></tr>`;
+    const blank = "<tr><td></td><td></td><td></td><td></td></tr>";
+    const foot = `<table class="ch1-table b56-foot"><tr><td class="role-name" style="width:15%">제출자</td><td>${document.getElementById("b6-pv-submitter").innerHTML}</td><td class="role-name" style="width:15%">확인자</td><td style="width:22%">${esc3a(b56Txt("b6-pv-confirmer"))}</td></tr></table>`;
+    host.innerHTML = b56Chunk(rows, PER).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
+      `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + blank.repeat(PER - pr.length)}</tbody></table>`, foot)).join("");
+  }
   load();
   wireHomeCoverInputs();
   render();
