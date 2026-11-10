@@ -42,7 +42,7 @@ B56_CSS = """
   #b56RecList .b56-rec span{ flex:1; min-width:0; color:#5a6272; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #b56RecList .b56-rec button{ flex:none; border:0; background:none; color:#c0392b; cursor:pointer; }
   .b56-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-  .b56-btns button{ flex:1; min-width:90px; }
+  .b56-btns button{ flex:1 1 0; min-width:0; margin:0 !important; padding-left:4px; padding-right:4px; font-size:12px; white-space:nowrap; }
   .rev-row-editor.b56-off{ opacity:.45; }
   .rev-row-editor.b56-off textarea, .rev-row-editor.b56-off input[type=text]{ background:#f4f5f7; }
   .b56-inc{ font-weight:700; color:#27407f; }
@@ -55,7 +55,7 @@ B56_CSS = """
   .b56-sigrow .sig{ height:34px; border:1px dashed #c5cbd6; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; color:#98a2b3; overflow:hidden; }
   .b56-sigrow .sig img{ max-height:30px; max-width:88px; }
   .b56-sigrow .acts{ display:flex; gap:4px; }
-  .b56-sigrow .acts button{ font-size:11px; padding:4px 6px; }
+  .b56-sigrow .acts button{ font-size:11px; padding:4px 6px; white-space:nowrap; }
   #b56SigModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(15,20,40,.5); margin:0 !important; }
   #b56SigModal.on{ display:flex; }
   #b56SigModal .box{ background:#fff; border-radius:12px; padding:16px; width:min(420px, 92vw); }
@@ -280,7 +280,7 @@ B56_JS = r"""
     const panel = document.getElementById("b56Panel"); if(!panel) return;
     // 맨 위: 날짜별 점검 기록
     const rec = document.createElement("fieldset"); rec.id = "b56RecFieldset";
-    rec.innerHTML = '<legend>📚 날짜별 점검 기록</legend><div id="b56RecList"></div><div class="b56-btns"><button type="button" class="reset-btn" id="b56SaveUpd">💾 수정 저장</button><button type="button" class="reset-btn" id="b56SaveNew">➕ 새 기록으로 저장</button><button type="button" class="photo-remove-btn" id="b56New">📝 새로 작성</button></div>';
+    rec.innerHTML = '<legend>📚 날짜별 점검 기록</legend><div id="b56RecList"></div><div class="b56-btns"><button type="button" class="reset-btn" id="b56SaveUpd">💾 수정 저장</button><button type="button" class="reset-btn" id="b56SaveNew">➕ 새로 저장</button><button type="button" class="photo-remove-btn" id="b56New">📝 새로 작성</button></div>';
     const firstFs = panel.querySelector("fieldset"); panel.insertBefore(rec, firstFs);
     // PDF 칸 다음: 협력사 서명
     const sig = document.createElement("fieldset"); sig.id = "b56SigFieldset";
@@ -321,6 +321,12 @@ B56_JS = r"""
 B56_PAGES_CSS = """
   /* 별지 5·6 인쇄용 A4 쪽 — 원래 서식(별지 5·6) 모양 그대로, 쪽 단위로 다시 그림 */
   #b56Main .b56-src{ display:none !important; }
+  .b56-tabs{ display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid var(--line,#dfe4ec); }
+  .b56-tab{ flex:1; padding:10px 6px 11px; border:0; background:transparent; font:inherit; font-size:13.5px; font-weight:600; color:#8a93a3; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; }
+  .b56-tab.on{ color:#1e3a8a; border-bottom-color:#e8541f; }
+  .b56-pane{ display:none; }
+  .b56-pane.on{ display:block; }
+  .b56-pane fieldset{ min-width:0; box-sizing:border-box; }
   #b56Main .b56-page{ width:210mm; max-width:none; height:297mm; min-height:0; padding:14mm 13mm 12mm; box-sizing:border-box; margin:0 auto 20px; display:flex; flex-direction:column; }
   .b56-page .byeolji-header{ flex:none; margin-bottom:0; }
   .b56-page .ch1-table{ margin-top:0; table-layout:fixed; border:1.5px solid #333; }
@@ -419,6 +425,37 @@ B56_PAGES_JS = r"""
     host.innerHTML = b56Chunk(rows, 2).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
       `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + "<tr><td></td><td></td><td></td><td></td></tr>".repeat(2 - pr.length)}</tbody></table>`, foot)).join("");
   }
+  /* ---- 입력 칸: "기록 · 불러오기" / "직접 작성" 두 탭으로 (교육·훈련 화면과 같은 방식) ---- */
+  (function b56Tabs(){
+    const panel = document.getElementById("b56Panel"); if(!panel || document.getElementById("b56Tabs")) return;
+    const rec = document.getElementById("b56RecFieldset"), pdf = document.getElementById("b5PdfFieldset"), sig = document.getElementById("b56SigFieldset");
+    if(!rec || !pdf || !sig) return;
+    const head = document.createElement("div");
+    head.innerHTML = '<div class="step-label">별지 5 · 6</div><h2 class="step-title">안전점검 지적내역서 · 조치 결과 통보서</h2>'
+      + '<div class="b56-tabs" id="b56Tabs"><button type="button" class="b56-tab on" data-pane="b56Pane1">기록 · 불러오기</button><button type="button" class="b56-tab" data-pane="b56Pane2">직접 작성</button></div>';
+    const p1 = document.createElement("div"); p1.className = "b56-pane on"; p1.id = "b56Pane1";
+    const p2 = document.createElement("div"); p2.className = "b56-pane"; p2.id = "b56Pane2";
+    // 지금 칸들: 맨 위 별지 5 제목·설명 → 직접 작성 탭 맨 위로
+    const rest = [...panel.children].filter(e => e !== rec && e !== pdf && e !== sig);
+    [rec, pdf, sig].forEach(e => p1.appendChild(e));
+    rest.forEach(e => p2.appendChild(e));
+    const note = document.createElement("p"); note.className = "save-note"; note.style.margin = "6px 0 0";
+    note.textContent = '기록을 누르면 "직접 작성" 탭에서 내용을 고칠 수 있어요. 고친 뒤 여기서 "💾 수정 저장"을 누르세요.';
+    const btns = rec.querySelector(".b56-btns"); if(btns) btns.after(note);
+    while(head.firstChild) panel.appendChild(head.firstChild);
+    panel.appendChild(p1); panel.appendChild(p2);
+    // 직접 작성 탭 아래에도 저장 버튼 (위로 안 올라가도 되게)
+    const sv = document.createElement("div"); sv.className = "b56-btns"; sv.style.marginTop = "14px";
+    sv.innerHTML = '<button type="button" class="reset-btn" id="b56SaveUpd2">💾 수정 저장</button><button type="button" class="reset-btn" id="b56SaveNew2">➕ 새 기록으로 저장</button>';
+    p2.appendChild(sv);
+    sv.querySelector("#b56SaveUpd2").addEventListener("click", ()=>{ if(!b56CurId){ alert('열려 있는 기록이 없어요. "➕ 새 기록으로 저장"을 누르세요.'); return; } document.getElementById("b56SaveUpd").click(); });
+    sv.querySelector("#b56SaveNew2").addEventListener("click", ()=> document.getElementById("b56SaveNew").click());
+    window.b56ShowPane = function(id){
+      document.querySelectorAll(".b56-tab").forEach(t => t.classList.toggle("on", t.dataset.pane === id));
+      document.querySelectorAll(".b56-pane").forEach(x => x.classList.toggle("on", x.id === id));
+    };
+    document.querySelectorAll(".b56-tab").forEach(t => t.addEventListener("click", ()=> window.b56ShowPane(t.dataset.pane)));
+  })();
 """
 
 PAIRS = [
