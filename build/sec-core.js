@@ -17,7 +17,7 @@
   var ENV        = "WSEC1:";                // 암호문 표시
   var ITER       = 310000;                  // PBKDF2 반복 횟수 (OWASP 권장치)
   var MIN_PW     = 8;
-  var IDB_NAMES  = ["fireplan_b3a_db", "fireplan_hotwork_db"];
+  var IDB_NAMES  = ["fireplan_b3a_db", "fireplan_hotwork_db", "fireplan_b56_db"];
 
   var realLS = window.localStorage;
   var SP = Storage.prototype;

@@ -142,7 +142,8 @@ TRAIN_JS = r"""
   // 스캔한 사진대지에서 사진만 찾기 (표 선·회색 머리글·글자는 제외)
   //  - 반 해상도에서: 밝지 않은 픽셀 중 "색 없고 평평한 회색 면"을 빼고 → 얇은 선·글자는 열기(opening)로 지움
   //  - 덩어리마다 상자 → 겹치는 상자 합치기 → 가운데를 가로·세로로 꿰뚫는 직선이 있으면 두 장으로 나눔
-  function b3aTrFindPhotos(c){
+  function b3aTrFindPhotos(c, opt){
+    opt = opt || {};
     const S = 2, W = Math.floor(c.width / S), H = Math.floor(c.height / S);
     const sm = document.createElement("canvas"); sm.width = W; sm.height = H; sm.getContext("2d").drawImage(c, 0, 0, W, H);
     const d = sm.getContext("2d").getImageData(0, 0, W, H).data, N = W * H;
@@ -186,7 +187,7 @@ TRAIN_JS = r"""
         if(a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]){ bx[i] = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]; bx.splice(j, 1); changed = true; break outer; }
       }
     }
-    bx = bx.filter(b => b[2] - b[0] > W * 0.12 && b[3] - b[1] > H * 0.06);
+    bx = bx.filter(b => b[2] - b[0] > W * (opt.noSplit ? 0.07 : 0.12) && b[3] - b[1] > H * 0.06);   // 휴대폰 캡처처럼 좁은 사진도
     // 가운데를 꿰뚫는 직선(표 선)으로 나누기
     const darkLine = (b, horiz)=>{
       const [x0, y0, x1, y1] = b, L = horiz ? (y1 - y0) : (x1 - x0), a0 = Math.round(L * 0.3), a1 = Math.round(L * 0.7);
@@ -206,6 +207,7 @@ TRAIN_JS = r"""
     bx = bx.map(b => {
       let [x0, y0, x1, y1] = b; const lim = Math.round((y1 - y0) * 0.35);
       const lineAt = (y)=>{ for(let yy = Math.max(0, y - 4); yy <= Math.min(H - 1, y + 4); yy++){ let n = 0; for(let x = x0; x < x1; x++) if(lum[yy * W + x] < 170) n++; if(n / Math.max(1, x1 - x0) > 0.8) return true; } return false; };
+      if(opt.noSplit) return [x0, y0, x1, y1];   // 칸마다 사진 한 장인 양식: 자르지 않음
       let k = 0; while(k < lim && rowSat(y1 - 1 - k, x0, x1) < 9) k++; if(k > 6 && lineAt(y1 - k)) y1 -= k;      // 표 선에서 끝나는 회색 띠만
       k = 0; while(k < lim && rowSat(y0 + k, x0, x1) < 9) k++; if(k > 6 && lineAt(y0 + k)) y0 += k;
       return [x0, y0, x1, y1];
@@ -213,6 +215,7 @@ TRAIN_JS = r"""
     const out = [];
     bx.forEach(b => {
       const w = b[2] - b[0], h = b[3] - b[1];
+      if(opt.noSplit){ out.push(b); return; }
       if(h > w * 0.9){ const k = darkLine(b, true); if(k > 0){ out.push([b[0], b[1], b[2], b[1] + k - 2], [b[0], b[1] + k + 3, b[2], b[3]]); return; } }
       if(w > h * 1.6){ const k = darkLine(b, false); if(k > 0){ out.push([b[0], b[1], b[0] + k - 2, b[3]], [b[0] + k + 3, b[1], b[2], b[3]]); return; } }
       out.push(b);

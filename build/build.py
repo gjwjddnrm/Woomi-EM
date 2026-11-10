@@ -115,6 +115,11 @@ import importlib.util as _u6
 _sp6 = _u6.spec_from_file_location("patch_b3a_training", HERE / "patch_b3a_training.py"); _m6 = _u6.module_from_spec(_sp6); _sp6.loader.exec_module(_m6)
 for _o, _n in _m6.PAIRS: s = rep(s, _o, _n)
 
+# 안전점검 지적내역서(별지 5)·조치 결과 통보서(별지 6)
+import importlib.util as _u7
+_sp7 = _u7.spec_from_file_location("patch_b56", HERE / "patch_b56.py"); _m7 = _u7.module_from_spec(_sp7); _sp7.loader.exec_module(_m7)
+for _o, _n in _m7.PAIRS: s = rep(s, _o, _n)
+
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u
 _sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
