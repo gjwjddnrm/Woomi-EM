@@ -12066,7 +12066,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     const host = b56Host("b56Pages5", "b5TableBody"); if(!host) return;
     let m5 = {}; try{ m5 = JSON.parse(localStorage.getItem(B5_META_KEY) || "{}"); }catch(e){}
     const rows = b5Rows.filter(r => r.place || r.issue || r.doneBy || r.noticeNo || r.tempFacility || r.evacRoute || r.fireSupervise);
-    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">${b56NameSig(B5_FIXED_INSPECTOR, b56SigOf(B5_FIXED_INSPECTOR))}</td></tr></table>`;
+    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">소방안전관리자 ${b56NameSig(B5_FIXED_INSPECTOR, b56SigOf(B5_FIXED_INSPECTOR))}</td></tr></table>`;
     const head = `<colgroup><col style="width:12%"><col style="width:19%"><col><col style="width:16%"><col style="width:15%"></colgroup>`
       + `<thead><tr><th rowspan="3">장소<br>(구역)</th><th rowspan="3">점검종류</th><th rowspan="3">지적사항</th><th colspan="2">현장조치 결과</th></tr><tr><th>완료</th><th>불가</th></tr><tr><th>확인자</th><th>통보서 번호</th></tr></thead>`;
     const kd = r => `<div class="b56-kd"><div><span>■ 임시소방시설</span><span>(${r.tempFacility ? " ○ " : "  "})</span></div><div><span>■ 피난로 등</span><span>(${r.evacRoute ? " ○ " : "  "})</span></div><div><span>■ 화기취급감독</span><span>(${r.fireSupervise ? " ○ " : "  "})</span></div></div>`;
@@ -12091,7 +12091,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       + `<td class="pc iss">${ph(r.photoBefore)}${b56IssueHtml(r)}</td>`
       + `<td class="pc res">${ph(r.photo)}${r.result ? `<div class="b56-txt">${esc3a(r.result)}</div>` : ""}</td></tr>`;
     const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => { const c = b56CoOf(n); return (c ? esc3a(c) + " " : "") + b56NameSig(n, b56SigOf(n)); }).join("<br/>");
-    const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">${b56NameSig(m6.confirmer, b56SigOf(m6.confirmer))}</td></tr></table>`;
+    const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">소방안전관리자 ${b56NameSig(B5_FIXED_INSPECTOR, b56SigOf(B5_FIXED_INSPECTOR))}</td></tr></table>`;
     host.innerHTML = b56Chunk(rows, 2).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
       `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + "<tr><td></td><td></td><td></td><td></td></tr>".repeat(2 - pr.length)}</tbody></table>`, foot)).join("");
   }
@@ -12160,6 +12160,8 @@ html.wsec-locked #wsecLock{ display:flex; }
       });
       b56RenderRecs();
     }
+    // 별지 6 확인자 = 소방안전관리자(점검자와 같은 사람)로 고정
+    const cf = document.getElementById("b6-confirmer"); if(cf){ cf.value = B5_FIXED_INSPECTOR; cf.readOnly = true; cf.title = "소방안전관리자로 고정돼요"; }
     ["b6-submitter", "b6-confirmer"].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ try{ b56RenderSigs(); }catch(e){} }); });
   })();
 
