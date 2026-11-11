@@ -44,7 +44,7 @@ B56_CSS = """
   #b56RecList .b56-rec span{ flex:1; min-width:0; color:#5a6272; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #b56RecList .b56-rec button{ flex:none; border:0; background:none; color:#c0392b; cursor:pointer; }
   .b56-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-  .b56-btns button{ flex:1 1 0; min-width:0; margin:0 !important; padding-left:4px; padding-right:4px; font-size:12px; white-space:nowrap; }
+  .b56-btns button{ flex:1 1 0; min-width:0; margin:0 !important; padding:0 4px !important; height:40px !important; box-sizing:border-box; font-size:12px !important; font-weight:700; line-height:1 !important; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:3px; }   /* 버튼 높이·글자 모두 같게 */
   /* 검토 목록 머리줄(넣기 체크 · 번호 · 문서번호 · 날짜)이 입력칸 위에 겹치지 않게 한 줄 따로 */
   #b5-pdf-review-list .rev-row-editor .rev-row-no{ position:static; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; margin:-2px 0 10px; padding-bottom:8px; border-bottom:1px dashed #d5dbe5; font-size:12px; line-height:1.5; color:#5a6272; }
   #b5-pdf-review-list .rev-row-editor .rev-row-no input{ margin:0 3px 0 0; vertical-align:-2px; }
@@ -389,7 +389,7 @@ B56_JS = r"""
     rec.innerHTML = '<legend>📚 날짜별 점검 기록 <span id="b56RecCount" style="font-weight:500;color:#5a6272"></span></legend>'
       + '<div class="b56-btns" style="margin:0 0 8px"><button type="button" class="reset-btn" id="b56SelAll">전체 선택</button><button type="button" class="reset-btn" id="b56SelNone">선택 해제</button></div>'
       + '<div id="b56RecList"></div>'
-      + '<div class="b56-btns"><button type="button" class="reset-btn" id="b56PrintSel">🖨️ 체크한 기록 모두 인쇄</button><button type="button" class="reset-btn" id="b56PdfSel">📄 체크한 기록 날짜별 PDF</button></div><p class="save-note" id="b56SelStatus" style="margin:6px 0 0;min-height:0"></p>'
+      + '<div class="b56-btns"><button type="button" class="reset-btn" id="b56PrintSel">🖨️ 체크한 기록 모두 인쇄</button><button type="button" class="reset-btn" id="b56PdfSel">📄 체크한 기록 날짜별 PDF</button></div><div class="b56-btns"><button type="button" class="photo-remove-btn" id="b56DelSel">🗑️ 체크한 기록 삭제</button></div><p class="save-note" id="b56SelStatus" style="margin:6px 0 0;min-height:0"></p>'
       + '<div class="b56-btns"><button type="button" class="reset-btn" id="b56SaveUpd">💾 수정 저장</button><button type="button" class="reset-btn" id="b56SaveNew">➕ 새로 저장</button><button type="button" class="photo-remove-btn" id="b56New">📝 새로 작성</button></div>';
     const firstFs = panel.querySelector("fieldset"); panel.insertBefore(rec, firstFs);
     // PDF 칸 다음: 협력사 서명
@@ -405,6 +405,15 @@ B56_JS = r"""
     document.getElementById("b56SelNone").addEventListener("click", ()=>{ b56Sel.clear(); b56RenderRecs(); });
     document.getElementById("b56PrintSel").addEventListener("click", b56PrintSelected);
     document.getElementById("b56PdfSel").addEventListener("click", b56PdfSelected);
+    document.getElementById("b56DelSel").addEventListener("click", ()=>{
+      const recs = b56SelRecs(); if(!recs.length){ alert("삭제할 기록을 먼저 체크해주세요."); return; }
+      if(!confirm(`체크한 ${recs.length}건의 기록을 삭제할까요?\n(${recs.map(r => (r.date || "날짜 없음").replace(/-/g, ".")).join(", ")})\n\n삭제하면 되돌릴 수 없어요.`)) return;
+      const ids = new Set(recs.map(r => r.id));
+      b56Records = b56Records.filter(r => !ids.has(r.id)); ids.forEach(id => b56Sel.delete(id));
+      if(ids.has(b56CurId)) b56CurId = null;
+      b56Renumber(); b56Persist(); b56RenderRecs();
+      b56SelStatus(`🗑️ ${ids.size}건을 삭제했어요.`);
+    });
     document.getElementById("b56SaveUpd").addEventListener("click", ()=>{
       const r = b56Records.find(x => x.id === b56CurId); if(!r) return;
       Object.assign(r, b56Snapshot(), { savedAt: new Date().toISOString() }); b56Persist(); b56RenderRecs(); alert("저장했어요.");
