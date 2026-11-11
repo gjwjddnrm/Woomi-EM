@@ -480,6 +480,8 @@ B56_PAGES_CSS = """
   .b56-page .b56-sn{ display:inline-flex; align-items:center; gap:1mm; white-space:nowrap; }
   .b56-page .b56-sn img{ max-height:9mm; max-width:24mm; vertical-align:middle; }
   .b56-page .b56-sn .ph{ color:#333; }
+  .b56-page .b56-signed{ position:relative; display:inline-block; }
+  .b56-page .b56-sn .b56-signed img{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); max-height:11mm; max-width:26mm; width:auto; height:auto; pointer-events:none; z-index:1; }
   .b56-page .b56-kd{ font-size:11.5px; line-height:1.35; }
   .b56-page .b56-kd div{ display:flex; justify-content:space-between; align-items:flex-start; gap:2px; padding-left:1em; text-indent:-1em; }
   .b56-page .b56-kd div span:first-child{ flex:1 1 auto; min-width:0; }
@@ -521,7 +523,8 @@ B56_PAGES_JS = r"""
   // 이름 + 서명 (서명이 없으면 "(서명)" 자리)
   function b56NameSig(name, sig){
     name = String(name || "").trim(); if(!name) return "";
-    return `<span class="b56-sn">${esc3a(name)}${sig ? `<img src="${sig}" alt="서명" />` : '<span class="ph">(서명)</span>'}</span>`;
+    // 실제 서명처럼: "(서명)" 글씨는 남기고 그 위에 서명을 겹쳐 찍음
+    return `<span class="b56-sn">${esc3a(name)}<span class="b56-signed"><span class="ph">(서명)</span>${sig ? `<img src="${sig}" alt="서명" />` : ""}</span></span>`;
   }
   // 조치자 이름 → 그 사람의 협력사 (별지 5 줄에서 찾음)
   function b56CoOf(name, rows5){ name = String(name || "").trim(); const r = (rows5 || b5Rows).find(x => String(x.doneBy || "").trim() === name && x.company); const c = r ? String(r.company).trim() : ""; return c && c !== name ? c : ""; }
