@@ -71,4 +71,8 @@ PAIRS = [
     ('<style>\n  /* 화면 미리보기도 인쇄와 똑같이: A4 한 장씩 따로, 같은 여백 */',
      '<style>' + B3TOP_CSS + '</style>\n<style>\n  /* 화면 미리보기도 인쇄와 똑같이: A4 한 장씩 따로, 같은 여백 */'),
     ('  load();\n  wireHomeCoverInputs();', B3TOP_JS + '  load();\n  wireHomeCoverInputs();'),
+    # 체크한 기록 인쇄·PDF 순서: 날짜가 빠른 것부터 (빈 날짜는 맨 뒤)
+    ('''      .sort((x, y)=> String(x.data["b3a-date"] || "").localeCompare(String(y.data["b3a-date"] || "")) || String(x.savedAt).localeCompare(String(y.savedAt)));''',
+     '''      .sort((x, y)=> b3NormDate(x.data["b3a-date"]).localeCompare(b3NormDate(y.data["b3a-date"])) || String(x.savedAt).localeCompare(String(y.savedAt)));'''),
+    ('  function b3SelectedEntries(){', '  function b3NormDate(v){ const m = String(v || "").match(/(\\d{4})\\D+(\\d{1,2})\\D+(\\d{1,2})/); return m ? m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0") : "9999-99-99"; }\n  function b3SelectedEntries(){'),
 ]

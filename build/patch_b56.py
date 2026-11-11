@@ -592,7 +592,7 @@ B56_PAGES_JS = r"""
   }
   // ---- 체크한 기록: 한 번에 인쇄 / 날짜별 PDF ----
   const b56Sel = new Set();
-  function b56SelRecs(){ return b56Records.filter(r => b56Sel.has(r.id)).sort((a, b) => String(a.date || "").localeCompare(String(b.date || ""))); }
+  function b56SelRecs(){ const k = r => b56Ymd(r.date) || "9999-99-99"; return b56Records.filter(r => b56Sel.has(r.id)).sort((a, b) => k(a).localeCompare(k(b)) || String(a.id || "").localeCompare(String(b.id || ""))); }   // 날짜가 빠른 것부터
   function b56SelStatus(t){ const el = document.getElementById("b56SelStatus"); if(el) el.textContent = t || ""; }
   async function b56PrintSelected(){
     const recs = b56SelRecs(); if(!recs.length){ alert("인쇄할 기록을 먼저 체크해주세요."); return; }

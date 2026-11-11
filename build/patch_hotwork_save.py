@@ -105,4 +105,8 @@ PAIRS = [
      '  }\n'
      '  return entries.filter(e => sel.has(e.id)).sort(byDate).map(e => e.data);\n'
      '};'),
+    # 인쇄·PDF 순서: 날짜가 빠른 것부터 (날짜 형식이 달라도, 빈 날짜는 맨 뒤), 같은 날은 허가번호 순
+    ('const byDate = (a, b)=> String(a.data.workDate || "").localeCompare(String(b.data.workDate || "")) || String(a.savedAt).localeCompare(String(b.savedAt));',
+     'const __nd = (v)=>{ const m = String(v || "").match(/(\\d{4})\\D+(\\d{1,2})\\D+(\\d{1,2})/); return m ? m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0") : "9999-99-99"; };\n'
+     'const byDate = (a, b)=> __nd(a.data.workDate || a.data.permitDate).localeCompare(__nd(b.data.workDate || b.data.permitDate)) || String(a.data.permitNo || "").localeCompare(String(b.data.permitNo || ""), undefined, { numeric: true }) || String(a.savedAt).localeCompare(String(b.savedAt));'),
 ]
