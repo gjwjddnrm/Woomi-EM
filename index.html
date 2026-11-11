@@ -2745,6 +2745,7 @@
   .b56-page .b56-kd{ font-size:11.5px; line-height:1.35; }
   .b56-page .b56-kd div{ display:flex; justify-content:space-between; white-space:nowrap; }
   .b56-page .b56-iss{ white-space:pre-line; }
+  .b56-page .b56-t5 td.done .b56-co{ font-size:11px; color:#333; margin-bottom:.5mm; }
   .b56-page .b56-t5 td.done{ text-align:center; padding:2px; }
   .b56-page .b56-t5 td.done .b56-sn{ flex-wrap:wrap; justify-content:center; white-space:normal; }
   .b56-page .b56-t6 tbody tr{ height:50%; }
@@ -11773,7 +11774,23 @@ html.wsec-locked #wsecLock{ display:flex; }
     const m5 = b56Meta(B5_META_KEY), m6 = b56Meta(B6_META_KEY);
     return { date: m5.date || m6.date || "", rows5: JSON.parse(JSON.stringify(b5Rows)), rows6: JSON.parse(JSON.stringify(b6Rows)), meta5: m5, meta6: m6 };
   }
+  // 예전 기록(확인자·제출자에 협력사명만 있던 것) → 조치 결과의 "조치자: 이름"으로 바꿔 줌
+  function b56Migrate(rec){
+    let ch = false; const r5s = rec.rows5 || [], r6s = rec.rows6 || [];
+    r5s.forEach(r5 => {
+      const d = String(r5.doneBy || "").trim(); if(!d || d !== String(r5.company || "").trim()) return;
+      const r6 = r6s.find(x => x.docNo && x.docNo === r5.docNo); const m = r6 && String(r6.result || "").match(/조치자:\s*([^,)\n]+)/);
+      if(m && m[1].trim()){ r5.doneBy = m[1].trim(); ch = true; }
+    });
+    if(ch && rec.meta6){
+      const cos = new Set(r5s.map(r => String(r.company || "").trim()));
+      const sub = String(rec.meta6.submitter || "").split(/\s*,\s*/).filter(Boolean);
+      if(!sub.length || sub.every(n => cos.has(n))) rec.meta6.submitter = [...new Set(r5s.map(r => String(r.doneBy || "").trim()).filter(Boolean))].join(", ");
+    }
+    return ch;
+  }
   function b56Apply(rec){
+    if(b56Migrate(rec)){ try{ b56Persist(); }catch(e){} }
     b5Rows = JSON.parse(JSON.stringify(rec.rows5 && rec.rows5.length ? rec.rows5 : [{place:"",tempFacility:false,evacRoute:false,fireSupervise:false,issue:"",doneBy:"",noticeNo:""}]));
     b6Rows = JSON.parse(JSON.stringify(rec.rows6 && rec.rows6.length ? rec.rows6 : [{place:"",kind:"",issue:"",result:""}]));
     localStorage.setItem(B5_META_KEY, JSON.stringify(Object.assign({}, rec.meta5 || {}, { date: rec.date || "" })));
@@ -11951,6 +11968,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     name = String(name || "").trim(); if(!name) return "";
     return `<span class="b56-sn">${esc3a(name)}${sig ? `<img src="${sig}" alt="서명" />` : '<span class="ph">(서명)</span>'}</span>`;
   }
+  // 조치자 이름 → 그 사람의 협력사 (별지 5 줄에서 찾음)
+  function b56CoOf(name){ name = String(name || "").trim(); const r = b5Rows.find(x => String(x.doneBy || "").trim() === name && x.company); const c = r ? String(r.company).trim() : ""; return c && c !== name ? c : ""; }
   function b56Items(t){ return String(t || "").split(/\n+/).map(x => x.trim()).filter(Boolean); }
   function b56IssueHtml(r){
     const pre = b6CompanyPrefix(r);
@@ -11973,7 +11992,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       + `<thead><tr><th rowspan="3">장소<br>(구역)</th><th rowspan="3">점검종류</th><th rowspan="3">지적사항</th><th colspan="2">현장조치 결과</th></tr><tr><th>완료</th><th>불가</th></tr><tr><th>확인자</th><th>통보서 번호</th></tr></thead>`;
     const kd = r => `<div class="b56-kd"><div><span>■ 임시소방시설</span><span>(${r.tempFacility ? " ○ " : "  "})</span></div><div><span>■ 피난로 등</span><span>(${r.evacRoute ? " ○ " : "  "})</span></div><div><span>■ 화기취급감독</span><span>(${r.fireSupervise ? " ○ " : "  "})</span></div></div>`;
     const one = r => { const n = String(r.doneBy || "").trim();
-      return `<tr style="height:${b56RowMm(r)}mm"><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td>${kd(r)}</td><td>${b56IssueHtml(r)}</td><td class="done">${n ? b56NameSig(n, b56SigOf(n)) : ""}</td><td class="c">${esc3a(r.noticeNo || "")}</td></tr>`; };
+      return `<tr style="height:${b56RowMm(r)}mm"><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td>${kd(r)}</td><td>${b56IssueHtml(r)}</td><td class="done">${n ? (b56CoOf(n) ? `<div class="b56-co">${esc3a(b56CoOf(n))}</div>` : "") + b56NameSig(n, b56SigOf(n)) : ""}</td><td class="c">${esc3a(r.noticeNo || "")}</td></tr>`; };
     const BODY = 216, BLANK = 15;   // 본문 높이(mm), 빈 줄 높이
     const pages = []; let cur = [], used = 0;
     rows.forEach(r => { const h = b56RowMm(r); if(cur.length && used + h > BODY){ pages.push([cur, used]); cur = []; used = 0; } cur.push(r); used += h; });
@@ -11992,7 +12011,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     const one = r => `<tr><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td><div class="b56-kd">${kinds(r)}</div></td>`
       + `<td class="pc iss">${ph(r.photoBefore)}${b56IssueHtml(r)}</td>`
       + `<td class="pc res">${ph(r.photo)}${r.result ? `<div class="b56-txt">${esc3a(r.result)}</div>` : ""}</td></tr>`;
-    const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => b56NameSig(n, b56SigOf(n))).join(" ");
+    const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => { const c = b56CoOf(n); return (c ? esc3a(c) + " " : "") + b56NameSig(n, b56SigOf(n)); }).join("<br/>");
     const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">${b56NameSig(m6.confirmer, b56SigOf(m6.confirmer))}</td></tr></table>`;
     host.innerHTML = b56Chunk(rows, 2).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
       `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + "<tr><td></td><td></td><td></td><td></td></tr>".repeat(2 - pr.length)}</tbody></table>`, foot)).join("");
