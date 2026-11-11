@@ -127,7 +127,7 @@ B56_JS = r"""
         Object.assign(row, {
           tempFacility: k.tempFacility, evacRoute: k.evacRoute, fireSupervise: k.fireSupervise,
           include: k.relevant, relevant: k.relevant,
-          doneBy: done ? (row.company || "") : "", _done: done,
+          doneBy: done ? (String(d["조치자"] || "").trim() || row.company || "") : "", _done: done,   // 확인자 = 안전 서류의 조치자
           photoBefore: before, photo: after, usePhoto: true,
         });
         out.push(row);
@@ -183,12 +183,15 @@ B56_JS = r"""
   const B56_SIG_KEY = "fireplan_co_sigs_v1";
   function b56Sigs(){ try{ const o = JSON.parse(localStorage.getItem(B56_SIG_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } }
   function b56SetSig(name, url){ const o = b56Sigs(); if(url) o[name] = url; else delete o[name]; try{ localStorage.setItem(B56_SIG_KEY, JSON.stringify(o)); }catch(e){ alert("서명을 저장하지 못했어요."); } b56RenderSigs(); renderB5Preview(); renderB6Preview(); }
-  function b56SigOf(name){ name = String(name || "").trim(); if(!name) return ""; const o = b56Sigs(); return o[name] || ""; }
+  function b56SigOf(name){ name = String(name || "").trim(); if(!name) return ""; const o = b56Sigs(); if(o[name]) return o[name]; if(name.replace(/\s/g, "") === B5_FIXED_INSPECTOR){ try{ return localStorage.getItem(B3A_SIGNATURE_DEFAULT_KEY) || ""; }catch(e){} } return ""; }
   function b56RenderSigs(){
     const wrap = document.getElementById("b56SigList"); if(!wrap) return;
-    const names = [...new Set(b5Rows.map(r => (r.doneBy || r.company || "").trim()).filter(Boolean).concat(Object.keys(b56Sigs())))];
+    let m6 = {}; try{ m6 = JSON.parse(localStorage.getItem(B6_META_KEY) || "{}"); }catch(e){}
+    const names = [...new Set(b5Rows.map(r => (r.doneBy || "").trim())
+      .concat(String(m6.submitter || "").split(/\s*,\s*/), [m6.confirmer || "", B5_FIXED_INSPECTOR].map(x => String(x).trim()), Object.keys(b56Sigs()))
+      .filter(Boolean))];
     wrap.innerHTML = names.length ? names.map((n, i)=> { const s = b56SigOf(n); return `<div class="b56-sigrow"><span>${esc3a(n)}</span><span class="sig">${s ? `<img src="${s}" alt="서명">` : "서명 없음"}</span><span class="acts"><button type="button" class="reset-btn" data-sdraw="${i}">✍️ 서명</button><button type="button" class="reset-btn" data-sup="${i}">🖼 사진</button>${s ? `<button type="button" class="photo-remove-btn" data-sdel="${i}">삭제</button>` : ""}</span></div>`; }).join("")
-      : '<p class="save-note" style="margin:0">지적사항에 협력사가 들어가면 여기에 나와요.</p>';
+      : '<p class="save-note" style="margin:0">PDF를 불러오면 조치자 이름이 여기에 나와요.</p>';
     wrap.querySelectorAll("[data-sdraw]").forEach(b => b.addEventListener("click", ()=> b56OpenPad(names[+b.dataset.sdraw])));
     wrap.querySelectorAll("[data-sdel]").forEach(b => b.addEventListener("click", ()=>{ if(confirm(names[+b.dataset.sdel] + " 서명을 지울까요?")) b56SetSig(names[+b.dataset.sdel], ""); }));
     wrap.querySelectorAll("[data-sup]").forEach(b => b.addEventListener("click", ()=>{
@@ -254,7 +257,7 @@ B56_JS = r"""
     let made = 0, merged = 0, last = null;
     dates.forEach(date => {
       const rows = groups.get(date), notice = date ? date + "-01" : "";
-      const cos = [...new Set(rows.map(r => r.company).filter(Boolean))];
+      const cos = [...new Set(rows.map(r => (r.doneBy || "").trim()).filter(Boolean))];   // 별지 6 제출자 = 조치자
       const rows5 = rows.map(r => ({ company: r.company || "", trade: r.trade || "", place: r.place || "",
         tempFacility: !!r.tempFacility, evacRoute: !!r.evacRoute, fireSupervise: !!r.fireSupervise,
         issue: r.issue || "", doneBy: r.doneBy || "", noticeNo: r._done ? "" : notice, docNo: r.docNo || "" }));
@@ -264,7 +267,7 @@ B56_JS = r"""
       if(rec){   // 같은 날짜 기록이 있으면 문서번호로 합치기
         rows5.forEach(n5 => { const ex = rec.rows5.find(x => x.docNo && x.docNo === n5.docNo); if(ex) Object.assign(ex, n5); else rec.rows5.push(n5); });
         rows6.forEach(n6 => { const ex = rec.rows6.find(x => x.docNo && x.docNo === n6.docNo); if(ex) Object.assign(ex, n6); else rec.rows6.push(n6); });
-        rec.meta6 = Object.assign({}, rec.meta6, { submitter: [...new Set(rec.rows5.map(x => x.company).filter(Boolean))].join(", ") });
+        rec.meta6 = Object.assign({}, rec.meta6, { submitter: [...new Set(rec.rows5.map(x => (x.doneBy || "").trim()).filter(Boolean))].join(", ") });
         rec.savedAt = new Date().toISOString(); merged++;
       }else{
         rec = { id: "b56_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), savedAt: new Date().toISOString(), date,
@@ -289,7 +292,7 @@ B56_JS = r"""
     const firstFs = panel.querySelector("fieldset"); panel.insertBefore(rec, firstFs);
     // PDF 칸 다음: 협력사 서명
     const sig = document.createElement("fieldset"); sig.id = "b56SigFieldset";
-    sig.innerHTML = '<legend>✍️ 협력사 서명 (완료 확인자 · 별지 6 제출자)</legend><p class="save-note" style="margin-top:0">한 번 등록하면 그 협력사가 조치한 줄마다 자동으로 들어가요.</p><div id="b56SigList"></div>';
+    sig.innerHTML = '<legend>✍️ 서명 등록 (조치자 · 확인자 · 점검자)</legend><p class="save-note" style="margin-top:0">사람마다 한 번만 등록하면, 그 사람 이름이 들어가는 칸(별지 5 완료 확인자, 별지 6 제출자·확인자, 점검자)에 앞으로 계속 자동으로 날인돼요.</p><div id="b56SigList"></div>';
     const pdfFs = document.getElementById("b5PdfFieldset"); pdfFs.parentNode.insertBefore(sig, pdfFs.nextSibling);
     // PDF 안내·검토 칸 문구 정리
     const note = pdfFs.querySelector(".save-note"); if(note) note.textContent = '안전팀 "추가위험발굴지시/조치" PDF(여러 건이 묶인 PDF도 돼요)를 올리면 건마다 지적 사진·조치 사진·내용을 읽어요. 소방 점검(임시소방시설·피난로 등·화기취급감독)에 해당하는 것만 기본으로 넣고, 지시일자별로 따로 기록을 만들어요.';
@@ -401,7 +404,7 @@ B56_PAGES_JS = r"""
     const host = b56Host("b56Pages5", "b5TableBody"); if(!host) return;
     let m5 = {}; try{ m5 = JSON.parse(localStorage.getItem(B5_META_KEY) || "{}"); }catch(e){}
     const rows = b5Rows.filter(r => r.place || r.issue || r.doneBy || r.noticeNo || r.tempFacility || r.evacRoute || r.fireSupervise);
-    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">${b56NameSig(B5_FIXED_INSPECTOR, b56OfficerSig(B5_FIXED_INSPECTOR))}</td></tr></table>`;
+    const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">${b56NameSig(B5_FIXED_INSPECTOR, b56SigOf(B5_FIXED_INSPECTOR))}</td></tr></table>`;
     const head = `<colgroup><col style="width:10%"><col style="width:20%"><col><col style="width:16%"><col style="width:16%"></colgroup>`
       + `<thead><tr><th rowspan="3">장소<br>(구역)</th><th rowspan="3">점검종류</th><th rowspan="3">지적사항</th><th colspan="2">현장조치 결과</th></tr><tr><th>완료</th><th>불가</th></tr><tr><th>확인자</th><th>통보서 번호</th></tr></thead>`;
     const kd = r => `<div class="b56-kd"><div><span>■ 임시소방시설</span><span>(${r.tempFacility ? " ○ " : "  "})</span></div><div><span>■ 피난로 등</span><span>(${r.evacRoute ? " ○ " : "  "})</span></div><div><span>■ 화기취급감독</span><span>(${r.fireSupervise ? " ○ " : "  "})</span></div></div>`;
@@ -426,7 +429,7 @@ B56_PAGES_JS = r"""
       + `<td class="pc iss">${ph(r.photoBefore)}${b56IssueHtml(r)}</td>`
       + `<td class="pc res">${ph(r.photo)}${r.result ? `<div class="b56-txt">${esc3a(r.result)}</div>` : ""}</td></tr>`;
     const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => b56NameSig(n, b56SigOf(n))).join(" ");
-    const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">${b56NameSig(m6.confirmer, b56OfficerSig(m6.confirmer))}</td></tr></table>`;
+    const foot = `<table class="ch1-table b56-foot"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>제출자</th><td class="r">${subs}</td><th>확인자</th><td class="r">${b56NameSig(m6.confirmer, b56SigOf(m6.confirmer))}</td></tr></table>`;
     host.innerHTML = b56Chunk(rows, 2).map(pr => b56PageHtml("별지 6", "안전점검 조치 결과 통보서", meta,
       `<table class="ch1-table b56-t6">${head}<tbody>${pr.map(one).join("") + "<tr><td></td><td></td><td></td><td></td></tr>".repeat(2 - pr.length)}</tbody></table>`, foot)).join("");
   }
@@ -460,6 +463,7 @@ B56_PAGES_JS = r"""
       document.querySelectorAll(".b56-pane").forEach(x => x.classList.toggle("on", x.id === id));
     };
     document.querySelectorAll(".b56-tab").forEach(t => t.addEventListener("click", ()=> window.b56ShowPane(t.dataset.pane)));
+    ["b6-submitter", "b6-confirmer"].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ try{ b56RenderSigs(); }catch(e){} }); });
   })();
 """
 
@@ -494,7 +498,7 @@ PAIRS = [
      '''        ${(r.photoBefore || r.photo) ? `<div class="b56-photos"><figure>${r.photoBefore ? `<img src="${r.photoBefore}" alt="지적 사진" />` : ""}<figcaption>지적 사진</figcaption></figure><figure>${r.photo ? `<img src="${r.photo}" alt="조치 사진" />` : ""}<figcaption>${r.photo ? "조치 사진" : "조치 사진 없음"}</figcaption></figure></div>
           <label style="display:block;margin-top:2px"><input type="checkbox" data-f="usePhoto" ${r.usePhoto !== false ? "checked" : ""}/> 사진을 별지 6에 넣기</label>` : ""}'''),
     ('''        <div class="field"><label>완료(확인자)</label><input type="text" data-f="doneBy" value="${esc(r.doneBy)}" /></div>''',
-     '''        <div class="field"><label>완료(확인자 = 조치한 협력사)</label><input type="text" data-f="doneBy" value="${esc(r.doneBy)}" placeholder="미조치면 비워 두세요" /></div>'''),
+     '''        <div class="field"><label>완료(확인자 = 안전 서류의 조치자)</label><input type="text" data-f="doneBy" value="${esc(r.doneBy)}" placeholder="미조치면 비워 두세요" /></div>'''),
     # 적용하기 → 날짜별 기록
     ('''  document.getElementById("b5-pdf-apply").addEventListener("click", ()=>{
     if(!b5ImportRows.length) return;''',
