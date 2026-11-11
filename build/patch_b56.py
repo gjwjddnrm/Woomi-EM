@@ -470,7 +470,7 @@ B56_PAGES_CSS = """
   .b56-page .ch1-table th{ background:#dce6f1; border:1px solid #555; font-size:12.5px; padding:4px 3px; line-height:1.3; text-align:center; vertical-align:middle; word-break:keep-all; font-weight:700; }
   .b56-page .ch1-table td{ border:1px solid #777; font-size:12px; padding:4px 6px; line-height:1.45; word-break:keep-all; overflow-wrap:anywhere; vertical-align:middle; }
   .b56-page .ch1-table td.c{ text-align:center; }
-  .b56-page .ch1-table td.r{ text-align:right; padding-right:3mm; }
+  .b56-page .ch1-table td.r{ text-align:right; padding-right:6mm; }   /* 겹쳐 찍은 서명이 칸 밖으로 안 나가게 */
   .b56-page .b56-meta{ flex:none; margin-top:3mm; }
   .b56-page .b56-meta th, .b56-page .b56-meta td{ height:9mm; white-space:nowrap; font-size:13px; }
   .b56-page .b56-fill{ flex:1 1 auto; min-height:0; margin-top:2.5mm; display:flex; flex-direction:column; }
@@ -481,7 +481,7 @@ B56_PAGES_CSS = """
   .b56-page .b56-sn img{ max-height:9mm; max-width:24mm; vertical-align:middle; }
   .b56-page .b56-sn .ph{ color:#333; }
   .b56-page .b56-signed{ position:relative; display:inline-block; }
-  .b56-page .b56-sn .b56-signed img{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); max-height:11mm; max-width:26mm; width:auto; height:auto; pointer-events:none; z-index:1; }
+  .b56-page .b56-sn .b56-signed img{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); max-height:8mm; max-width:19mm; width:auto; height:auto; pointer-events:none; z-index:1; }
   .b56-page .b56-kd{ font-size:11.5px; line-height:1.35; }
   .b56-page .b56-kd div{ display:flex; justify-content:space-between; align-items:flex-start; gap:2px; padding-left:1em; text-indent:-1em; }
   .b56-page .b56-kd div span:first-child{ flex:1 1 auto; min-width:0; }
