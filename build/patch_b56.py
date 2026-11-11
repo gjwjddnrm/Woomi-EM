@@ -651,7 +651,7 @@ B56_PAGES_JS = r"""
     const p2 = document.createElement("div"); p2.className = "b56-pane"; p2.id = "b56Pane2";
     // 지금 칸들: 맨 위 별지 5 제목·설명 → 직접 작성 탭 맨 위로
     const rest = [...panel.children].filter(e => e !== rec && e !== pdf && e !== sig);
-    [rec, pdf, sig].forEach(e => p1.appendChild(e));
+    [pdf, rec, sig].forEach(e => p1.appendChild(e));   // 맨 먼저 하는 일(PDF 넣기)이 맨 위로
     rest.forEach(e => p2.appendChild(e));
     const note = document.createElement("p"); note.className = "save-note"; note.style.margin = "6px 0 0";
     note.textContent = '기록을 누르면 "직접 작성" 탭에서 내용을 고칠 수 있어요. 고친 뒤 여기서 "💾 수정 저장"을 누르세요.';
