@@ -2720,6 +2720,27 @@
 <style>
   /* 별지 5·6 인쇄용 A4 쪽 — 원래 서식(별지 5·6) 모양 그대로, 쪽 단위로 다시 그림 */
   #b56Main .b56-src{ display:none !important; }
+  @media screen{
+    #b56CombinedView:not(.view-hidden){ display:grid; grid-template-columns:minmax(340px, 420px) minmax(0, 1fr); grid-template-rows:58px minmax(0, 1fr); height:100vh; min-height:0; align-items:stretch; }
+    #b56Top{ grid-column:1 / -1; display:flex; align-items:center; gap:10px; padding:0 18px; background:linear-gradient(180deg,#1d2d52,#14213d); color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.25); z-index:5; }
+    #b56Top .b56-logo{ width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#ff8a4c,#e2562b); display:flex; align-items:center; justify-content:center; font-size:17px; flex:none; }
+    #b56Top .b56-brand{ background:none; border:0; padding:0; margin:0; box-shadow:none; }
+    #b56Top .b56-brand b{ display:block; font-size:15.5px; letter-spacing:-.2px; }
+    #b56Top .b56-brand span{ display:block; font-size:11.5px; color:#9fb0d6; margin-top:1px; }
+    #b56Top .sp{ flex:1; }
+    #b56Top .tb{ display:flex; align-items:center; gap:6px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.07); color:#fff; padding:8px 12px; border-radius:9px; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+    #b56Top .tb:hover{ background:rgba(255,255,255,.16); }
+    #b56Top .tb.pri{ background:#e2562b; border-color:#e2562b; font-weight:700; }
+    #b56Top .tb:disabled{ opacity:.6; cursor:default; }
+    .b56-i{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+    #b56CombinedView > #b56Panel{ position:relative !important; top:auto !important; height:auto !important; max-height:none !important; min-height:0; overflow-y:auto !important; padding-top:0 !important; padding-bottom:0 !important; }
+    #b56Panel #b56Tabs{ position:sticky; top:0; z-index:4; background:#fff; margin:0 -22px 12px; padding:6px 22px 0; }
+    #b56Panel .b56-pane{ padding-bottom:24px; }
+    #b56Panel #b56SaveBar{ position:sticky; bottom:0; z-index:4; background:#fff; margin:14px -22px 0 !important; padding:10px 22px 12px; border-top:1px solid #e3e7ef; box-shadow:0 -6px 14px rgba(16,24,40,.06); }
+    #b56CombinedView > #b56Main{ min-height:0; height:auto; overflow:auto; padding-top:22px; }
+    #b56Main > .preview-toolbar{ display:none !important; }
+  }
+  @media print{ #b56Top{ display:none !important; } }
   .b56-tabs{ display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid var(--line,#dfe4ec); }
   .b56-tab{ flex:1; padding:10px 6px 11px; border:0; background:transparent; font:inherit; font-size:13.5px; font-weight:600; color:#8a93a3; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; }
   .b56-tab.on{ color:#1e3a8a; border-bottom-color:#e8541f; }
@@ -2753,8 +2774,8 @@
   .b56-page .b56-t6 td.pc.iss{ vertical-align:middle; }
   .b56-page .b56-pbox{ display:flex; align-items:center; justify-content:center; }
   .b56-page .b56-pbox img{ display:block; max-width:100%; max-height:100%; object-fit:contain; }
-  .b56-page .b56-t6 td.iss .b56-pbox{ height:60mm; margin-bottom:2mm; }
-  .b56-page .b56-t6 td.res .b56-pbox{ height:86mm; }
+  .b56-page .b56-t6 td.iss .b56-pbox{ height:72mm; margin-bottom:2mm; }
+  .b56-page .b56-t6 td.res .b56-pbox{ height:92mm; }
   .b56-page .b56-txt{ margin-top:2mm; white-space:pre-line; font-size:11.5px; line-height:1.4; text-align:center; }
   @media print{
     #b56Main .b56-page{ margin:0 !important; height:296mm; box-shadow:none !important; overflow:hidden; }
@@ -11738,7 +11759,7 @@ html.wsec-locked #wsecLock{ display:flex; }
         Object.assign(row, {
           tempFacility: k.tempFacility, evacRoute: k.evacRoute, fireSupervise: k.fireSupervise,
           include: k.relevant, relevant: k.relevant,
-          doneBy: done ? (String(d["조치자"] || "").trim() || row.company || "") : "", _done: done,   // 확인자 = 안전 서류의 조치자
+          doneBy: done ? (String(d["조치자"] || "").trim() || row.company || "") : "", _done: done, _doneDate: b56Ymd(d["조치일자"]),   // 확인자 = 안전 서류의 조치자
           photoBefore: before, photo: after, usePhoto: true,
         });
         out.push(row);
@@ -11770,6 +11791,9 @@ html.wsec-locked #wsecLock{ display:flex; }
     })()).catch(e => { console.error(e); alert("점검 기록 저장에 실패했어요. 저장 공간이 부족할 수 있어요."); });
   }
   function b56Meta(key){ try{ return JSON.parse(localStorage.getItem(key) || "{}"); }catch(e){ return {}; } }
+  function b56Ymd(v){ const m = String(v || "").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : ""; }
+  // 별지 6 점검일 = 조치 완료일(가장 늦은 날)
+  function b56DoneDate(rows6){ const ds = (rows6 || []).map(r => r.doneDate || b56Ymd((String(r.result || "").match(/조치\s*완료\s*\(([^,)]+)/) || [])[1])).filter(Boolean).sort(); return ds.length ? ds[ds.length - 1] : ""; }
   function b56Snapshot(){
     const m5 = b56Meta(B5_META_KEY), m6 = b56Meta(B6_META_KEY);
     return { date: m5.date || m6.date || "", rows5: JSON.parse(JSON.stringify(b5Rows)), rows6: JSON.parse(JSON.stringify(b6Rows)), meta5: m5, meta6: m6 };
@@ -11787,6 +11811,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       const sub = String(rec.meta6.submitter || "").split(/\s*,\s*/).filter(Boolean);
       if(!sub.length || sub.every(n => cos.has(n))) rec.meta6.submitter = [...new Set(r5s.map(r => String(r.doneBy || "").trim()).filter(Boolean))].join(", ");
     }
+    if(rec.meta6 && (!rec.meta6.date || rec.meta6.date === rec.date)){ const dd = b56DoneDate(r6s); if(dd && dd !== rec.meta6.date){ rec.meta6.date = dd; ch = true; } }
     return ch;
   }
   function b56Apply(rec){
@@ -11794,7 +11819,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     b5Rows = JSON.parse(JSON.stringify(rec.rows5 && rec.rows5.length ? rec.rows5 : [{place:"",tempFacility:false,evacRoute:false,fireSupervise:false,issue:"",doneBy:"",noticeNo:""}]));
     b6Rows = JSON.parse(JSON.stringify(rec.rows6 && rec.rows6.length ? rec.rows6 : [{place:"",kind:"",issue:"",result:""}]));
     localStorage.setItem(B5_META_KEY, JSON.stringify(Object.assign({}, rec.meta5 || {}, { date: rec.date || "" })));
-    localStorage.setItem(B6_META_KEY, JSON.stringify(Object.assign({}, rec.meta6 || {}, { date: rec.date || "" })));
+    localStorage.setItem(B6_META_KEY, JSON.stringify(Object.assign({ date: rec.date || "" }, rec.meta6 || {})));
     saveB5Rows(); saveB6Rows(); loadB5Meta(); loadB6Meta(); renderB5Form(); renderB6Form(); b56RenderSigs();
   }
   function b56RenderRecs(){
@@ -11805,6 +11830,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       return `<div class="b56-rec${r.id === b56CurId ? " on" : ""}" data-rid="${r.id}"><b>${esc3a((r.date || "날짜 없음").replace(/-/g, "."))}</b><span>${(r.rows5 || []).length}건 · ${esc3a(cos)}</span><button type="button" data-rdel="${r.id}" title="이 기록 삭제">✕</button></div>`;
     }).join("") : '<p class="save-note" style="margin:0">저장된 점검 기록이 없어요. PDF를 불러오면 날짜별로 저장돼요.</p>';
     document.getElementById("b56SaveUpd").disabled = !b56CurId;
+    const tu = document.getElementById("b56TopUpd"); if(tu) tu.style.display = b56CurId ? "" : "none";
   }
   // ---- 협력사 서명 ----
   const B56_SIG_KEY = "fireplan_co_sigs_v1";
@@ -11889,16 +11915,16 @@ html.wsec-locked #wsecLock{ display:flex; }
         tempFacility: !!r.tempFacility, evacRoute: !!r.evacRoute, fireSupervise: !!r.fireSupervise,
         issue: r.issue || "", doneBy: r.doneBy || "", noticeNo: r._done ? "" : notice, docNo: r.docNo || "" }));
       const rows6 = rows.map(r => ({ company: r.company || "", trade: r.trade || "", place: r.place || "", kind: b5KindText(r),
-        issue: r.issue || "", result: r.result || "", photo: r.usePhoto !== false ? (r.photo || "") : "", photoBefore: r.usePhoto !== false ? (r.photoBefore || "") : "", docNo: r.docNo || "" }));
+        issue: r.issue || "", result: r.result || "", doneDate: r._doneDate || "", photo: r.usePhoto !== false ? (r.photo || "") : "", photoBefore: r.usePhoto !== false ? (r.photoBefore || "") : "", docNo: r.docNo || "" }));
       let rec = b56Records.find(x => x.date === date);
       if(rec){   // 같은 날짜 기록이 있으면 문서번호로 합치기
         rows5.forEach(n5 => { const ex = rec.rows5.find(x => x.docNo && x.docNo === n5.docNo); if(ex) Object.assign(ex, n5); else rec.rows5.push(n5); });
         rows6.forEach(n6 => { const ex = rec.rows6.find(x => x.docNo && x.docNo === n6.docNo); if(ex) Object.assign(ex, n6); else rec.rows6.push(n6); });
-        rec.meta6 = Object.assign({}, rec.meta6, { submitter: [...new Set(rec.rows5.map(x => (x.doneBy || "").trim()).filter(Boolean))].join(", ") });
+        rec.meta6 = Object.assign({}, rec.meta6, { submitter: [...new Set(rec.rows5.map(x => (x.doneBy || "").trim()).filter(Boolean))].join(", "), date: b56DoneDate(rec.rows6) || (rec.meta6 && rec.meta6.date) || date });
         rec.savedAt = new Date().toISOString(); merged++;
       }else{
         rec = { id: "b56_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), savedAt: new Date().toISOString(), date,
-          rows5, rows6, meta5: { date, inspector: B5_FIXED_INSPECTOR }, meta6: { date, noticeNo: notice, submitter: cos.join(", "), confirmer } };
+          rows5, rows6, meta5: { date, inspector: B5_FIXED_INSPECTOR }, meta6: { date: b56DoneDate(rows6) || date, noticeNo: notice, submitter: cos.join(", "), confirmer } };
         b56Records.push(rec); made++;
       }
       last = rec;
@@ -12005,7 +12031,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     let m6 = {}; try{ m6 = JSON.parse(localStorage.getItem(B6_META_KEY) || "{}"); }catch(e){}
     const rows = b6Rows.filter(r => r.place || r.kind || r.issue || r.result || r.photo || r.photoBefore);
     const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m6.date)}</td><th>통보서 번호</th><td class="c">${esc3a(m6.noticeNo || "")}</td></tr></table>`;
-    const head = `<colgroup><col style="width:9%"><col style="width:15%"><col style="width:30%"><col></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진</th></tr></thead>`;
+    const head = `<colgroup><col style="width:8%"><col style="width:11%"><col style="width:37%"><col></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진</th></tr></thead>`;
     const ph = u => u ? `<div class="b56-pbox"><img src="${u}" alt="" /></div>` : "";
     const kinds = r => String(r.kind || "").split(/\s*,\s*/).filter(Boolean).map(k => `<div>■ ${esc3a(k)}</div>`).join("");
     const one = r => `<tr><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td><div class="b56-kd">${kinds(r)}</div></td>`
@@ -12022,8 +12048,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     const rec = document.getElementById("b56RecFieldset"), pdf = document.getElementById("b5PdfFieldset"), sig = document.getElementById("b56SigFieldset");
     if(!rec || !pdf || !sig) return;
     const head = document.createElement("div");
-    head.innerHTML = '<div class="step-label">별지 5 · 6</div><h2 class="step-title">안전점검 지적내역서 · 조치 결과 통보서</h2>'
-      + '<div class="b56-tabs" id="b56Tabs"><button type="button" class="b56-tab on" data-pane="b56Pane1">기록 · 불러오기</button><button type="button" class="b56-tab" data-pane="b56Pane2">직접 작성</button></div>';
+    head.innerHTML = '<div class="b56-tabs" id="b56Tabs"><button type="button" class="b56-tab on" data-pane="b56Pane1">기록 · 불러오기</button><button type="button" class="b56-tab" data-pane="b56Pane2">직접 작성</button></div>';
     const p1 = document.createElement("div"); p1.className = "b56-pane on"; p1.id = "b56Pane1";
     const p2 = document.createElement("div"); p2.className = "b56-pane"; p2.id = "b56Pane2";
     // 지금 칸들: 맨 위 별지 5 제목·설명 → 직접 작성 탭 맨 위로
@@ -12037,6 +12062,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     panel.appendChild(p1); panel.appendChild(p2);
     // 직접 작성 탭 아래에도 저장 버튼 (위로 안 올라가도 되게)
     const sv = document.createElement("div"); sv.className = "b56-btns"; sv.style.marginTop = "14px";
+    sv.id = "b56SaveBar";
     sv.innerHTML = '<button type="button" class="reset-btn" id="b56SaveUpd2">💾 수정 저장</button><button type="button" class="reset-btn" id="b56SaveNew2">➕ 새 기록으로 저장</button>';
     p2.appendChild(sv);
     sv.querySelector("#b56SaveUpd2").addEventListener("click", ()=>{ if(!b56CurId){ alert('열려 있는 기록이 없어요. "➕ 새 기록으로 저장"을 누르세요.'); return; } document.getElementById("b56SaveUpd").click(); });
@@ -12046,6 +12072,41 @@ html.wsec-locked #wsecLock{ display:flex; }
       document.querySelectorAll(".b56-pane").forEach(x => x.classList.toggle("on", x.id === id));
     };
     document.querySelectorAll(".b56-tab").forEach(t => t.addEventListener("click", ()=> window.b56ShowPane(t.dataset.pane)));
+    // 상단 바 (화기작업 화면과 같은 모양): 새로 작성 · 인쇄 · PDF · 수정 저장 · 새 기록 저장
+    const view = document.getElementById("b56CombinedView");
+    if(view && !document.getElementById("b56Top")){
+      const I = d => `<svg class="b56-i" viewBox="0 0 24 24">${d}</svg>`;
+      const top = document.createElement("header"); top.id = "b56Top";
+      top.innerHTML = `<div class="b56-logo">🛠</div><div class="b56-brand"><b>안전점검 지적내역서 · 조치결과통보서</b><span>별지 5 지적내역서 · 별지 6 조치 결과 통보서 작성</span></div><div class="sp"></div>`
+        + `<button class="tb" id="b56TopNew" type="button">${I('<path d="M12 5v14M5 12h14"/>')} 새로 작성</button>`
+        + `<button class="tb" id="b56TopPrint" type="button">${I('<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>')} 인쇄</button>`
+        + `<button class="tb" id="b56TopPdf" type="button">${I('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14h6M9 17h4"/>')} PDF</button>`
+        + `<button class="tb" id="b56TopUpd" type="button" style="display:none">${I('<path d="M4 20h4l11-11-4-4L4 16z"/>')} 수정 저장</button>`
+        + `<button class="tb pri" id="b56TopSave" type="button">${I('<path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>')} 새 기록 저장</button>`;
+      view.insertBefore(top, view.firstChild);
+      document.getElementById("b56TopNew").addEventListener("click", ()=> document.getElementById("b56New").click());
+      document.getElementById("b56TopPrint").addEventListener("click", ()=> window.print());
+      document.getElementById("b56TopUpd").addEventListener("click", ()=> document.getElementById("b56SaveUpd").click());
+      document.getElementById("b56TopSave").addEventListener("click", ()=> document.getElementById("b56SaveNew").click());
+      document.getElementById("b56TopPdf").addEventListener("click", async (e)=>{
+        const btn = e.currentTarget, pages = [...document.querySelectorAll("#b56Main .b56-page")]; if(!pages.length) return;
+        const old = btn.innerHTML; btn.disabled = true; btn.textContent = "⏳ PDF 만드는 중...";
+        try{
+          await b3EnsurePdfLibs();
+          const { jsPDF } = window.jspdf; const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+          for(let k = 0; k < pages.length; k++){
+            btn.textContent = `⏳ PDF ${k + 1}/${pages.length}쪽`;
+            const cv = await window.html2canvas(pages[k], { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+            if(k > 0) pdf.addPage();
+            pdf.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, Math.min(297, cv.height / cv.width * 210), undefined, "FAST");
+          }
+          const d = b56Meta(B5_META_KEY).date || "날짜없음";
+          b3DownloadBlob(pdf.output("blob"), `안전점검_별지5·6_${d}.pdf`);
+        }catch(err){ console.error(err); alert("PDF 저장 중 문제가 생겼어요: " + (err && err.message || err)); }
+        finally{ btn.disabled = false; btn.innerHTML = old; }
+      });
+      b56RenderRecs();
+    }
     ["b6-submitter", "b6-confirmer"].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ try{ b56RenderSigs(); }catch(e){} }); });
   })();
   load();
