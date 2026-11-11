@@ -64,6 +64,9 @@ B56_CSS = """
   .b56-sigrow{ display:grid; grid-template-columns:1fr 92px auto; gap:6px; align-items:center; margin-bottom:6px; font-size:13px; }
   .b56-sigrow .sig{ height:34px; border:1px dashed #c5cbd6; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; color:#98a2b3; overflow:hidden; }
   .b56-sigrow .sig img{ max-height:30px; max-width:88px; }
+  .b56-sigrow .sig{ cursor:pointer; }
+  .b56-sigrow.armed .sig{ border:1.5px solid #2451c9; background:#eef3ff; color:#2451c9; }
+  .b56-pastebox{ margin:-2px 0 8px; padding:8px 10px; border:1.5px solid #2451c9; border-radius:8px; background:#eef3ff; font-size:12px; color:#27407f; outline:none; }
   .b56-sigrow .acts{ display:flex; gap:4px; }
   .b56-sigrow .acts button{ font-size:11px; padding:4px 6px; white-space:nowrap; }
   #b56SigModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(15,20,40,.5); margin:0 !important; }
@@ -251,17 +254,49 @@ B56_JS = r"""
     });
     const names = [...groups.values()].flat();
     let idx = 0;
-    const row = n => { const i = idx++, s = b56SigOf(n); return `<div class="b56-sigrow"><span>${esc3a(n)}</span><span class="sig">${s ? `<img src="${s}" alt="서명">` : "서명 없음"}</span><span class="acts"><button type="button" class="reset-btn" data-sdraw="${i}">✍️ 서명</button><button type="button" class="reset-btn" data-sup="${i}">🖼 사진</button>${s && b56Sigs()[n] ? `<button type="button" class="photo-remove-btn" data-sdel="${i}">삭제</button>` : ""}</span></div>`; };
+    const row = n => { const i = idx++, s = b56SigOf(n), armed = b56PasteName === n;
+      const hint = armed ? `<div class="b56-pastebox" tabindex="-1" data-pbox="${i}">📋 <b>지금 Ctrl+V</b>를 누르면 복사한 서명 사진(화면 캡처)이 들어가요.<div class="b56-btns" style="margin-top:6px"><button type="button" class="reset-btn" data-sfile="${i}">📁 파일에서 찾기</button><button type="button" class="photo-remove-btn" data-scancel="1">취소</button></div></div>` : "";
+      return `<div class="b56-sigrow${armed ? " armed" : ""}"><span>${esc3a(n)}</span><span class="sig" data-sup="${i}" title="누르고 Ctrl+V로 붙여넣기">${s ? `<img src="${s}" alt="서명">` : "서명 없음"}</span><span class="acts"><button type="button" class="reset-btn" data-sdraw="${i}">✍️ 서명</button><button type="button" class="reset-btn" data-sup="${i}">🖼 사진</button>${s && b56Sigs()[n] ? `<button type="button" class="photo-remove-btn" data-sdel="${i}">삭제</button>` : ""}</span></div>${hint}`; };
     wrap.innerHTML = names.length ? [...groups.entries()].map(([g, ns]) => `<div class="b56-siggrp"><div class="b56-siggrp-t">${esc3a(g)} <span>${ns.filter(n => b56SigOf(n)).length}/${ns.length}명 등록</span></div>${ns.map(row).join("")}</div>`).join("")
       : '<p class="save-note" style="margin:0">PDF를 불러오면 조치자 이름이 여기에 나와요.</p>';
     wrap.querySelectorAll("[data-sdraw]").forEach(b => b.addEventListener("click", ()=> b56OpenPad(names[+b.dataset.sdraw])));
     wrap.querySelectorAll("[data-sdel]").forEach(b => b.addEventListener("click", ()=>{ if(confirm(names[+b.dataset.sdel] + " 서명을 지울까요?")) b56SetSig(names[+b.dataset.sdel], ""); }));
-    wrap.querySelectorAll("[data-sup]").forEach(b => b.addEventListener("click", ()=>{
+    // 🖼 사진 / 서명 칸 → 바로 파일 창을 열지 않고 "Ctrl+V 붙여넣기" 대기 (파일 찾기는 안내 안의 버튼)
+    wrap.querySelectorAll("[data-sup]").forEach(b => b.addEventListener("click", ()=>{ b56PasteName = names[+b.dataset.sup]; b56RenderSigs(); }));
+    wrap.querySelectorAll("[data-scancel]").forEach(b => b.addEventListener("click", ()=>{ b56PasteName = null; b56RenderSigs(); }));
+    wrap.querySelectorAll("[data-sfile]").forEach(b => b.addEventListener("click", ()=>{
+      const name = names[+b.dataset.sfile];
       const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
-      inp.onchange = ()=>{ const f = inp.files[0]; if(!f) return; const im = new Image(); im.onload = ()=>{ const c = document.createElement("canvas"); const k = Math.min(1, 900 / im.width); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); const ink = b3aTrInk(c); if(!ink){ alert("서명을 찾지 못했어요. 흰 종이에 또렷하게 쓴 서명 사진을 넣어주세요."); return; } b56SetSig(names[+b.dataset.sup], ink.url); URL.revokeObjectURL(im.src); }; im.src = URL.createObjectURL(f); };
+      inp.onchange = ()=>{ const f = inp.files[0]; if(f) b56SigFromFile(name, f); };
       inp.click();
     }));
+    const pb = wrap.querySelector("[data-pbox]"); if(pb){ pb.focus({ preventScroll: true }); }
   }
+  // 서명 붙여넣기 대기 중인 사람
+  let b56PasteName = null;
+  // 사진(파일·붙여넣기) → 흰 바탕의 서명 글씨만 뽑아 저장
+  function b56SigFromFile(name, f){
+    const im = new Image();
+    im.onload = ()=>{
+      const c = document.createElement("canvas"); const k = Math.min(1, 900 / im.width); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(im.src);
+      const ink = b3aTrInk(c, true);
+      if(!ink){ alert("서명을 찾지 못했어요. 흰 바탕에 서명만 보이게 캡처해서 다시 넣어주세요."); return; }
+      b56PasteName = null; b56SetSig(name, ink.url);
+    };
+    im.onerror = ()=> alert("사진을 읽지 못했어요.");
+    im.src = URL.createObjectURL(f);
+  }
+  document.addEventListener("paste", (e)=>{
+    if(!b56PasteName) return;
+    const view = document.getElementById("b56CombinedView"); if(!view || view.classList.contains("view-hidden")) return;
+    const items = [...((e.clipboardData && e.clipboardData.items) || [])];
+    const it = items.find(x => x.kind === "file" && /^image\//.test(x.type));
+    if(!it){ alert("복사된 사진이 없어요. 화면 캡처(Print Screen, 또는 Windows+Shift+S)로 서명 부분을 복사한 뒤 다시 Ctrl+V 해주세요."); return; }
+    e.preventDefault();
+    b56SigFromFile(b56PasteName, it.getAsFile());
+  });
   function b56OpenPad(name){
     let m = document.getElementById("b56SigModal");
     if(!m){
