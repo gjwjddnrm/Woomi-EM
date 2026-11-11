@@ -119,6 +119,9 @@ for _o, _n in _m6.PAIRS: s = rep(s, _o, _n)
 import importlib.util as _u7
 _sp7 = _u7.spec_from_file_location("patch_b56", HERE / "patch_b56.py"); _m7 = _u7.module_from_spec(_sp7); _sp7.loader.exec_module(_m7)
 for _o, _n in _m7.PAIRS: s = rep(s, _o, _n)
+# 교육·훈련 화면 상단 바
+_sp8 = _u7.spec_from_file_location("patch_b3_top", HERE / "patch_b3_top.py"); _m8 = _u7.module_from_spec(_sp8); _sp8.loader.exec_module(_m8)
+for _o, _n in _m8.PAIRS: s = rep(s, _o, _n)
 
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u

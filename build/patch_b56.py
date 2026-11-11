@@ -147,8 +147,29 @@ B56_JS = r"""
       db.close();
       const list = await WoomiSec.decVal(v);
       b56Records = Array.isArray(list) ? list : [];
+      let ch = false; b56Records.forEach(r => { if(b56Migrate(r)) ch = true; }); if(b56Renumber()) ch = true;
+      if(ch) b56Persist();
     }catch(e){ console.warn(e); b56Records = []; }
     b56RenderRecs();
+  }
+  // 통보서 번호 = 별지 6 점검일(조치 완료일)-순번. 같은 날 여러 기록이면 01, 02, ... (직접 다른 형식으로 쓴 번호는 그대로)
+  function b56Renumber(){
+    let ch = false; const auto = /^\d{4}-\d{2}-\d{2}-\d{2,}$/, groups = new Map();
+    b56Records.forEach(r => {
+      r.meta6 = r.meta6 || {}; const n = String(r.meta6.noticeNo || "").trim(); if(n && !auto.test(n)) return;
+      const d = r.meta6.date || r.date || ""; if(!d) return;
+      if(!groups.has(d)) groups.set(d, []); groups.get(d).push(r);
+    });
+    groups.forEach((list, d) => {
+      list.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.id || "").localeCompare(String(b.id || "")));
+      list.forEach((r, i) => {
+        const no = `${d}-${String(i + 1).padStart(2, "0")}`;
+        if(r.meta6.noticeNo === no) return;
+        r.meta6.noticeNo = no; ch = true;
+        (r.rows5 || []).forEach(x => { if(x.noticeNo && auto.test(String(x.noticeNo).trim())) x.noticeNo = no; });
+      });
+    });
+    return ch;
   }
   function b56Persist(){
     const snap = JSON.parse(JSON.stringify(b56Records));
@@ -297,6 +318,7 @@ B56_JS = r"""
       }
       last = rec;
     });
+    b56Renumber();
     b56Persist();
     if(last){ b56CurId = last.id; b56Apply(last); }
     b56RenderRecs();
@@ -394,7 +416,13 @@ B56_PAGES_CSS = """
   .b56-page .b56-sn img{ max-height:9mm; max-width:24mm; vertical-align:middle; }
   .b56-page .b56-sn .ph{ color:#333; }
   .b56-page .b56-kd{ font-size:11.5px; line-height:1.35; }
-  .b56-page .b56-kd div{ display:flex; justify-content:space-between; white-space:nowrap; }
+  .b56-page .b56-kd div{ display:flex; justify-content:space-between; align-items:flex-start; gap:2px; padding-left:1em; text-indent:-1em; }
+  .b56-page .b56-kd div span:first-child{ flex:1 1 auto; min-width:0; }
+  .b56-page .b56-kd div span + span{ flex:none; white-space:nowrap; text-indent:0; }
+  .b56-page .b56-kd6{ font-size:11.5px; line-height:1.4; }
+  .b56-page .b56-t6 td:nth-child(2){ padding-left:4px; padding-right:3px; }
+  .b56-page .b56-kd6 div{ padding-left:1.1em; text-indent:-1.1em; word-break:keep-all; overflow-wrap:break-word; }
+  .b56-page .ch1-table td.pl{ word-break:keep-all; overflow-wrap:break-word; padding-left:3px; padding-right:3px; }
   .b56-page .b56-iss{ white-space:pre-line; }
   .b56-page .b56-t5 td.done .b56-co{ font-size:11px; color:#333; margin-bottom:.5mm; }
   .b56-page .b56-t5 td.done{ text-align:center; padding:2px; }
@@ -434,8 +462,12 @@ B56_PAGES_JS = r"""
   function b56CoOf(name){ name = String(name || "").trim(); const r = b5Rows.find(x => String(x.doneBy || "").trim() === name && x.company); const c = r ? String(r.company).trim() : ""; return c && c !== name ? c : ""; }
   function b56Items(t){ return String(t || "").split(/\n+/).map(x => x.trim()).filter(Boolean); }
   function b56IssueHtml(r){
-    const pre = b6CompanyPrefix(r);
-    return `<div class="b56-iss">· ${pre}${esc3a(String(r.issue || "").trim())}</div>`;
+    const t = [r.company, r.trade].map(v => String(v || "").trim()).filter(Boolean).join(" · ");
+    return `<div class="b56-iss">· ${t ? `<b>[${esc3a(t)}]</b>\n` : ""}${esc3a(String(r.issue || "").trim())}</div>`;
+  }
+  // 장소: "1층 근로자휴게실" → "1층 근로자 휴게실" (낱말 단위로 줄바꿈되게)
+  function b56Place(v){
+    return esc3a(String(v || "").trim().replace(/([가-힣])(휴게실|사무실|화장실|출입구|계단실|주차장|식당|탈의실|흡연장|자재창고|창고)/g, "$1 $2")).replace(/\s*\(/, "<br/>(");
   }
   function b56PageHtml(badge, title, meta, body, foot){
     return `<div class="ch1-paper b56-page"><div class="byeolji-header"><div class="byeolji-badge">${badge}</div><div class="byeolji-title-box">${title}</div></div>${meta}<div class="b56-fill">${body}</div>${foot || ""}</div>`;
@@ -450,11 +482,11 @@ B56_PAGES_JS = r"""
     let m5 = {}; try{ m5 = JSON.parse(localStorage.getItem(B5_META_KEY) || "{}"); }catch(e){}
     const rows = b5Rows.filter(r => r.place || r.issue || r.doneBy || r.noticeNo || r.tempFacility || r.evacRoute || r.fireSupervise);
     const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m5.date)}</td><th>점검자</th><td class="r">${b56NameSig(B5_FIXED_INSPECTOR, b56SigOf(B5_FIXED_INSPECTOR))}</td></tr></table>`;
-    const head = `<colgroup><col style="width:10%"><col style="width:20%"><col><col style="width:16%"><col style="width:16%"></colgroup>`
+    const head = `<colgroup><col style="width:12%"><col style="width:19%"><col><col style="width:16%"><col style="width:15%"></colgroup>`
       + `<thead><tr><th rowspan="3">장소<br>(구역)</th><th rowspan="3">점검종류</th><th rowspan="3">지적사항</th><th colspan="2">현장조치 결과</th></tr><tr><th>완료</th><th>불가</th></tr><tr><th>확인자</th><th>통보서 번호</th></tr></thead>`;
     const kd = r => `<div class="b56-kd"><div><span>■ 임시소방시설</span><span>(${r.tempFacility ? " ○ " : "  "})</span></div><div><span>■ 피난로 등</span><span>(${r.evacRoute ? " ○ " : "  "})</span></div><div><span>■ 화기취급감독</span><span>(${r.fireSupervise ? " ○ " : "  "})</span></div></div>`;
     const one = r => { const n = String(r.doneBy || "").trim();
-      return `<tr style="height:${b56RowMm(r)}mm"><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td>${kd(r)}</td><td>${b56IssueHtml(r)}</td><td class="done">${n ? (b56CoOf(n) ? `<div class="b56-co">${esc3a(b56CoOf(n))}</div>` : "") + b56NameSig(n, b56SigOf(n)) : ""}</td><td class="c">${esc3a(r.noticeNo || "")}</td></tr>`; };
+      return `<tr style="height:${b56RowMm(r)}mm"><td class="c pl">${b56Place(r.place)}</td><td>${kd(r)}</td><td>${b56IssueHtml(r)}</td><td class="done">${n ? (b56CoOf(n) ? `<div class="b56-co">${esc3a(b56CoOf(n))}</div>` : "") + b56NameSig(n, b56SigOf(n)) : ""}</td><td class="c">${esc3a(r.noticeNo || "")}</td></tr>`; };
     const BODY = 216, BLANK = 15;   // 본문 높이(mm), 빈 줄 높이
     const pages = []; let cur = [], used = 0;
     rows.forEach(r => { const h = b56RowMm(r); if(cur.length && used + h > BODY){ pages.push([cur, used]); cur = []; used = 0; } cur.push(r); used += h; });
@@ -467,10 +499,10 @@ B56_PAGES_JS = r"""
     let m6 = {}; try{ m6 = JSON.parse(localStorage.getItem(B6_META_KEY) || "{}"); }catch(e){}
     const rows = b6Rows.filter(r => r.place || r.kind || r.issue || r.result || r.photo || r.photoBefore);
     const meta = `<table class="ch1-table b56-meta"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col></colgroup><tr><th>점검일</th><td class="r">${b56DateKo(m6.date)}</td><th>통보서 번호</th><td class="c">${esc3a(m6.noticeNo || "")}</td></tr></table>`;
-    const head = `<colgroup><col style="width:8%"><col style="width:11%"><col style="width:37%"><col></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진</th></tr></thead>`;
+    const head = `<colgroup><col style="width:11%"><col style="width:15%"><col style="width:33%"><col></colgroup><thead><tr><th>장소<br>(구역)</th><th>점검종류</th><th>지적사항</th><th>조치 결과 사진</th></tr></thead>`;
     const ph = u => u ? `<div class="b56-pbox"><img src="${u}" alt="" /></div>` : "";
-    const kinds = r => String(r.kind || "").split(/\s*,\s*/).filter(Boolean).map(k => `<div>■ ${esc3a(k)}</div>`).join("");
-    const one = r => `<tr><td class="c">${esc3a(r.place || "").replace(/\s*\(/, "<br/>(")}</td><td><div class="b56-kd">${kinds(r)}</div></td>`
+    const kinds = r => String(r.kind || "").split(/\s*,\s*/).filter(Boolean).map(k => `<div>■\u00A0${esc3a(k)}</div>`).join("");
+    const one = r => `<tr><td class="c pl">${b56Place(r.place)}</td><td><div class="b56-kd6">${kinds(r)}</div></td>`
       + `<td class="pc iss">${ph(r.photoBefore)}${b56IssueHtml(r)}</td>`
       + `<td class="pc res">${ph(r.photo)}${r.result ? `<div class="b56-txt">${esc3a(r.result)}</div>` : ""}</td></tr>`;
     const subs = String(m6.submitter || "").split(/\s*,\s*/).filter(Boolean).map(n => { const c = b56CoOf(n); return (c ? esc3a(c) + " " : "") + b56NameSig(n, b56SigOf(n)); }).join("<br/>");
