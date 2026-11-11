@@ -163,12 +163,14 @@ B56_JS = r"""
   }
   // 통보서 번호 = 별지 6 점검일(조치 완료일)-순번. 같은 날 여러 기록이면 01, 02, ... (직접 다른 형식으로 쓴 번호는 그대로)
   function b56Renumber(){
-    // 통보서 번호 = 별지 6 점검일(조치 완료일) + 일련번호. 일련번호는 날짜 순으로 01, 02, 03 … 계속 이어짐
+    // 통보서 번호 = 별지 6 점검일(조치 완료일) + 일련번호. 일련번호는 지시일(별지 5 점검일) 순으로 01, 02, 03 … 계속 이어짐
     // (직접 다른 형식으로 쓴 번호는 그대로 두고 순번에서 뺌)
     let ch = false; const auto = /^\d{4}-\d{2}-\d{2}-\d{2,}$/;
     const list = b56Records.filter(r => { r.meta6 = r.meta6 || {}; const n = String(r.meta6.noticeNo || "").trim(); return (!n || auto.test(n)) && (r.meta6.date || r.date); });
     const key = r => b56Ymd(r.meta6.date || r.date) || "9999-99-99";
-    list.sort((a, b) => key(a).localeCompare(key(b)) || String(b56Ymd(a.date) || "").localeCompare(String(b56Ymd(b.date) || "")) || String(a.id || "").localeCompare(String(b.id || "")));
+    // 일련번호 순서는 별지 5 점검일(지시일) 순서 = 기록·인쇄 순서. 조치가 늦어 조치 완료일이 뒤바뀌어도 번호가 꼬이지 않게
+    const k5 = r => b56Ymd(r.date) || b56Ymd(r.meta6.date) || "9999-99-99";
+    list.sort((a, b) => k5(a).localeCompare(k5(b)) || String(a.id || "").localeCompare(String(b.id || "")));
     list.forEach((r, i) => {
       const no = `${key(r)}-${String(i + 1).padStart(2, "0")}`;
       if(r.meta6.noticeNo === no) return;
