@@ -2684,14 +2684,15 @@
   .b56-siggrp{ margin-bottom:10px; }
   .b56-siggrp-t{ font-size:12.5px; font-weight:700; color:#27407f; margin:4px 0 6px; padding-bottom:3px; border-bottom:1px solid #e3e7ef; }
   .b56-siggrp-t span{ font-weight:500; color:#8a92a3; font-size:11.5px; margin-left:4px; }
-  .b56-sigrow{ display:grid; grid-template-columns:1fr 92px auto; gap:6px; align-items:center; margin-bottom:6px; font-size:13px; }
+  .b56-sigrow{ display:grid; grid-template-columns:minmax(0, 1fr) 92px 170px; gap:6px; align-items:center; margin-bottom:6px; font-size:13px; }
   .b56-sigrow .sig{ height:34px; border:1px dashed #c5cbd6; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; color:#98a2b3; overflow:hidden; }
   .b56-sigrow .sig img{ max-height:30px; max-width:88px; }
   .b56-sigrow .sig{ cursor:pointer; }
   .b56-sigrow.armed .sig{ border:1.5px solid #2451c9; background:#eef3ff; color:#2451c9; }
   .b56-pastebox{ margin:-2px 0 8px; padding:8px 10px; border:1.5px solid #2451c9; border-radius:8px; background:#eef3ff; font-size:12px; color:#27407f; outline:none; }
-  .b56-sigrow .acts{ display:flex; gap:4px; }
-  .b56-sigrow .acts button{ font-size:11px; padding:4px 6px; white-space:nowrap; }
+  /* 버튼 3칸(서명·사진·삭제)을 같은 크기로, 삭제가 없어도 자리는 비워 두어 줄이 딱 맞게 */
+  .b56-sigrow .acts{ display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; }
+  .b56-sigrow .acts > button, .b56-sigrow .acts > .b56-slot{ box-sizing:border-box; width:100% !important; height:32px !important; min-height:0 !important; margin:0 !important; padding:0 4px !important; font-size:11.5px !important; font-weight:600; line-height:1 !important; border-radius:7px !important; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; }
   #b56SigModal{ position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(15,20,40,.5); margin:0 !important; }
   #b56SigModal.on{ display:flex; }
   #b56SigModal .box{ background:#fff; border-radius:12px; padding:16px; width:min(420px, 92vw); }
@@ -11917,7 +11918,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     let idx = 0;
     const row = n => { const i = idx++, s = b56SigOf(n), armed = b56PasteName === n;
       const hint = armed ? `<div class="b56-pastebox" tabindex="-1" data-pbox="${i}">📋 <b>지금 Ctrl+V</b>를 누르면 복사한 서명 사진(화면 캡처)이 들어가요.<div class="b56-btns" style="margin-top:6px"><button type="button" class="reset-btn" data-sfile="${i}">📁 파일에서 찾기</button><button type="button" class="photo-remove-btn" data-scancel="1">취소</button></div></div>` : "";
-      return `<div class="b56-sigrow${armed ? " armed" : ""}"><span>${esc3a(n)}</span><span class="sig" data-sup="${i}" title="누르고 Ctrl+V로 붙여넣기">${s ? `<img src="${s}" alt="서명">` : "서명 없음"}</span><span class="acts"><button type="button" class="reset-btn" data-sdraw="${i}">✍️ 서명</button><button type="button" class="reset-btn" data-sup="${i}">🖼 사진</button>${s && b56Sigs()[n] ? `<button type="button" class="photo-remove-btn" data-sdel="${i}">삭제</button>` : ""}</span></div>${hint}`; };
+      return `<div class="b56-sigrow${armed ? " armed" : ""}"><span>${esc3a(n)}</span><span class="sig" data-sup="${i}" title="누르고 Ctrl+V로 붙여넣기">${s ? `<img src="${s}" alt="서명">` : "서명 없음"}</span><span class="acts"><button type="button" class="reset-btn" data-sdraw="${i}">✍️ 서명</button><button type="button" class="reset-btn" data-sup="${i}">🖼 사진</button>${s && b56Sigs()[n] ? `<button type="button" class="photo-remove-btn" data-sdel="${i}">삭제</button>` : `<span class="b56-slot"></span>`}</span></div>${hint}`; };
     wrap.innerHTML = names.length ? [...groups.entries()].map(([g, ns]) => `<div class="b56-siggrp"><div class="b56-siggrp-t">${esc3a(g)} <span>${ns.filter(n => b56SigOf(n)).length}/${ns.length}명 등록</span></div>${ns.map(row).join("")}</div>`).join("")
       : '<p class="save-note" style="margin:0">PDF를 불러오면 조치자 이름이 여기에 나와요.</p>';
     wrap.querySelectorAll("[data-sdraw]").forEach(b => b.addEventListener("click", ()=> b56OpenPad(names[+b.dataset.sdraw])));
