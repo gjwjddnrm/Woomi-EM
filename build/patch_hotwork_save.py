@@ -103,10 +103,12 @@ PAIRS = [
      '      document.getElementById("saveUpd").click(); try{ __sbClean(); refreshSaveBars("✅ 저장했어요."); }catch(e){}\n'
      '    }\n'
      '  }\n'
-     '  return entries.filter(e => sel.has(e.id)).sort(byDate).map(e => e.data);\n'
+     '  return entries.filter(e => sel.has(e.id)).sort(__byPrint).map(e => e.data);\n'
      '};'),
-    # 인쇄·PDF 순서: 날짜가 빠른 것부터 (날짜 형식이 달라도, 빈 날짜는 맨 뒤), 같은 날은 허가번호 순
+    # 날짜 비교를 형식에 상관없이 정확하게 + 인쇄용 순서(최근 날짜 먼저)
     ('const byDate = (a, b)=> String(a.data.workDate || "").localeCompare(String(b.data.workDate || "")) || String(a.savedAt).localeCompare(String(b.savedAt));',
      'const __nd = (v)=>{ const m = String(v || "").match(/(\\d{4})\\D+(\\d{1,2})\\D+(\\d{1,2})/); return m ? m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0") : "9999-99-99"; };\n'
-     'const byDate = (a, b)=> __nd(a.data.workDate || a.data.permitDate).localeCompare(__nd(b.data.workDate || b.data.permitDate)) || String(a.data.permitNo || "").localeCompare(String(b.data.permitNo || ""), undefined, { numeric: true }) || String(a.savedAt).localeCompare(String(b.savedAt));'),
+     'const byDate = (a, b)=> __nd(a.data.workDate || a.data.permitDate).localeCompare(__nd(b.data.workDate || b.data.permitDate)) || String(a.data.permitNo || "").localeCompare(String(b.data.permitNo || ""), undefined, { numeric: true }) || String(a.savedAt).localeCompare(String(b.savedAt));\n'
+     '// 체크한 기록 인쇄·PDF: 최근 날짜 먼저, 가장 옛날 날짜가 마지막 (같은 날은 허가번호 순, 빈 날짜는 맨 뒤)\n'
+     'const __byPrint = (a, b)=>{ const x = __nd(a.data.workDate || a.data.permitDate), y = __nd(b.data.workDate || b.data.permitDate); return (x === "9999-99-99") - (y === "9999-99-99") || y.localeCompare(x) || String(a.data.permitNo || "").localeCompare(String(b.data.permitNo || ""), undefined, { numeric: true }) || String(a.savedAt).localeCompare(String(b.savedAt)); };'),
 ]

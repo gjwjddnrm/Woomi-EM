@@ -163,20 +163,17 @@ B56_JS = r"""
   }
   // 통보서 번호 = 별지 6 점검일(조치 완료일)-순번. 같은 날 여러 기록이면 01, 02, ... (직접 다른 형식으로 쓴 번호는 그대로)
   function b56Renumber(){
-    let ch = false; const auto = /^\d{4}-\d{2}-\d{2}-\d{2,}$/, groups = new Map();
-    b56Records.forEach(r => {
-      r.meta6 = r.meta6 || {}; const n = String(r.meta6.noticeNo || "").trim(); if(n && !auto.test(n)) return;
-      const d = r.meta6.date || r.date || ""; if(!d) return;
-      if(!groups.has(d)) groups.set(d, []); groups.get(d).push(r);
-    });
-    groups.forEach((list, d) => {
-      list.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.id || "").localeCompare(String(b.id || "")));
-      list.forEach((r, i) => {
-        const no = `${d}-${String(i + 1).padStart(2, "0")}`;
-        if(r.meta6.noticeNo === no) return;
-        r.meta6.noticeNo = no; ch = true;
-        (r.rows5 || []).forEach(x => { if(x.noticeNo && auto.test(String(x.noticeNo).trim())) x.noticeNo = no; });
-      });
+    // 통보서 번호 = 별지 6 점검일(조치 완료일) + 일련번호. 일련번호는 날짜 순으로 01, 02, 03 … 계속 이어짐
+    // (직접 다른 형식으로 쓴 번호는 그대로 두고 순번에서 뺌)
+    let ch = false; const auto = /^\d{4}-\d{2}-\d{2}-\d{2,}$/;
+    const list = b56Records.filter(r => { r.meta6 = r.meta6 || {}; const n = String(r.meta6.noticeNo || "").trim(); return (!n || auto.test(n)) && (r.meta6.date || r.date); });
+    const key = r => b56Ymd(r.meta6.date || r.date) || "9999-99-99";
+    list.sort((a, b) => key(a).localeCompare(key(b)) || String(b56Ymd(a.date) || "").localeCompare(String(b56Ymd(b.date) || "")) || String(a.id || "").localeCompare(String(b.id || "")));
+    list.forEach((r, i) => {
+      const no = `${key(r)}-${String(i + 1).padStart(2, "0")}`;
+      if(r.meta6.noticeNo === no) return;
+      r.meta6.noticeNo = no; ch = true;
+      (r.rows5 || []).forEach(x => { if(x.noticeNo && auto.test(String(x.noticeNo).trim())) x.noticeNo = no; });
     });
     return ch;
   }
@@ -592,7 +589,7 @@ B56_PAGES_JS = r"""
   }
   // ---- 체크한 기록: 한 번에 인쇄 / 날짜별 PDF ----
   const b56Sel = new Set();
-  function b56SelRecs(){ const k = r => b56Ymd(r.date) || "9999-99-99"; return b56Records.filter(r => b56Sel.has(r.id)).sort((a, b) => k(a).localeCompare(k(b)) || String(a.id || "").localeCompare(String(b.id || ""))); }   // 날짜가 빠른 것부터
+  function b56SelRecs(){ const k = r => b56Ymd(r.date) || "9999-99-99"; return b56Records.filter(r => b56Sel.has(r.id)).sort((a, b) => (k(a) === "9999-99-99") - (k(b) === "9999-99-99") || k(b).localeCompare(k(a)) || String(a.id || "").localeCompare(String(b.id || ""))); }   // 최근 날짜 먼저, 가장 옛날이 마지막 (빈 날짜는 맨 뒤)
   function b56SelStatus(t){ const el = document.getElementById("b56SelStatus"); if(el) el.textContent = t || ""; }
   async function b56PrintSelected(){
     const recs = b56SelRecs(); if(!recs.length){ alert("인쇄할 기록을 먼저 체크해주세요."); return; }
