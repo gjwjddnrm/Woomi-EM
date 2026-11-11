@@ -2666,6 +2666,11 @@
   #b56RecList .b56-rec button{ flex:none; border:0; background:none; color:#c0392b; cursor:pointer; }
   .b56-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .b56-btns button{ flex:1 1 0; min-width:0; margin:0 !important; padding-left:4px; padding-right:4px; font-size:12px; white-space:nowrap; }
+  /* 검토 목록 머리줄(넣기 체크 · 번호 · 문서번호 · 날짜)이 입력칸 위에 겹치지 않게 한 줄 따로 */
+  #b5-pdf-review-list .rev-row-editor .rev-row-no{ position:static; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; margin:-2px 0 10px; padding-bottom:8px; border-bottom:1px dashed #d5dbe5; font-size:12px; line-height:1.5; color:#5a6272; }
+  #b5-pdf-review-list .rev-row-editor .rev-row-no input{ margin:0 3px 0 0; vertical-align:-2px; }
+  #b5-pdf-review-list textarea[data-f="issue"]{ min-height:150px; }
+  #b5-pdf-review-list textarea[data-f="result"]{ min-height:64px; }
   .rev-row-editor.b56-off{ opacity:.45; }
   .rev-row-editor.b56-off textarea, .rev-row-editor.b56-off input[type=text]{ background:#f4f5f7; }
   .b56-inc{ font-weight:700; color:#27407f; }
