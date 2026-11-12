@@ -67,6 +67,37 @@ B3TOP_JS = r"""
   })();
 """
 
+B3SIGPASTE_JS = r"""
+  /* ---- 별지 3-1 소방안전관리자 서명: 화면 캡처 붙여넣기(Ctrl+V) ---- */
+  (function b3aSigPaste(){
+    const btn = document.getElementById("b3a-sig-paste-btn"), hint = document.getElementById("b3a-sig-paste-hint");
+    if(!btn || !hint) return;
+    let armed = false;
+    const arm = (on)=>{ armed = on; hint.style.display = on ? "" : "none"; btn.style.outline = on ? "2px solid #2451c9" : ""; };
+    btn.addEventListener("click", ()=> arm(true));
+    hint.querySelector("button").addEventListener("click", ()=> arm(false));
+    window.addEventListener("paste", (e)=>{
+      if(!armed) return;
+      const view = document.getElementById("b3CombinedView"); if(!view || view.classList.contains("view-hidden")) return;
+      const it = [...((e.clipboardData && e.clipboardData.items) || [])].find(x => x.kind === "file" && /^image\//.test(x.type));
+      if(!it){ alert("복사된 사진이 없어요. 화면 캡처(Print Screen, 또는 Windows+Shift+S)로 서명 부분을 복사한 뒤 다시 Ctrl+V 해주세요."); return; }
+      e.preventDefault(); e.stopImmediatePropagation();
+      const im = new Image();
+      im.onload = ()=>{
+        const c = document.createElement("canvas"); const k = Math.min(1, 900 / im.width); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+        const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src);
+        const ink = b3aTrInk(c, true);
+        if(!ink){ alert("서명을 찾지 못했어요. 흰 바탕에 서명만 보이게 캡처해서 다시 넣어주세요."); return; }
+        b3aSignature = ink.url;
+        try{ localStorage.setItem(B3A_SIGNATURE_DEFAULT_KEY, ink.url); }catch(err){}
+        renderB3a(); arm(false);
+      };
+      im.onerror = ()=> alert("사진을 읽지 못했어요.");
+      im.src = URL.createObjectURL(it.getAsFile());
+    }, true);
+  })();
+"""
+
 PAIRS = [
     ('<style>\n  /* 화면 미리보기도 인쇄와 똑같이: A4 한 장씩 따로, 같은 여백 */',
      '<style>' + B3TOP_CSS + '</style>\n<style>\n  /* 화면 미리보기도 인쇄와 똑같이: A4 한 장씩 따로, 같은 여백 */'),
@@ -75,4 +106,11 @@ PAIRS = [
     ('''      .sort((x, y)=> String(x.data["b3a-date"] || "").localeCompare(String(y.data["b3a-date"] || "")) || String(x.savedAt).localeCompare(String(y.savedAt)));''',
      '''      .sort((x, y)=> { const a = b3NormDate(x.data["b3a-date"]), b = b3NormDate(y.data["b3a-date"]); return (a === "9999-99-99") - (b === "9999-99-99") || b.localeCompare(a) || String(x.savedAt).localeCompare(String(y.savedAt)); });'''),
     ('  function b3SelectedEntries(){', '  function b3NormDate(v){ const m = String(v || "").match(/(\\d{4})\\D+(\\d{1,2})\\D+(\\d{1,2})/); return m ? m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0") : "9999-99-99"; }\n  function b3SelectedEntries(){'),
+    # 별지 3-1 소방안전관리자 서명: 화면 캡처 붙여넣기(Ctrl+V)
+    ('          <button type="button" class="reset-btn" id="b3a-sig-upload-btn">🖼️ 서명 이미지 업로드</button>',
+     '          <button type="button" class="reset-btn" id="b3a-sig-paste-btn">📋 화면 캡처 붙여넣기 (Ctrl+V)</button>\n'
+     '          <div id="b3a-sig-paste-hint" style="display:none;padding:8px 10px;border:1.5px solid #2451c9;border-radius:8px;background:#eef3ff;color:#27407f;font-size:12px">📋 <b>지금 Ctrl+V</b>를 누르면 복사한 서명 사진(화면 캡처)이 들어가요. <button type="button" class="photo-remove-btn" style="margin-left:4px;padding:3px 8px;font-size:11.5px">취소</button></div>\n'
+     '          <button type="button" class="reset-btn" id="b3a-sig-upload-btn">🖼️ 서명 이미지 업로드</button>'),
+    ('  #b3a-sig-upload-btn, #b3a-sig-clear, #b3a-sig-clear-default{', '  #b3a-sig-paste-btn, #b3a-sig-upload-btn, #b3a-sig-clear, #b3a-sig-clear-default{'),
+    ('  load();\n  wireHomeCoverInputs();', B3SIGPASTE_JS + '  load();\n  wireHomeCoverInputs();'),
 ]
