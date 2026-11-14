@@ -686,13 +686,14 @@ B56_PAGES_JS = r"""
     if(view && !document.getElementById("b56Top")){
       const I = d => `<svg class="b56-i" viewBox="0 0 24 24">${d}</svg>`;
       const top = document.createElement("header"); top.id = "b56Top";
-      top.innerHTML = `<div class="b56-logo">🛠</div><div class="b56-brand"><b>안전점검 지적내역서 · 조치결과통보서</b><span>별지 5 지적내역서 · 별지 6 조치 결과 통보서 작성</span></div><div class="sp"></div>`
+      top.innerHTML = `<div class="b56-logo"><svg class="b56-lg" viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="M8.5 13l2.2 2.2L15.5 10.5"/></svg></div><div class="b56-brand"><b>안전점검 지적내역서 · 조치결과통보서</b><span>별지 5 지적내역서 · 별지 6 조치 결과 통보서 작성</span></div><div class="sp"></div>`
         + `<button class="tb" id="b56TopNew" type="button">${I('<path d="M12 5v14M5 12h14"/>')} 새로 작성</button>`
         + `<button class="tb" id="b56TopPrint" type="button">${I('<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>')} 인쇄</button>`
         + `<button class="tb" id="b56TopPdf" type="button">${I('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14h6M9 17h4"/>')} PDF</button>`
         + `<button class="tb" id="b56TopUpd" type="button" style="display:none">${I('<path d="M4 20h4l11-11-4-4L4 16z"/>')} 수정 저장</button>`
         + `<button class="tb pri" id="b56TopSave" type="button">${I('<path d="M5 3h11l4 4v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>')} 새 기록 저장</button>`;
       view.insertBefore(top, view.firstChild);
+      { const mainEl = document.getElementById("b56Main"); if(mainEl && !mainEl.querySelector(".woomi-pvhead")){ const h = document.createElement("div"); h.className = "woomi-pvhead"; h.innerHTML = '<span><b>미리보기</b> · A4 양식 그대로</span><span>별지 5 → 별지 6</span>'; mainEl.insertBefore(h, mainEl.firstChild); } }   // (WOOMI) 화기작업 화면과 같은 미리보기 머리줄
       document.getElementById("b56TopNew").addEventListener("click", ()=> document.getElementById("b56New").click());
       document.getElementById("b56TopPrint").addEventListener("click", ()=> window.print());
       document.getElementById("b56TopUpd").addEventListener("click", ()=> document.getElementById("b56SaveUpd").click());
