@@ -2236,6 +2236,7 @@
   }
   .b3a-log-item.active{ border-color:#3b6fd6; background:#f0f5ff; }
   .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }
+  .b3a-log-warn{ margin-top:3px; padding:3px 6px; border-radius:5px; background:#fff4dc; color:#8a5a00; font-size:11.5px; line-height:1.4; white-space:normal; word-break:keep-all; }
   .b3a-log-item-date{ font-size:12px; font-weight:700; color:#333; }
   .b3a-log-item-snip{ font-size:11px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .b3a-log-item-del{
@@ -6668,6 +6669,7 @@ html.wsec-locked #wsecLock{ display:flex; }
           <div class="b3a-log-item-main" data-action="load" data-id="${entry.id}">
             <div class="b3a-log-item-date">${label}</div>
             <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>
+            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\s*—.*$/, "").replace(/\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("")}
           </div>
           <button type="button" class="b3a-log-item-del" data-action="delete" data-id="${entry.id}">삭제</button>
         </div>`;
@@ -8907,6 +8909,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
     const noSig = rosterRows.filter(p => !p.sig);
     if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
+    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
     if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \"(확인필요)\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");
     return {
       date, time: "", cnt: totalCnt || "", place: firstOf("place"), trade: tradeText,
@@ -8943,8 +8946,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     {   // (WOOMI) 날짜를 못 읽었거나 다른 쪽에서 가져왔으면 이유 표시
       const sel = document.getElementById("b3a-ocr-day-sel"); let nt = document.getElementById("b3a-ocr-date-note");
       if(!nt && sel){ nt = document.createElement("p"); nt.id = "b3a-ocr-date-note"; nt.className = "save-note"; nt.style.cssText = "margin:6px 0 0;border-color:#f0c36d;background:#fff8e6;color:#7a5200"; sel.parentNode.insertBefore(nt, sel.nextSibling); }
-      const ws = (d.warns || []).slice(); if(d.noPhoto) ws.push("ℹ️ 사진: PDF에 사진대지가 없어 사진을 넣지 않았어요.");
-      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = (wn ? "<b>⚠️ 확인할 곳 " + wn + "건</b>" : "<b>✅ 확인할 곳 없음</b>") + (ws.length ? "<br>" + ws.map(w => "· " + esc3a(w)).join("<br>") : ""); nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }
+      const ws = (d.warns || []).slice();
+      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = ws.length ? "<details><summary style=cursor:pointer;font-weight:700>" + (wn ? "⚠️ 확인할 곳 " + wn + "건" : "✅ 확인할 곳 없음") + " <span style=font-weight:400>(저장하면 기록 목록에 표시돼요 · 눌러서 보기)</span></summary>" + ws.map(w => "· " + esc3a(w)).join("<br>") + "</details>" : "<b>✅ 확인할 곳 없음</b>"; nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }
     }
     document.getElementById("b3a-ocr-day-sel").value = String(i);
     document.getElementById("b3a-ocr-r-date").value = d.date || "";

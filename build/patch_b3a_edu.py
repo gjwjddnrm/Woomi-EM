@@ -173,14 +173,15 @@ PAIRS = [
     if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
     const noSig = rosterRows.filter(p => !p.sig);
     if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
+    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
     if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \\"(확인필요)\\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");"""),
     ('      names: [...new Set(results.map(r => r.name))], gubun, dateNote:',
      '      names: [...new Set(results.map(r => r.name))], gubun, warns, dateNote:'),
     ('${d.dateNote ? " ⚠️" : ""} · ',
      '${(d.warns || []).length ? " ⚠️" + d.warns.length : ""} · '),
     ('      if(nt){ nt.textContent = d.dateNote ? "⚠️ 날짜: " + d.dateNote + (d.date ? "" : " 날짜를 직접 입력해 주세요.") : ""; nt.style.display = d.dateNote ? "" : "none"; }',
-     '      const ws = (d.warns || []).slice(); if(d.noPhoto) ws.push("ℹ️ 사진: PDF에 사진대지가 없어 사진을 넣지 않았어요.");\n'
-     '      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = (wn ? "<b>⚠️ 확인할 곳 " + wn + "건</b>" : "<b>✅ 확인할 곳 없음</b>") + (ws.length ? "<br>" + ws.map(w => "· " + esc3a(w)).join("<br>") : ""); nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }'),
+     '      const ws = (d.warns || []).slice();\n'
+     '      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = ws.length ? "<details><summary style=cursor:pointer;font-weight:700>" + (wn ? "⚠️ 확인할 곳 " + wn + "건" : "✅ 확인할 곳 없음") + " <span style=font-weight:400>(저장하면 기록 목록에 표시돼요 · 눌러서 보기)</span></summary>" + ws.map(w => "· " + esc3a(w)).join("<br>") + "</details>" : "<b>✅ 확인할 곳 없음</b>"; nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }'),
     # 저장할 때 기록에 함께 보관
     ('      <input type="hidden" id="b3a-date-note" />',
      '      <input type="hidden" id="b3a-date-note" />\n      <input type="hidden" id="b3a-check-note" />'),
@@ -209,4 +210,11 @@ PAIRS = [
     document.getElementById("b3a-check-done").onclick = ()=>{ f.value = ""; b3aShowCheckBox(); try{ saveB3a(); }catch(e){} alert('표시를 지웠어요. 저장된 기록에도 반영하려면 "새 기록으로 저장"을 눌러 주세요.'); };
   }
   async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){"""),
+    # 10) 저장된 기록 목록에서 문제점을 바로 보이게 (항목마다 짧게, 전체 문장은 마우스를 올리면)
+    ('            <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>',
+     '            <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>\n'
+     '            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\\s*—.*$/, "").replace(/\\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("")}'),
+    ('  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }',
+     '  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }\n'
+     '  .b3a-log-warn{ margin-top:3px; padding:3px 6px; border-radius:5px; background:#fff4dc; color:#8a5a00; font-size:11.5px; line-height:1.4; white-space:normal; word-break:keep-all; }'),
 ]
