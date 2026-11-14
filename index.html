@@ -4155,6 +4155,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       <label style="margin-top:10px;display:block">협력업체별 인원 · 역할</label>
       <input type="hidden" id="b3a-workers" />
       <input type="hidden" id="b3a-photo-note" />
+      <input type="hidden" id="b3a-date-note" />
       <datalist id="b3a-role-list"><option value="용접"></option><option value="화기감시자"></option><option value="용단"></option><option value="연마"></option></datalist>
       <div id="b3a-workers-editor"></div>
       <div class="field-row" style="margin-top:6px">
@@ -6482,7 +6483,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   /* ================= 별지 3-1: 소방안전 교육 및 훈련 결과 보고서 ================= */
   const B3A_STORAGE_KEY = "fireplan_byeolji3a_v1";
   const B3A_TEXT_FIELDS = ["b3a-date","b3a-place","b3a-target-cnt","b3a-done-cnt","b3a-miss-cnt","b3a-target-trade",
-    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
+    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note","b3a-date-note","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
   const B3A_CHECK_FIELDS = ["b3a-proxy-on","b3a-chk-edu","b3a-chk-training","b3a-chk-recruit","b3a-chk-fire","b3a-chk-init-edu","b3a-chk-evac","b3a-chk-init-training"];
   const B3A_LOG_KEY = "fireplan_byeolji3a_log_v1";
   const B3A_SIGNATURE_DEFAULT_KEY = "fireplan_b3a_signature_default_v1";
@@ -6657,7 +6658,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     }else{
       listEl.innerHTML = b3aLogEntries.slice().reverse().map(entry=>{
         const { date, place, main } = b3aLogSnippet(entry.data);
-        const label = [date || "날짜 미입력", place].filter(Boolean).join(" · ");
+        const label = [date || ("날짜 미입력" + (entry.data && entry.data["b3a-date-note"] ? " ⚠️ " + String(entry.data["b3a-date-note"]).replace(/[<>&]/g, "") : "")), place].filter(Boolean).join(" · ");
         const isActive = entry.id === b3aEditingId;
         return `<div class="b3a-log-item${isActive ? " active" : ""}" data-id="${entry.id}">
           <input type="checkbox" class="b3a-log-sel" data-id="${entry.id}" ${b3aLogSel.has(entry.id) ? "checked" : ""} title="인쇄·PDF 저장할 기록 선택" style="width:18px;height:18px;flex:none" />
@@ -8393,6 +8394,36 @@ html.wsec-locked #wsecLock{ display:flex; }
     return kinds;
   }
 
+  // (WOOMI) 교육일지 날짜를 못 읽은 묶음: 사진대지("교육일자: …")·참석확인서("2026 년 10 월 31 일") 맨 위에서 날짜 찾기
+  async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){
+    const label = (k)=> k === "roster" ? "참석확인서" : k === "admin" ? "관리자 첨부 사진대지" : "사진대지";
+    for(let pn = P0; pn <= P1; pn++){
+      const k = kinds && kinds[pn]; if(!/^(photo|admin|roster)$/.test(k || "")) continue;
+      const m = kinds.meta && kinds.meta[pn]; if(m && m.date) return { date: m.date, from: label(k), page: pn };
+    }
+    for(let pn = P0; pn <= P1; pn++){
+      const k = kinds && kinds[pn]; if(!/^(photo|admin|roster)$/.test(k || "")) continue;
+      try{
+        const tc = await (await pdf.getPage(pn)).getTextContent();
+        const d0 = b3aOcrParseDate(tc.items.map(i => i.str).join(" ").slice(0, 400));
+        if(d0) return { date: d0, from: label(k), page: pn };
+      }catch(e){}
+      try{
+        await b3aOcrEnsureWorker();
+        const page = await pdf.getPage(pn), vp0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: Math.min(2.5, 1600 / vp0.width) });
+        const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise; b3aOcrNormalizeDark(c);
+        const x0 = Math.round(c.width * 0.55), y0 = Math.round(c.height * 0.05), w = c.width - x0, h = Math.round(c.height * 0.08);
+        const t = document.createElement("canvas"); t.width = w; t.height = h; t.getContext("2d").drawImage(c, x0, y0, w, h, 0, 0, w, h);
+        await b3aOcrWorker.setParameters({ tessedit_pageseg_mode: "6" });
+        const txt = await b3aOcrRecognizeCanvas(b3aOcrPad(t));
+        await b3aOcrWorker.setParameters({ tessedit_pageseg_mode: "7" });
+        const mm = String(txt || "").replace(/\s+/g, "").match(/(20\d{2})\D{0,2}(\d{1,2})\D{0,2}(\d{1,2})/);
+        if(mm && +mm[2] >= 1 && +mm[2] <= 12 && +mm[3] >= 1 && +mm[3] <= 31) return { date: `${mm[1]}-${mm[2].padStart(2, "0")}-${mm[3].padStart(2, "0")}`, from: label(k), page: pn };
+      }catch(e){ console.warn("묶음 날짜 찾기 실패", pn, e); }
+    }
+    return null;
+  }
   async function b3aOcrProcessSession(pdf, file, fileIdx, total, P0, P1, sIdx, sTotal, kinds){
     const prefix = (total > 1 ? `[${fileIdx+1}/${total}] ` : "") + (sTotal > 1 ? `(${sIdx+1}/${sTotal}) ` : "");
     const st = (t)=> b3aOcrSetStatus(prefix + t);
@@ -8506,7 +8537,7 @@ html.wsec-locked #wsecLock{ display:flex; }
         const adminPage = {};
         const photoPageInfo = {};   // pageNo -> { first: 그 교육의 첫 사진대지 장인지 }
         let anyTitle = false, prevPhoto = false;
-        for(let pn = P0 + 1; pn <= P1; pn++){
+        for(let pn = (kinds && /^(photo|admin|roster)$/.test(kinds[P0] || "")) ? P0 : P0 + 1; pn <= P1; pn++){   // (WOOMI)
           const kd = kinds && kinds[pn];
           const isPhoto = kd === "admin" || kd === "photo";
           adminPage[pn] = kd === "admin";
@@ -8522,7 +8553,7 @@ html.wsec-locked #wsecLock{ display:flex; }
           for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }
         {
           // 사진대지 맨 위 줄의 교육일자가 이 일지의 날짜와 다르거나, 교육명이 제외 대상(MSDS·특별·특수·기타)뿐이면 사진을 쓰지 않습니다.
-          const sdate = b3aOcrParseDate(fields.date);
+          const sdate = (kinds && /^(photo|admin|roster)$/.test(kinds[P0] || "")) ? "" : b3aOcrParseDate(fields.date || "");   // (WOOMI)
           photoPages = photoPages.filter(pn => {
             const m = kinds && kinds.meta && kinds.meta[pn];
             if(!m) return true;
@@ -8707,12 +8738,19 @@ html.wsec-locked #wsecLock{ display:flex; }
       }
 
     }
-    const trade = b3aOcrSanitize(fields.trade);
+    // (WOOMI) 교육일지 첫 장이 없는 묶음이면 일지 칸(장소·인원·공종)은 엉뚱한 쪽을 읽은 것이라 비움
+    const __noLog = !!(kinds && /^(photo|admin|roster)$/.test(kinds[P0] || ""));
+    const trade = __noLog ? "" : b3aOcrSanitize(fields.trade);
+    let __date = __noLog ? "" : b3aOcrParseDate(fields.date || ""), __dateNote = "";
+    if(!__date){
+      __dateNote = __noLog ? `PDF ${P0}~${P1}쪽 묶음에 교육일지 첫 장(안전보건교육일지)이 없어요` : `교육일지(${P0}쪽)의 교육일자 칸을 읽지 못했어요`;
+      try{ const fd = await b3aOcrFindSessionDate(pdf, P0, P1, kinds); if(fd){ __date = fd.date; __dateNote += ` → ${fd.from}(${fd.page}쪽)의 날짜로 넣었어요`; } }catch(e){}
+    }
     return {
-      name: file.name,
-      date: b3aOcrParseDate(fields.date), time: b3aOcrParseTime(fields.time),
-      cnt: b3aOcrParseCount(fields.targetCnt),
-      place: b3aOcrCleanText(b3aOcrSanitize(fields.place)),
+      name: file.name, dateNote: __dateNote,
+      date: __date, time: b3aOcrParseTime(fields.time || ""),
+      cnt: __noLog ? "" : b3aOcrParseCount(fields.targetCnt),
+      place: __noLog ? "" : b3aOcrCleanText(b3aOcrSanitize(fields.place)),
       tradeRaw: trade, companies: b3aOcrTradeCompanies(trade),
       gubun: detectedGubun, photos, roster, noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false,
     };
@@ -8727,7 +8765,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     const starts = [];
     for(let pn = 1; pn <= pdf.numPages; pn++) if(kinds[pn] === "log") starts.push(pn);
     if(!starts.length) starts.push(1);
-    starts[0] = 1;
+    if(starts[0] !== 1) starts.unshift(1);   // (WOOMI) 첫 교육일지를 덮어쓰지 않음
     const out = [];
     for(let i = 0; i < starts.length; i++){
       const end = (starts[i+1] || pdf.numPages + 1) - 1;
@@ -8848,7 +8886,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     return {
       date, time: "", cnt: totalCnt || "", place: firstOf("place"), trade: tradeText,
       rosterRows, photos, selected: null, companyCount: companies.length,
-      names: [...new Set(results.map(r => r.name))], gubun, noPhoto: !photos.length && results.every(r => r.noPhotoPage),
+      names: [...new Set(results.map(r => r.name))], gubun, dateNote: [...new Set(results.map(r => r.dateNote).filter(Boolean))].join(" / "), noPhoto: !photos.length && results.every(r => r.noPhotoPage),
     };
   }
 
@@ -8864,7 +8902,7 @@ html.wsec-locked #wsecLock{ display:flex; }
 
   function b3aOcrFillDaySelect(){
     const sel = document.getElementById("b3a-ocr-day-sel"), wrap = document.getElementById("b3a-ocr-day-wrap");
-    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
+    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")}${d.dateNote ? " ⚠️" : ""} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
     sel.value = "0";
     const multi = b3aOcrDays.length > 1;
     wrap.style.display = multi ? "block" : "none";
@@ -8877,6 +8915,11 @@ html.wsec-locked #wsecLock{ display:flex; }
   function b3aOcrLoadDay(i){
     const d = b3aOcrDays[i]; if(!d) return;
     b3aOcrDayIdx = i;
+    {   // (WOOMI) 날짜를 못 읽었거나 다른 쪽에서 가져왔으면 이유 표시
+      const sel = document.getElementById("b3a-ocr-day-sel"); let nt = document.getElementById("b3a-ocr-date-note");
+      if(!nt && sel){ nt = document.createElement("p"); nt.id = "b3a-ocr-date-note"; nt.className = "save-note"; nt.style.cssText = "margin:6px 0 0;border-color:#f0c36d;background:#fff8e6;color:#7a5200"; sel.parentNode.insertBefore(nt, sel.nextSibling); }
+      if(nt){ nt.textContent = d.dateNote ? "⚠️ 날짜: " + d.dateNote + (d.date ? "" : " 날짜를 직접 입력해 주세요.") : ""; nt.style.display = d.dateNote ? "" : "none"; }
+    }
     document.getElementById("b3a-ocr-day-sel").value = String(i);
     document.getElementById("b3a-ocr-r-date").value = d.date || "";
     document.getElementById("b3a-ocr-r-time").value = "";
@@ -9483,7 +9526,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(tradeVal) document.getElementById("b3a-target-trade").value = tradeVal;
     {
       // 선택한 순서대로 배치(아무것도 선택하지 않았으면 찾은 사진 전체를 PDF 순서대로)
-      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
+      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); const dn = document.getElementById("b3a-date-note"); if(dn) dn.value = (dd && !dd.date && dd.dateNote) ? dd.dateNote : ""; if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
       const all = b3aOcrSelected.slice();
       if(all.length){ b3aPhoto1 = all[0] || null; b3aPhoto2 = all[1] || null; b3aPhotoMore = all.slice(2); }
     }
