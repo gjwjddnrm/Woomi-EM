@@ -267,13 +267,13 @@ PAIRS = [
      '  document.getElementById("b3aSaveLogBtn").addEventListener("click", ()=>{\n    try{ b3aResolveChecks(); window.__b3aEdited = false; }catch(e){}   // (WOOMI) 고쳤거나 해결된 확인할 곳은 지움\n    const data = getB3aFormData();'),
     # 15) 연한 회색·가는 선 서명(예: "K"처럼 흐리게 쓴 서명)을 빈칸으로 보던 문제: 연한 점까지 세서 서명으로 보고, 진하게 바꿔 넣음
     ('              const sig = b3aOcrDarkRatio(sigCrop) > 0.01 ? b3aOcrCanvasToDataUrl(b3aOcrFixSig(sigCrop)) : "";',
-     '              const sig = (b3aOcrDarkRatio(sigCrop) > 0.01 || b3aOcrLightInk(sigCrop) > 0.003) ? b3aOcrCanvasToDataUrl(b3aOcrFixSig(b3aOcrSigEnhance(sigCrop))) : "";   // (WOOMI) 연한 서명도'),
+     '              const sig = (b3aOcrDarkRatio(sigCrop) > 0.01 || b3aOcrLightInk(sigCrop) > 0.0012) ? b3aOcrCanvasToDataUrl(b3aOcrFixSig(b3aOcrSigEnhance(sigCrop))) : "";   // (WOOMI) 연한 서명도'),
     ('  function b3aOcrDarkRatio(canvas){',
      """  // (WOOMI) 연한 글씨(밝기 215 미만) 비율 — 흐린 서명 찾기용
   function b3aOcrLightInk(canvas){
     const d = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data; let n = 0;
-    for(let i = 0; i < d.length; i += 4) if(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2] < 215) n++;
-    return n / (d.length / 4);
+    for(let i = 0; i < d.length; i += 4) if(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2] < 228) n++;
+    return n >= 12 ? n / (d.length / 4) : 0;   // 점 몇 개(잡티)는 서명이 아님
   }
   // (WOOMI) 흐린 서명이면 대비를 높여 진하게 (이미 진한 서명은 그대로)
   function b3aOcrSigEnhance(canvas){
