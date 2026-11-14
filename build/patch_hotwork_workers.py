@@ -68,4 +68,7 @@ $("#splitDays").onclick = ()=>{
   persist(); renderLog(); status(`✅ ${days.length}일치로 나눠 저장했어요.`);
 };
 $("#saveNew").onclick = ()=>{'''),
+    # 저장된 기록 목록 정리: 날짜 묶음 머리줄(체크박스)을 없애고 한 줄씩만 (날짜는 허가번호에 들어 있음)
+    ('`<div class="dgrp" style="display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:12.5px;font-weight:800;color:#0e1a33"><input type="checkbox" data-grp="${esc(g.k)}" style="width:17px;height:17px;accent-color:#0e1a33" ${g.items.every(e => sel.has(e.id)) ? "checked" : ""}> ${esc(g.k || "작업일 없음")} <small style="font-weight:500;color:#6b7488">${g.items.length}건</small></div>` +',
+     '"" +'),
 ]
