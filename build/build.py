@@ -112,6 +112,9 @@ s = rep(s, "  async function b3IdbSet(key, val){\n    const db", "  async functi
 import importlib.util as _u3
 _sp3 = _u3.spec_from_file_location("patch_b3a_darkpage", HERE / "patch_b3a_darkpage.py"); _m3 = _u3.module_from_spec(_sp3); _sp3.loader.exec_module(_m3)
 for _o, _n in _m3.PAIRS: s = rep(s, _o, _n)
+# 교육일지 PDF 읽기 보완(제목 띠 사진 제외, 공종명 칸 깨진 업체 정리)
+_spE = _u3.spec_from_file_location("patch_b3a_edu", HERE / "patch_b3a_edu.py"); _mE = _u3.module_from_spec(_spE); _spE.loader.exec_module(_mE)
+for _o, _n in _mE.PAIRS: s = rep(s, _o, _n)
 
 # 별지 3-1: 비상대비훈련 보고서(스캔본) 불러오기 + 별지 3-2 손글씨 소속·성명 그림
 import importlib.util as _u6
