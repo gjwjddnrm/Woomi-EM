@@ -4154,6 +4154,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       <div style="display:none">
       <label style="margin-top:10px;display:block">협력업체별 인원 · 역할</label>
       <input type="hidden" id="b3a-workers" />
+      <input type="hidden" id="b3a-photo-note" />
       <datalist id="b3a-role-list"><option value="용접"></option><option value="화기감시자"></option><option value="용단"></option><option value="연마"></option></datalist>
       <div id="b3a-workers-editor"></div>
       <div class="field-row" style="margin-top:6px">
@@ -6481,7 +6482,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   /* ================= 별지 3-1: 소방안전 교육 및 훈련 결과 보고서 ================= */
   const B3A_STORAGE_KEY = "fireplan_byeolji3a_v1";
   const B3A_TEXT_FIELDS = ["b3a-date","b3a-place","b3a-target-cnt","b3a-done-cnt","b3a-miss-cnt","b3a-target-trade",
-    "b3a-time-start","b3a-time-end","b3a-workers","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
+    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
   const B3A_CHECK_FIELDS = ["b3a-proxy-on","b3a-chk-edu","b3a-chk-training","b3a-chk-recruit","b3a-chk-fire","b3a-chk-init-edu","b3a-chk-evac","b3a-chk-init-training"];
   const B3A_LOG_KEY = "fireplan_byeolji3a_log_v1";
   const B3A_SIGNATURE_DEFAULT_KEY = "fireplan_b3a_signature_default_v1";
@@ -6822,7 +6823,9 @@ html.wsec-locked #wsecLock{ display:flex; }
     const capOf = (u)=>{ const c = u && (window.b3aPhotoCaps || {})[u.length + ":" + u.slice(-40)]; return c ? esc3a(c) : ""; };
     const box = (url, n)=> url
       ? `<div class="photo-box has-photo${capOf(url) ? " has-cap" : ""}"><img src="${url}" alt="사진 ${n}" />${capOf(url) ? `<div class="photo-cap">${capOf(url)}</div>` : ""}</div>`
-      : `<div class="photo-box"><span class="photo-placeholder">사진 ${n} 첨부란</span></div>`;
+      : (n === 1 && !all.length && (document.getElementById("b3a-photo-note") || {}).value
+        ? `<div class="photo-box b3a-nophoto"><span class="photo-placeholder">📷 사진 없음<br><small>${esc3a(document.getElementById("b3a-photo-note").value)}</small></span></div>`
+        : `<div class="photo-box"><span class="photo-placeholder">사진 ${n} 첨부란</span></div>`);
     const headHtml = lastSheet.querySelector(".byeolji-header").outerHTML;
     let n = 0;
     chunks.forEach(ch=>{
@@ -8528,6 +8531,7 @@ html.wsec-locked #wsecLock{ display:flex; }
             return true;
           });
         }
+        var __woomiNoPhotoPage = photoPages.length === 0;   // (WOOMI) 이 교육에는 사진대지 쪽이 없음
         for(const pageNo of photoPages){
           const page = await pdf.getPage(pageNo);
           const viewport = page.getViewport({ scale: 2.5 });
@@ -8710,7 +8714,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       cnt: b3aOcrParseCount(fields.targetCnt),
       place: b3aOcrCleanText(b3aOcrSanitize(fields.place)),
       tradeRaw: trade, companies: b3aOcrTradeCompanies(trade),
-      gubun: detectedGubun, photos, roster,
+      gubun: detectedGubun, photos, roster, noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false,
     };
   }
 
@@ -8844,7 +8848,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     return {
       date, time: "", cnt: totalCnt || "", place: firstOf("place"), trade: tradeText,
       rosterRows, photos, selected: null, companyCount: companies.length,
-      names: [...new Set(results.map(r => r.name))], gubun,
+      names: [...new Set(results.map(r => r.name))], gubun, noPhoto: !photos.length && results.every(r => r.noPhotoPage),
     };
   }
 
@@ -8860,7 +8864,7 @@ html.wsec-locked #wsecLock{ display:flex; }
 
   function b3aOcrFillDaySelect(){
     const sel = document.getElementById("b3a-ocr-day-sel"), wrap = document.getElementById("b3a-ocr-day-wrap");
-    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · 사진 ${d.photos.length}장</option>`).join("");
+    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
     sel.value = "0";
     const multi = b3aOcrDays.length > 1;
     wrap.style.display = multi ? "block" : "none";
@@ -9479,6 +9483,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(tradeVal) document.getElementById("b3a-target-trade").value = tradeVal;
     {
       // 선택한 순서대로 배치(아무것도 선택하지 않았으면 찾은 사진 전체를 PDF 순서대로)
+      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
       const all = b3aOcrSelected.slice();
       if(all.length){ b3aPhoto1 = all[0] || null; b3aPhoto2 = all[1] || null; b3aPhotoMore = all.slice(2); }
     }

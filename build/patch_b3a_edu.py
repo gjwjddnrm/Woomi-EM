@@ -58,4 +58,25 @@ PAIRS = [
     ('        else for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }',
      '        else if(![...Array(Math.max(0, P1 - P0)).keys()].some(i => kinds && kinds[P0 + 1 + i] && kinds[P0 + 1 + i] !== "other"))   // (WOOMI) 예전 스캔본(쪽 종류를 하나도 못 알아봄)일 때만\n'
      '          for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }'),
+    # 5) 사진대지가 없어 사진을 못 넣은 날은 "인식 실패"처럼 보이지 않게 안내 문구 표시
+    ('        for(const pageNo of photoPages){',
+     '        var __woomiNoPhotoPage = photoPages.length === 0;   // (WOOMI) 이 교육에는 사진대지 쪽이 없음\n'
+     '        for(const pageNo of photoPages){'),
+    ('      gubun: detectedGubun, photos, roster,',
+     '      gubun: detectedGubun, photos, roster, noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false,'),
+    ('      names: [...new Set(results.map(r => r.name))], gubun,',
+     '      names: [...new Set(results.map(r => r.name))], gubun, noPhoto: !photos.length && results.every(r => r.noPhotoPage),'),
+    ('<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · 사진 ${d.photos.length}장</option>',
+     '<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>'),
+    ('      <input type="hidden" id="b3a-workers" />',
+     '      <input type="hidden" id="b3a-workers" />\n      <input type="hidden" id="b3a-photo-note" />'),
+    ('    "b3a-time-start","b3a-time-end","b3a-workers",',
+     '    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note",'),
+    ('      const all = b3aOcrSelected.slice();',
+     '      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)\n'
+     '      const all = b3aOcrSelected.slice();'),
+    ('      : `<div class="photo-box"><span class="photo-placeholder">사진 ${n} 첨부란</span></div>`;',
+     '      : (n === 1 && !all.length && (document.getElementById("b3a-photo-note") || {}).value\n'
+     '        ? `<div class="photo-box b3a-nophoto"><span class="photo-placeholder">📷 사진 없음<br><small>${esc3a(document.getElementById("b3a-photo-note").value)}</small></span></div>`\n'
+     '        : `<div class="photo-box"><span class="photo-placeholder">사진 ${n} 첨부란</span></div>`);'),
 ]
