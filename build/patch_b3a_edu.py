@@ -10,7 +10,7 @@ PAIRS = [
     # 1) 사진: 제목 띠 빼기
     ('          const blobs = b3aOcrDetectPhotoBlobs(pageCanvas, { firstSectionIndividual: !!photoPageInfo[pageNo].first, allIndividual: true });',
      '          const blobs = b3aOcrDetectPhotoBlobs(pageCanvas, { firstSectionIndividual: !!photoPageInfo[pageNo].first, allIndividual: true })\n'
-     '            .filter(b => b.canvas || !(b.y1 <= 0.115 || ((b.x1 - b.x0) * pageCanvas.width) / Math.max(1, (b.y1 - b.y0) * pageCanvas.height) > 7));   // (WOOMI) 쪽 맨 위 제목 띠·납작한 띠는 사진이 아님'),
+     '            .filter(b => !(kinds && kinds[pageNo] === "photo" && !b.canvas && b.y0 >= 0.455))   // (WOOMI) 사진대지 아래 "신분증,이수증" 칸은 개인정보라 가져오지 않음\n            .filter(b => b.canvas || !(b.y1 <= 0.115 || ((b.x1 - b.x0) * pageCanvas.width) / Math.max(1, (b.y1 - b.y0) * pageCanvas.height) > 7));   // (WOOMI) 쪽 맨 위 제목 띠·납작한 띠는 사진이 아님'),
     # 2) 공종명 칸 → 업체 이름
     ('''    raw.split(/[,，]/).map(x=>x.trim()).filter(Boolean).forEach(part=>{
       const seg = part.includes("/") ? part.split("/").pop() : part;''',
@@ -67,13 +67,13 @@ PAIRS = [
     ('      names: [...new Set(results.map(r => r.name))], gubun,',
      '      names: [...new Set(results.map(r => r.name))], gubun, noPhoto: !photos.length && results.every(r => r.noPhotoPage),'),
     ('<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · 사진 ${d.photos.length}장</option>',
-     '<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>'),
+     '<option value="${i}">${esc3a(d.date || "날짜 미확인")} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(관리자 첨부 사진 없음)" : "사진 " + d.photos.length + "장"}</option>'),
     ('      <input type="hidden" id="b3a-workers" />',
      '      <input type="hidden" id="b3a-workers" />\n      <input type="hidden" id="b3a-photo-note" />'),
     ('    "b3a-time-start","b3a-time-end","b3a-workers",',
      '    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note",'),
     ('      const all = b3aOcrSelected.slice();',
-     '      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)\n'
+     '      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 관리자 첨부 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)\n'
      '      const all = b3aOcrSelected.slice();'),
     ('      : `<div class="photo-box"><span class="photo-placeholder">사진 ${n} 첨부란</span></div>`;',
      '      : (n === 1 && !all.length && (document.getElementById("b3a-photo-note") || {}).value\n'
@@ -173,7 +173,7 @@ PAIRS = [
     if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
     const noSig = rosterRows.filter(p => !p.sig);
     if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
-    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
+    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 관리자 첨부 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
     if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \\"(확인필요)\\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");"""),
     ('      names: [...new Set(results.map(r => r.name))], gubun, dateNote:',
      '      names: [...new Set(results.map(r => r.name))], gubun, warns, dateNote:'),
@@ -217,4 +217,15 @@ PAIRS = [
     ('  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }',
      '  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }\n'
      '  .b3a-log-warn{ margin-top:3px; padding:3px 6px; border-radius:5px; background:#fff4dc; color:#8a5a00; font-size:11.5px; line-height:1.4; white-space:normal; word-break:keep-all; }'),
+    # 11) 관리자 첨부 사진(교육 전경)이 없어 사진대지의 개인 교육사진을 넣었으면 알려 줌
+    ('        const adminList = Object.keys(adminPage).filter(k => adminPage[k]).map(Number);',
+     '        const adminList = Object.keys(adminPage).filter(k => adminPage[k]).map(Number);\n        var __woomiAdminPhotos = adminList.length > 0;   // (WOOMI)'),
+    ('noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false,',
+     'noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false, adminPhotos: typeof __woomiAdminPhotos !== "undefined" ? __woomiAdminPhotos : false,'),
+    ('    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push(',
+     '    if(photos.length && !results.some(r => r.adminPhotos)) warns.push("사진: 관리자 첨부 사진(교육 전경)이 없어 사진대지의 개인 교육사진을 넣었어요 — 맞는지 확인해 주세요.");\n'
+     '    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push('),
+    # 12) 사진은 "관리자 첨부 사진대지"에서만 가져옴 (일반 사진대지의 개인 사진·신분증·이수증은 가져오지 않음)
+    ('        else if(anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));',
+     '        else if(false && anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));   // (WOOMI) 관리자 첨부 사진이 아니면 가져오지 않음'),
 ]

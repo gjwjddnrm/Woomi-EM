@@ -8563,8 +8563,9 @@ html.wsec-locked #wsecLock{ display:flex; }
         let photoPages = [];
         // "관리자첨부 사진대지" 장이 있으면 그 장의 사진만 가져옵니다. (없으면 모든 사진대지 장)
         const adminList = Object.keys(adminPage).filter(k => adminPage[k]).map(Number);
+        var __woomiAdminPhotos = adminList.length > 0;   // (WOOMI)
         if(adminList.length) adminList.forEach(k => photoPages.push(k));
-        else if(anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));
+        else if(false && anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));   // (WOOMI) 관리자 첨부 사진이 아니면 가져오지 않음
         else if(![...Array(Math.max(0, P1 - P0)).keys()].some(i => kinds && kinds[P0 + 1 + i] && kinds[P0 + 1 + i] !== "other"))   // (WOOMI) 예전 스캔본(쪽 종류를 하나도 못 알아봄)일 때만
           for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }
         {
@@ -8591,6 +8592,7 @@ html.wsec-locked #wsecLock{ display:flex; }
           // 2페이지는 "교육사진" 박스만 인원별로 따로 뽑고, 그 다음 박스(신분증,이수증)부터는
           // 박스 전체를 한 장으로 합쳐서 뽑습니다. 다른 페이지(관리자 첨부 사진 등)는 항상 박스 전체 1장.
           const blobs = b3aOcrDetectPhotoBlobs(pageCanvas, { firstSectionIndividual: !!photoPageInfo[pageNo].first, allIndividual: true })
+            .filter(b => !(kinds && kinds[pageNo] === "photo" && !b.canvas && b.y0 >= 0.455))   // (WOOMI) 사진대지 아래 "신분증,이수증" 칸은 개인정보라 가져오지 않음
             .filter(b => b.canvas || !(b.y1 <= 0.115 || ((b.x1 - b.x0) * pageCanvas.width) / Math.max(1, (b.y1 - b.y0) * pageCanvas.height) > 7));   // (WOOMI) 쪽 맨 위 제목 띠·납작한 띠는 사진이 아님
           blobs.forEach(b=>{
             // 여러 칸을 모아 만든 "모음 사진"은 이미 완성된 캔버스로 오고, 낱장 사진은 좌표(ROI)로
@@ -8768,7 +8770,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       cnt: __noLog ? "" : b3aOcrParseCount(fields.targetCnt),
       place: __noLog ? "" : b3aOcrCleanText(b3aOcrSanitize(fields.place)),
       tradeRaw: trade, companies: b3aOcrTradeCompanies(trade),
-      gubun: detectedGubun, photos, roster, noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false,
+      gubun: detectedGubun, photos, roster, noPhotoPage: typeof __woomiNoPhotoPage !== "undefined" ? __woomiNoPhotoPage : false, adminPhotos: typeof __woomiAdminPhotos !== "undefined" ? __woomiAdminPhotos : false,
     };
   }
 
@@ -8909,7 +8911,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
     const noSig = rosterRows.filter(p => !p.sig);
     if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
-    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
+    if(photos.length && !results.some(r => r.adminPhotos)) warns.push("사진: 관리자 첨부 사진(교육 전경)이 없어 사진대지의 개인 교육사진을 넣었어요 — 맞는지 확인해 주세요.");
+    if(!photos.length && results.every(r => r.noPhotoPage)) warns.push("사진: PDF에 관리자 첨부 사진대지가 없어 사진을 넣지 않았어요 — 필요하면 직접 넣어 주세요.");
     if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \"(확인필요)\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");
     return {
       date, time: "", cnt: totalCnt || "", place: firstOf("place"), trade: tradeText,
@@ -8930,7 +8933,7 @@ html.wsec-locked #wsecLock{ display:flex; }
 
   function b3aOcrFillDaySelect(){
     const sel = document.getElementById("b3a-ocr-day-sel"), wrap = document.getElementById("b3a-ocr-day-wrap");
-    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")}${(d.warns || []).length ? " ⚠️" + d.warns.length : ""} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
+    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")}${(d.warns || []).length ? " ⚠️" + d.warns.length : ""} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(관리자 첨부 사진 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
     sel.value = "0";
     const multi = b3aOcrDays.length > 1;
     wrap.style.display = multi ? "block" : "none";
@@ -9555,7 +9558,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(tradeVal) document.getElementById("b3a-target-trade").value = tradeVal;
     {
       // 선택한 순서대로 배치(아무것도 선택하지 않았으면 찾은 사진 전체를 PDF 순서대로)
-      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); const cn = document.getElementById("b3a-check-note"); if(cn) cn.value = (dd && dd.warns && dd.warns.length) ? dd.warns.join("\n") : ""; setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0); const dn = document.getElementById("b3a-date-note"); if(dn) dn.value = (dd && !dd.date && dd.dateNote) ? dd.dateNote : ""; if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
+      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); const cn = document.getElementById("b3a-check-note"); if(cn) cn.value = (dd && dd.warns && dd.warns.length) ? dd.warns.join("\n") : ""; setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0); const dn = document.getElementById("b3a-date-note"); if(dn) dn.value = (dd && !dd.date && dd.dateNote) ? dd.dateNote : ""; if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 관리자 첨부 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
       const all = b3aOcrSelected.slice();
       if(all.length){ b3aPhoto1 = all[0] || null; b3aPhoto2 = all[1] || null; b3aPhotoMore = all.slice(2); }
     }
