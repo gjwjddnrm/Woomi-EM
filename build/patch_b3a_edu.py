@@ -53,4 +53,9 @@ PAIRS = [
      '              rawGrid = out;\n'
      '            }\n'
      '          }'),
+    # 4) 사진대지가 없는 교육(예: 사진 없이 일지·참석확인서·문진표만 있는 날)에서 문진표의 "혈액형·수술여부" 칸을 사진으로 잡던 문제:
+    #    쪽 종류(일지·교육내용·참석확인서 등)를 하나라도 알아본 교육이면 "사진대지 없음 = 사진 없음"으로 보고, 앞쪽을 훑지 않음
+    ('        else for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }',
+     '        else if(![...Array(Math.max(0, P1 - P0)).keys()].some(i => kinds && kinds[P0 + 1 + i] && kinds[P0 + 1 + i] !== "other"))   // (WOOMI) 예전 스캔본(쪽 종류를 하나도 못 알아봄)일 때만\n'
+     '          for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }'),
 ]

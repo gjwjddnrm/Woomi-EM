@@ -8515,7 +8515,8 @@ html.wsec-locked #wsecLock{ display:flex; }
         const adminList = Object.keys(adminPage).filter(k => adminPage[k]).map(Number);
         if(adminList.length) adminList.forEach(k => photoPages.push(k));
         else if(anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));
-        else for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }
+        else if(![...Array(Math.max(0, P1 - P0)).keys()].some(i => kinds && kinds[P0 + 1 + i] && kinds[P0 + 1 + i] !== "other"))   // (WOOMI) 예전 스캔본(쪽 종류를 하나도 못 알아봄)일 때만
+          for(let pn = P0 + 1; pn <= Math.min(P1, P0 + 3); pn++){ photoPages.push(pn); photoPageInfo[pn] = { first: pn === P0 + 1 }; }
         {
           // 사진대지 맨 위 줄의 교육일자가 이 일지의 날짜와 다르거나, 교육명이 제외 대상(MSDS·특별·특수·기타)뿐이면 사진을 쓰지 않습니다.
           const sdate = b3aOcrParseDate(fields.date);
