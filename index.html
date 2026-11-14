@@ -6727,6 +6727,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   });
 
   document.getElementById("b3aSaveLogBtn").addEventListener("click", ()=>{
+    try{ b3aResolveChecks(); window.__b3aEdited = false; }catch(e){}   // (WOOMI) 고쳤거나 해결된 확인할 곳은 지움
     const data = getB3aFormData();
     if(b3aEditingId && b3aLogEntries.some(e=>e.id === b3aEditingId)){
       const entry = b3aLogEntries.find(e=>e.id === b3aEditingId);
@@ -9942,7 +9943,22 @@ html.wsec-locked #wsecLock{ display:flex; }
     return !!(t("b3a-date") || t("b3a-place") || t("b3a-target-cnt") || t("b3a-target-trade") || d["b3a-photo1"] || d["b3a-photo2"]
       || roster.some(r => (r.name||"").trim() || (r.org||"").trim() || r.nameImg));
   }
+  window.__b3aEdited = false;
+  document.addEventListener("input", (e)=>{ if(e.isTrusted && e.target && e.target.closest && e.target.closest("#b3aPane2")) window.__b3aEdited = true; }, true);
+  document.addEventListener("change", (e)=>{ if(e.isTrusted && e.target && e.target.closest && e.target.closest("#b3aPane2")) window.__b3aEdited = true; }, true);
+  document.addEventListener("click", (e)=>{ if(e.target && e.target.closest && e.target.closest(".b3a-log-item-main")) window.__b3aEdited = false; }, true);   // 다른 기록을 열면 처음부터
+  function b3aResolveChecks(){
+    const cn = document.getElementById("b3a-check-note"); if(!cn || !cn.value) return;
+    if(window.__b3aEdited){ cn.value = ""; return; }
+    const hasDate = !!(document.getElementById("b3a-date") || {}).value;
+    const hasPhoto = !![b3aPhoto1, b3aPhoto2].concat(b3aPhotoMore || []).filter(Boolean).length;
+    const named = (b3bRows || []).filter(r => (r.name || "").trim());
+    cn.value = cn.value.split("\n").filter(w => w && !(
+      (hasDate && /^날짜:/.test(w)) || (hasPhoto && /^사진:/.test(w)) || (named.length && /^명단:/.test(w)) || (named.length && named.every(r => r.sig) && /^서명:/.test(w))
+    )).join("\n");
+  }
   function b3aArchiveCurrent(){
+    try{ if(!b3aSilentSave) b3aResolveChecks(); }catch(e){}   // (WOOMI) 직접 저장할 때만 (PDF 날짜별 일괄 저장은 그대로)
     try{
       const data = getB3aFormData();
       const roster = (data._roster || []).filter(r => r.name || r.org || r.sig || r.nameImg || r.orgImg);

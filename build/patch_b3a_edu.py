@@ -243,4 +243,26 @@ PAIRS = [
      '  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }\n'
      '  .b3a-warn-badge{ display:inline-block; padding:0 6px; margin-right:2px; border-radius:10px; background:#fff1d0; border:1px solid #f0c36d; color:#8a5a00; font-size:12px; line-height:18px; cursor:pointer; }\n'
      '  .b3a-warn-badge:hover{ background:#ffe6a8; }'),
+    # 14) 직접 작성 탭에서 내용을 고치고 저장하면 ⚠️(확인할 곳)가 사라짐
+    #     - 직접 작성 탭에서 무엇이든 고친 뒤 저장 → 확인한 것으로 보고 모두 지움
+    #     - 고치지 않았어도 해결된 것은 자동으로 지움: 날짜를 넣었으면 "날짜", 사진이 있으면 "사진", 명단이 있으면 "명단", 모두 서명이 있으면 "서명"
+    ('  function b3aArchiveCurrent(){',
+     """  window.__b3aEdited = false;
+  document.addEventListener("input", (e)=>{ if(e.isTrusted && e.target && e.target.closest && e.target.closest("#b3aPane2")) window.__b3aEdited = true; }, true);
+  document.addEventListener("change", (e)=>{ if(e.isTrusted && e.target && e.target.closest && e.target.closest("#b3aPane2")) window.__b3aEdited = true; }, true);
+  document.addEventListener("click", (e)=>{ if(e.target && e.target.closest && e.target.closest(".b3a-log-item-main")) window.__b3aEdited = false; }, true);   // 다른 기록을 열면 처음부터
+  function b3aResolveChecks(){
+    const cn = document.getElementById("b3a-check-note"); if(!cn || !cn.value) return;
+    if(window.__b3aEdited){ cn.value = ""; return; }
+    const hasDate = !!(document.getElementById("b3a-date") || {}).value;
+    const hasPhoto = !![b3aPhoto1, b3aPhoto2].concat(b3aPhotoMore || []).filter(Boolean).length;
+    const named = (b3bRows || []).filter(r => (r.name || "").trim());
+    cn.value = cn.value.split("\\n").filter(w => w && !(
+      (hasDate && /^날짜:/.test(w)) || (hasPhoto && /^사진:/.test(w)) || (named.length && /^명단:/.test(w)) || (named.length && named.every(r => r.sig) && /^서명:/.test(w))
+    )).join("\\n");
+  }
+  function b3aArchiveCurrent(){
+    try{ if(!b3aSilentSave) b3aResolveChecks(); }catch(e){}   // (WOOMI) 직접 저장할 때만 (PDF 날짜별 일괄 저장은 그대로)"""),
+    ('  document.getElementById("b3aSaveLogBtn").addEventListener("click", ()=>{\n    const data = getB3aFormData();',
+     '  document.getElementById("b3aSaveLogBtn").addEventListener("click", ()=>{\n    try{ b3aResolveChecks(); window.__b3aEdited = false; }catch(e){}   // (WOOMI) 고쳤거나 해결된 확인할 곳은 지움\n    const data = getB3aFormData();'),
 ]
