@@ -2236,6 +2236,8 @@
   }
   .b3a-log-item.active{ border-color:#3b6fd6; background:#f0f5ff; }
   .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }
+  .b3a-warn-badge{ display:inline-block; padding:0 6px; margin-right:2px; border-radius:10px; background:#fff1d0; border:1px solid #f0c36d; color:#8a5a00; font-size:12px; line-height:18px; cursor:pointer; }
+  .b3a-warn-badge:hover{ background:#ffe6a8; }
   .b3a-log-warn{ margin-top:3px; padding:3px 6px; border-radius:5px; background:#fff4dc; color:#8a5a00; font-size:11.5px; line-height:1.4; white-space:normal; word-break:keep-all; }
   .b3a-log-item-date{ font-size:12px; font-weight:700; color:#333; }
   .b3a-log-item-snip{ font-size:11px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -6662,14 +6664,14 @@ html.wsec-locked #wsecLock{ display:flex; }
       listEl.innerHTML = b3aLogEntries.slice().reverse().map(entry=>{
         const { date, place, main } = b3aLogSnippet(entry.data);
         const __cw = String((entry.data && entry.data["b3a-check-note"]) || "").split("\n").filter(Boolean).length;
-        const label = (__cw ? "⚠️" + __cw + " " : "") + [date || ("날짜 미입력" + (entry.data && entry.data["b3a-date-note"] ? " ⚠️ " + String(entry.data["b3a-date-note"]).replace(/[<>&]/g, "") : "")), place].filter(Boolean).join(" · ");
+        const label = (__cw ? `<span class="b3a-warn-badge" data-wid="${entry.id}" title="눌러서 확인할 곳 보기">⚠️${__cw}</span> ` : "") + [date || ("날짜 미입력" + (entry.data && entry.data["b3a-date-note"] ? " ⚠️ " + String(entry.data["b3a-date-note"]).replace(/[<>&]/g, "") : "")), place].filter(Boolean).join(" · ");
         const isActive = entry.id === b3aEditingId;
         return `<div class="b3a-log-item${isActive ? " active" : ""}" data-id="${entry.id}">
           <input type="checkbox" class="b3a-log-sel" data-id="${entry.id}" ${b3aLogSel.has(entry.id) ? "checked" : ""} title="인쇄·PDF 저장할 기록 선택" style="width:18px;height:18px;flex:none" />
           <div class="b3a-log-item-main" data-action="load" data-id="${entry.id}">
             <div class="b3a-log-item-date">${label}</div>
             <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>
-            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\s*—.*$/, "").replace(/\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("")}
+            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\s*—.*$/, "").replace(/\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("").replace(/^(.+)$/s, `<div class="b3a-warn-list" data-wlist="${entry.id}" style="display:${(typeof b3aWarnOpen !== "undefined" && b3aWarnOpen && b3aWarnOpen.has(entry.id)) ? "block" : "none"}">$1</div>`)}
           </div>
           <button type="button" class="b3a-log-item-del" data-action="delete" data-id="${entry.id}">삭제</button>
         </div>`;
@@ -8411,6 +8413,14 @@ html.wsec-locked #wsecLock{ display:flex; }
     box.style.display = "";
     document.getElementById("b3a-check-done").onclick = ()=>{ f.value = ""; b3aShowCheckBox(); try{ saveB3a(); }catch(e){} alert('표시를 지웠어요. 저장된 기록에도 반영하려면 "새 기록으로 저장"을 눌러 주세요.'); };
   }
+  var b3aWarnOpen = b3aWarnOpen || new Set();   // (WOOMI) 문제점을 펼쳐 둔 기록
+  document.addEventListener("click", (e)=>{
+    const bd = e.target && e.target.closest && e.target.closest(".b3a-warn-badge"); if(!bd) return;
+    e.stopPropagation(); e.preventDefault();
+    const id = bd.dataset.wid, el = document.querySelector(`.b3a-warn-list[data-wlist="${id}"]`); if(!el) return;
+    const open = el.style.display === "none"; el.style.display = open ? "block" : "none";
+    if(open) b3aWarnOpen.add(id); else b3aWarnOpen.delete(id);
+  }, true);
   async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){
     const label = (k)=> k === "roster" ? "참석확인서" : k === "admin" ? "관리자 첨부 사진대지" : "사진대지";
     for(let pn = P0; pn <= P1; pn++){

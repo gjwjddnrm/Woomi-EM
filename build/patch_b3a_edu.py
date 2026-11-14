@@ -191,7 +191,7 @@ PAIRS = [
     # 저장된 기록 목록에 ⚠️ 표시
     ('        const label = [date || ("날짜 미입력"',
      '        const __cw = String((entry.data && entry.data["b3a-check-note"]) || "").split("\\n").filter(Boolean).length;\n'
-     '        const label = (__cw ? "⚠️" + __cw + " " : "") + [date || ("날짜 미입력"'),
+     '        const label = (__cw ? `<span class="b3a-warn-badge" data-wid="${entry.id}" title="눌러서 확인할 곳 보기">⚠️${__cw}</span> ` : "") + [date || ("날짜 미입력"'),
     # 직접 작성 탭 맨 위: 확인할 곳 목록 + "확인했어요" 버튼
     ('    <div class="b3a-pane" id="b3aPane2">',
      '    <div class="b3a-pane" id="b3aPane2">\n'
@@ -213,7 +213,7 @@ PAIRS = [
     # 10) 저장된 기록 목록에서 문제점을 바로 보이게 (항목마다 짧게, 전체 문장은 마우스를 올리면)
     ('            <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>',
      '            <div class="b3a-log-item-snip">${main || "(주요내용 없음)"}</div>\n'
-     '            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\\s*—.*$/, "").replace(/\\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("")}'),
+     '            ${String((entry.data && entry.data["b3a-check-note"]) || "").split("\\n").filter(Boolean).map(w => { const t = String(w).replace(/[<>&"]/g, ""); const short = t.replace(/\\s*—.*$/, "").replace(/\\s*→.*$/, ""); return `<div class="b3a-log-warn" title="${t}">⚠️ ${short}</div>`; }).join("").replace(/^(.+)$/s, `<div class="b3a-warn-list" data-wlist="${entry.id}" style="display:${(typeof b3aWarnOpen !== "undefined" && b3aWarnOpen && b3aWarnOpen.has(entry.id)) ? "block" : "none"}">$1</div>`)}'),
     ('  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }',
      '  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }\n'
      '  .b3a-log-warn{ margin-top:3px; padding:3px 6px; border-radius:5px; background:#fff4dc; color:#8a5a00; font-size:11.5px; line-height:1.4; white-space:normal; word-break:keep-all; }'),
@@ -228,4 +228,19 @@ PAIRS = [
     # 12) 사진은 "관리자 첨부 사진대지"에서만 가져옴 (일반 사진대지의 개인 사진·신분증·이수증은 가져오지 않음)
     ('        else if(anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));',
      '        else if(false && anyTitle) Object.keys(photoPageInfo).forEach(k => photoPages.push(Number(k)));   // (WOOMI) 관리자 첨부 사진이 아니면 가져오지 않음'),
+    # 13) 저장된 기록: ⚠️만 보이고 누르면 문제점이 펼쳐짐 (기록을 여는 동작과 따로)
+    ('  async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){',
+     '''  var b3aWarnOpen = b3aWarnOpen || new Set();   // (WOOMI) 문제점을 펼쳐 둔 기록
+  document.addEventListener("click", (e)=>{
+    const bd = e.target && e.target.closest && e.target.closest(".b3a-warn-badge"); if(!bd) return;
+    e.stopPropagation(); e.preventDefault();
+    const id = bd.dataset.wid, el = document.querySelector(`.b3a-warn-list[data-wlist="${id}"]`); if(!el) return;
+    const open = el.style.display === "none"; el.style.display = open ? "block" : "none";
+    if(open) b3aWarnOpen.add(id); else b3aWarnOpen.delete(id);
+  }, true);
+  async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){'''),
+    ('  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }',
+     '  .b3a-log-item-main{ flex:1; min-width:0; cursor:pointer; }\n'
+     '  .b3a-warn-badge{ display:inline-block; padding:0 6px; margin-right:2px; border-radius:10px; background:#fff1d0; border:1px solid #f0c36d; color:#8a5a00; font-size:12px; line-height:18px; cursor:pointer; }\n'
+     '  .b3a-warn-badge:hover{ background:#ffe6a8; }'),
 ]
