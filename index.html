@@ -7695,6 +7695,27 @@ html.wsec-locked #wsecLock{ display:flex; }
     return out;
   }
 
+  // (WOOMI) 연한 글씨(밝기 215 미만) 비율 — 흐린 서명 찾기용
+  function b3aOcrLightInk(canvas){
+    const d = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data; let n = 0;
+    for(let i = 0; i < d.length; i += 4) if(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2] < 215) n++;
+    return n / (d.length / 4);
+  }
+  // (WOOMI) 흐린 서명이면 대비를 높여 진하게 (이미 진한 서명은 그대로)
+  function b3aOcrSigEnhance(canvas){
+    const ctx = canvas.getContext("2d"), img = ctx.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
+    let lo = 255; for(let i = 0; i < d.length; i += 4){ const l = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; if(l < lo) lo = l; }
+    if(lo < 110) return canvas;
+    const out = document.createElement("canvas"); out.width = canvas.width; out.height = canvas.height;
+    const oc = out.getContext("2d"), oi = oc.createImageData(canvas.width, canvas.height), o = oi.data, hi = 235;
+    for(let i = 0; i < d.length; i += 4){
+      const l = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      const v = l >= hi ? 255 : Math.max(0, Math.round((l - lo) / Math.max(1, hi - lo) * 255 * 0.85));
+      o[i] = o[i+1] = o[i+2] = v; o[i+3] = 255;
+    }
+    oc.putImageData(oi, 0, 0);
+    return out;
+  }
   function b3aOcrDarkRatio(canvas){
     const ctx = canvas.getContext("2d");
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -8757,7 +8778,7 @@ html.wsec-locked #wsecLock{ display:flex; }
               if(!nameText) continue;
 
               const sigCrop = b3aOcrCropPx(rcanvas, block.sig.x0, row.y0, block.sig.x1, row.y1, rinset);
-              const sig = b3aOcrDarkRatio(sigCrop) > 0.01 ? b3aOcrCanvasToDataUrl(b3aOcrFixSig(sigCrop)) : "";
+              const sig = (b3aOcrDarkRatio(sigCrop) > 0.01 || b3aOcrLightInk(sigCrop) > 0.003) ? b3aOcrCanvasToDataUrl(b3aOcrFixSig(b3aOcrSigEnhance(sigCrop))) : "";   // (WOOMI) 연한 서명도
               roster.push({ org: orgText, name: nameText, sig, exact });
             }
           }
