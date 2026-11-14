@@ -4106,6 +4106,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     </div>
 
     <div class="b3a-pane" id="b3aPane2">
+    <div id="b3a-check-box" class="save-note" style="display:none;margin:0 0 12px;background:#fff8e6;color:#7a5200;border-color:#f0c36d"></div>
     <fieldset id="b3aSaveFieldset">
       <legend>기록 저장</legend>
       <div class="field-row">
@@ -4156,6 +4157,7 @@ html.wsec-locked #wsecLock{ display:flex; }
       <input type="hidden" id="b3a-workers" />
       <input type="hidden" id="b3a-photo-note" />
       <input type="hidden" id="b3a-date-note" />
+      <input type="hidden" id="b3a-check-note" />
       <datalist id="b3a-role-list"><option value="용접"></option><option value="화기감시자"></option><option value="용단"></option><option value="연마"></option></datalist>
       <div id="b3a-workers-editor"></div>
       <div class="field-row" style="margin-top:6px">
@@ -6483,7 +6485,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   /* ================= 별지 3-1: 소방안전 교육 및 훈련 결과 보고서 ================= */
   const B3A_STORAGE_KEY = "fireplan_byeolji3a_v1";
   const B3A_TEXT_FIELDS = ["b3a-date","b3a-place","b3a-target-cnt","b3a-done-cnt","b3a-miss-cnt","b3a-target-trade",
-    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note","b3a-date-note","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
+    "b3a-time-start","b3a-time-end","b3a-workers","b3a-photo-note","b3a-date-note","b3a-check-note","b3a-main","b3a-lack","b3a-improve","b3a-officer-title","b3a-officer-name","b3a-proxy-name"];
   const B3A_CHECK_FIELDS = ["b3a-proxy-on","b3a-chk-edu","b3a-chk-training","b3a-chk-recruit","b3a-chk-fire","b3a-chk-init-edu","b3a-chk-evac","b3a-chk-init-training"];
   const B3A_LOG_KEY = "fireplan_byeolji3a_log_v1";
   const B3A_SIGNATURE_DEFAULT_KEY = "fireplan_b3a_signature_default_v1";
@@ -6658,7 +6660,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     }else{
       listEl.innerHTML = b3aLogEntries.slice().reverse().map(entry=>{
         const { date, place, main } = b3aLogSnippet(entry.data);
-        const label = [date || ("날짜 미입력" + (entry.data && entry.data["b3a-date-note"] ? " ⚠️ " + String(entry.data["b3a-date-note"]).replace(/[<>&]/g, "") : "")), place].filter(Boolean).join(" · ");
+        const __cw = String((entry.data && entry.data["b3a-check-note"]) || "").split("\n").filter(Boolean).length;
+        const label = (__cw ? "⚠️" + __cw + " " : "") + [date || ("날짜 미입력" + (entry.data && entry.data["b3a-date-note"] ? " ⚠️ " + String(entry.data["b3a-date-note"]).replace(/[<>&]/g, "") : "")), place].filter(Boolean).join(" · ");
         const isActive = entry.id === b3aEditingId;
         return `<div class="b3a-log-item${isActive ? " active" : ""}" data-id="${entry.id}">
           <input type="checkbox" class="b3a-log-sel" data-id="${entry.id}" ${b3aLogSel.has(entry.id) ? "checked" : ""} title="인쇄·PDF 저장할 기록 선택" style="width:18px;height:18px;flex:none" />
@@ -6675,6 +6678,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     [...b3aLogSel].forEach(id => { if(!b3aLogEntries.some(e => e.id === id)) b3aLogSel.delete(id); });
     const selCnt = document.getElementById("b3a-log-selcount");
     if(selCnt) selCnt.textContent = b3aLogSel.size ? `${b3aLogSel.size}건 선택됨` : "";
+    setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0);   // (WOOMI) 기록을 열거나 저장하면 확인할 곳 상자도 다시
     const editingNote = document.getElementById("b3a-editing-note");
     if(b3aEditingId && b3aLogEntries.some(e=>e.id === b3aEditingId)){
       const entry = b3aLogEntries.find(e=>e.id === b3aEditingId);
@@ -8395,6 +8399,16 @@ html.wsec-locked #wsecLock{ display:flex; }
   }
 
   // (WOOMI) 교육일지 날짜를 못 읽은 묶음: 사진대지("교육일자: …")·참석확인서("2026 년 10 월 31 일") 맨 위에서 날짜 찾기
+  // (WOOMI) 직접 작성 탭 맨 위: PDF에서 읽을 때 확인이 필요했던 곳
+  function b3aShowCheckBox(){
+    const box = document.getElementById("b3a-check-box"), f = document.getElementById("b3a-check-note"); if(!box || !f) return;
+    const ws = String(f.value || "").split("\n").filter(Boolean);
+    if(!ws.length){ box.style.display = "none"; box.innerHTML = ""; return; }
+    box.innerHTML = "<b>⚠️ PDF에서 읽을 때 확인이 필요했던 곳 " + ws.length + "건</b><br>" + ws.map(w => "· " + esc3a(w)).join("<br>")
+      + '<div style="margin-top:8px"><button type="button" class="reset-btn" id="b3a-check-done" style="width:auto;padding:6px 12px">✔ 확인했어요 (표시 지우기)</button></div>';
+    box.style.display = "";
+    document.getElementById("b3a-check-done").onclick = ()=>{ f.value = ""; b3aShowCheckBox(); try{ saveB3a(); }catch(e){} alert('표시를 지웠어요. 저장된 기록에도 반영하려면 "새 기록으로 저장"을 눌러 주세요.'); };
+  }
   async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){
     const label = (k)=> k === "roster" ? "참석확인서" : k === "admin" ? "관리자 첨부 사진대지" : "사진대지";
     for(let pn = P0; pn <= P1; pn++){
@@ -8883,10 +8897,21 @@ html.wsec-locked #wsecLock{ display:flex; }
     const photos = await b3aOcrDedupePhotos(results.flatMap(r => r.photos));
     for(const ph of photos) ph.url = await b3aOcrShrink(ph.url, 1000, 0.8);   // 저장 공간 절약
     const gubun = [...new Set(results.flatMap(r => r.gubun))];
+    // (WOOMI) 확인이 필요한 곳
+    const warns = [];
+    results.forEach(r => { if(r.dateNote) warns.push("날짜: " + r.dateNote + (r.date ? "" : " — 날짜를 직접 입력해 주세요.")); });
+    results.forEach(r => { if(!(r.roster || []).some(q => (q.name || "").trim())) warns.push(`명단: 교육일지${r.cnt ? "(근로자수 " + r.cnt + "명)" : ""}${r.time ? " " + r.time : ""}에 맞는 참석확인서 명단을 찾지 못했어요 — 별지 3-2 명단을 직접 확인해 주세요.`); });
+    const logCnt = results.reduce((a, r)=> a + (Number(r.cnt) || 0), 0);
+    if(logCnt && rosterRows.length && logCnt !== rosterRows.length) warns.push(`인원: 교육일지 근로자수 합계 ${logCnt}명인데 참석확인서 명단은 ${rosterRows.length}명이에요.`);
+    const odd = rosterRows.filter(p => { const n = String(p.name || "").trim(), k = n.replace(/\s/g, ""); return /[0-9~!@#$%^&*_=+\[\]{}|\\;:"<>?\/]/.test(n) || k.length < 2 || (/^[가-힣]+$/.test(k) && k.length > 5); });
+    if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
+    const noSig = rosterRows.filter(p => !p.sig);
+    if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
+    if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \"(확인필요)\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");
     return {
       date, time: "", cnt: totalCnt || "", place: firstOf("place"), trade: tradeText,
       rosterRows, photos, selected: null, companyCount: companies.length,
-      names: [...new Set(results.map(r => r.name))], gubun, dateNote: [...new Set(results.map(r => r.dateNote).filter(Boolean))].join(" / "), noPhoto: !photos.length && results.every(r => r.noPhotoPage),
+      names: [...new Set(results.map(r => r.name))], gubun, warns, dateNote: [...new Set(results.map(r => r.dateNote).filter(Boolean))].join(" / "), noPhoto: !photos.length && results.every(r => r.noPhotoPage),
     };
   }
 
@@ -8902,7 +8927,7 @@ html.wsec-locked #wsecLock{ display:flex; }
 
   function b3aOcrFillDaySelect(){
     const sel = document.getElementById("b3a-ocr-day-sel"), wrap = document.getElementById("b3a-ocr-day-wrap");
-    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")}${d.dateNote ? " ⚠️" : ""} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
+    sel.innerHTML = b3aOcrDays.map((d, i)=> `<option value="${i}">${esc3a(d.date || "날짜 미확인")}${(d.warns || []).length ? " ⚠️" + d.warns.length : ""} · 이수자 ${d.rosterRows.length}명 · ${d.noPhoto ? "사진 없음(PDF에 사진대지 없음)" : "사진 " + d.photos.length + "장"}</option>`).join("");
     sel.value = "0";
     const multi = b3aOcrDays.length > 1;
     wrap.style.display = multi ? "block" : "none";
@@ -8918,7 +8943,8 @@ html.wsec-locked #wsecLock{ display:flex; }
     {   // (WOOMI) 날짜를 못 읽었거나 다른 쪽에서 가져왔으면 이유 표시
       const sel = document.getElementById("b3a-ocr-day-sel"); let nt = document.getElementById("b3a-ocr-date-note");
       if(!nt && sel){ nt = document.createElement("p"); nt.id = "b3a-ocr-date-note"; nt.className = "save-note"; nt.style.cssText = "margin:6px 0 0;border-color:#f0c36d;background:#fff8e6;color:#7a5200"; sel.parentNode.insertBefore(nt, sel.nextSibling); }
-      if(nt){ nt.textContent = d.dateNote ? "⚠️ 날짜: " + d.dateNote + (d.date ? "" : " 날짜를 직접 입력해 주세요.") : ""; nt.style.display = d.dateNote ? "" : "none"; }
+      const ws = (d.warns || []).slice(); if(d.noPhoto) ws.push("ℹ️ 사진: PDF에 사진대지가 없어 사진을 넣지 않았어요.");
+      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = (wn ? "<b>⚠️ 확인할 곳 " + wn + "건</b>" : "<b>✅ 확인할 곳 없음</b>") + (ws.length ? "<br>" + ws.map(w => "· " + esc3a(w)).join("<br>") : ""); nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }
     }
     document.getElementById("b3a-ocr-day-sel").value = String(i);
     document.getElementById("b3a-ocr-r-date").value = d.date || "";
@@ -9526,7 +9552,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     if(tradeVal) document.getElementById("b3a-target-trade").value = tradeVal;
     {
       // 선택한 순서대로 배치(아무것도 선택하지 않았으면 찾은 사진 전체를 PDF 순서대로)
-      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); const dn = document.getElementById("b3a-date-note"); if(dn) dn.value = (dd && !dd.date && dd.dateNote) ? dd.dateNote : ""; if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
+      { const dd = b3aOcrDays && b3aOcrDays[b3aOcrDayIdx]; const pn = document.getElementById("b3a-photo-note"); const cn = document.getElementById("b3a-check-note"); if(cn) cn.value = (dd && dd.warns && dd.warns.length) ? dd.warns.join("\n") : ""; setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0); const dn = document.getElementById("b3a-date-note"); if(dn) dn.value = (dd && !dd.date && dd.dateNote) ? dd.dateNote : ""; if(pn) pn.value = (dd && dd.noPhoto) ? "PDF에 사진대지가 없어 첨부할 사진이 없어요" : ""; }   // (WOOMI)
       const all = b3aOcrSelected.slice();
       if(all.length){ b3aPhoto1 = all[0] || null; b3aPhoto2 = all[1] || null; b3aPhotoMore = all.slice(2); }
     }

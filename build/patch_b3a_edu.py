@@ -160,4 +160,53 @@ PAIRS = [
      '        for(let pn = (kinds && /^(photo|admin|roster)$/.test(kinds[P0] || "")) ? P0 : P0 + 1; pn <= P1; pn++){   // (WOOMI)'),
     ('          const sdate = b3aOcrParseDate(fields.date);',
      '          const sdate = (kinds && /^(photo|admin|roster)$/.test(kinds[P0] || "")) ? "" : b3aOcrParseDate(fields.date || "");   // (WOOMI)'),
+    # 9) PDF를 읽고 나서 "확인이 필요한 곳"을 한곳에 모아 보여 줌 (검토 화면 · 저장된 기록 · 직접 작성 탭)
+    ('    const gubun = [...new Set(results.flatMap(r => r.gubun))];',
+     """    const gubun = [...new Set(results.flatMap(r => r.gubun))];
+    // (WOOMI) 확인이 필요한 곳
+    const warns = [];
+    results.forEach(r => { if(r.dateNote) warns.push("날짜: " + r.dateNote + (r.date ? "" : " — 날짜를 직접 입력해 주세요.")); });
+    results.forEach(r => { if(!(r.roster || []).some(q => (q.name || "").trim())) warns.push(`명단: 교육일지${r.cnt ? "(근로자수 " + r.cnt + "명)" : ""}${r.time ? " " + r.time : ""}에 맞는 참석확인서 명단을 찾지 못했어요 — 별지 3-2 명단을 직접 확인해 주세요.`); });
+    const logCnt = results.reduce((a, r)=> a + (Number(r.cnt) || 0), 0);
+    if(logCnt && rosterRows.length && logCnt !== rosterRows.length) warns.push(`인원: 교육일지 근로자수 합계 ${logCnt}명인데 참석확인서 명단은 ${rosterRows.length}명이에요.`);
+    const odd = rosterRows.filter(p => { const n = String(p.name || "").trim(), k = n.replace(/\\s/g, ""); return /[0-9~!@#$%^&*_=+\\[\\]{}|\\\\;:"<>?\\/]/.test(n) || k.length < 2 || (/^[가-힣]+$/.test(k) && k.length > 5); });
+    if(odd.length) warns.push("이름: " + odd.map(p => `"${p.name}"`).join(", ") + " — 글자가 이상하게 읽혔을 수 있어요.");
+    const noSig = rosterRows.filter(p => !p.sig);
+    if(noSig.length) warns.push("서명: " + noSig.map(p => p.name).join(", ") + " — 서명을 찾지 못했어요.");
+    if(/확인필요/.test(tradeText)) warns.push("업체: 대상공종에 \\"(확인필요)\\"로 표시된 업체가 있어요 — 인원을 확인해 주세요.");"""),
+    ('      names: [...new Set(results.map(r => r.name))], gubun, dateNote:',
+     '      names: [...new Set(results.map(r => r.name))], gubun, warns, dateNote:'),
+    ('${d.dateNote ? " ⚠️" : ""} · ',
+     '${(d.warns || []).length ? " ⚠️" + d.warns.length : ""} · '),
+    ('      if(nt){ nt.textContent = d.dateNote ? "⚠️ 날짜: " + d.dateNote + (d.date ? "" : " 날짜를 직접 입력해 주세요.") : ""; nt.style.display = d.dateNote ? "" : "none"; }',
+     '      const ws = (d.warns || []).slice(); if(d.noPhoto) ws.push("ℹ️ 사진: PDF에 사진대지가 없어 사진을 넣지 않았어요.");\n'
+     '      if(nt){ const wn = (d.warns || []).length; nt.innerHTML = (wn ? "<b>⚠️ 확인할 곳 " + wn + "건</b>" : "<b>✅ 확인할 곳 없음</b>") + (ws.length ? "<br>" + ws.map(w => "· " + esc3a(w)).join("<br>") : ""); nt.style.display = ""; nt.style.background = wn ? "#fff8e6" : "#eefaf1"; nt.style.color = wn ? "#7a5200" : "#1f6b3a"; }'),
+    # 저장할 때 기록에 함께 보관
+    ('      <input type="hidden" id="b3a-date-note" />',
+     '      <input type="hidden" id="b3a-date-note" />\n      <input type="hidden" id="b3a-check-note" />'),
+    ('"b3a-photo-note","b3a-date-note",', '"b3a-photo-note","b3a-date-note","b3a-check-note",'),
+    ('const dn = document.getElementById("b3a-date-note");',
+     'const cn = document.getElementById("b3a-check-note"); if(cn) cn.value = (dd && dd.warns && dd.warns.length) ? dd.warns.join("\\n") : ""; setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0); const dn = document.getElementById("b3a-date-note");'),
+    # 저장된 기록 목록에 ⚠️ 표시
+    ('        const label = [date || ("날짜 미입력"',
+     '        const __cw = String((entry.data && entry.data["b3a-check-note"]) || "").split("\\n").filter(Boolean).length;\n'
+     '        const label = (__cw ? "⚠️" + __cw + " " : "") + [date || ("날짜 미입력"'),
+    # 직접 작성 탭 맨 위: 확인할 곳 목록 + "확인했어요" 버튼
+    ('    <div class="b3a-pane" id="b3aPane2">',
+     '    <div class="b3a-pane" id="b3aPane2">\n'
+     '    <div id="b3a-check-box" class="save-note" style="display:none;margin:0 0 12px;background:#fff8e6;color:#7a5200;border-color:#f0c36d"></div>'),
+    ('    const editingNote = document.getElementById("b3a-editing-note");',
+     '    setTimeout(()=>{ try{ b3aShowCheckBox(); }catch(e){} }, 0);   // (WOOMI) 기록을 열거나 저장하면 확인할 곳 상자도 다시\n    const editingNote = document.getElementById("b3a-editing-note");'),
+    ('  async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){',
+     """  // (WOOMI) 직접 작성 탭 맨 위: PDF에서 읽을 때 확인이 필요했던 곳
+  function b3aShowCheckBox(){
+    const box = document.getElementById("b3a-check-box"), f = document.getElementById("b3a-check-note"); if(!box || !f) return;
+    const ws = String(f.value || "").split("\\n").filter(Boolean);
+    if(!ws.length){ box.style.display = "none"; box.innerHTML = ""; return; }
+    box.innerHTML = "<b>⚠️ PDF에서 읽을 때 확인이 필요했던 곳 " + ws.length + "건</b><br>" + ws.map(w => "· " + esc3a(w)).join("<br>")
+      + '<div style="margin-top:8px"><button type="button" class="reset-btn" id="b3a-check-done" style="width:auto;padding:6px 12px">✔ 확인했어요 (표시 지우기)</button></div>';
+    box.style.display = "";
+    document.getElementById("b3a-check-done").onclick = ()=>{ f.value = ""; b3aShowCheckBox(); try{ saveB3a(); }catch(e){} alert('표시를 지웠어요. 저장된 기록에도 반영하려면 "새 기록으로 저장"을 눌러 주세요.'); };
+  }
+  async function b3aOcrFindSessionDate(pdf, P0, P1, kinds){"""),
 ]
