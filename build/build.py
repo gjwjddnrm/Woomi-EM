@@ -51,6 +51,9 @@ for _o, _n in _m2.PAIRS: B = rep(B, _o, _n)
 # 화기작업 소방안전관리자 서명: Ctrl+V 붙여넣기
 _sp9 = _u2.spec_from_file_location("patch_hotwork_mgrpaste", HERE / "patch_hotwork_mgrpaste.py"); _m9 = _u2.module_from_spec(_sp9); _sp9.loader.exec_module(_m9)
 for _o, _n in _m9.PAIRS: B = rep(B, _o, _n)
+# 화기작업: 허가서 PDF의 작업자 명단·화기작업자 읽기
+_spW = _u2.spec_from_file_location("patch_hotwork_workers", HERE / "patch_hotwork_workers.py"); _mW = _u2.module_from_spec(_spW); _spW.loader.exec_module(_mW)
+for _o, _n in _mW.PAIRS: B = rep(B, _o, _n)
 # PC 전용: 화면(프레임)이 좁아도 입력창·미리보기를 좌우로 유지
 B = rep(B, "@media screen and (max-width:900px){", "@media screen and (max-width:0px){", count=2)
 B_b64 = base64.b64encode(B.encode("utf-8")).decode("ascii")
