@@ -7,8 +7,9 @@ LOGIN_JS = '(function(){ try{ return (window.WoomiSec && WoomiSec.getProfile && 
 
 PAIRS = [
     # 안전점검: 고정 이름 대신 로그인한 관리자
-    ('  const B5_FIXED_INSPECTOR = "허정욱";   // 점검자(소방안전관리자) 고정',
-     '  const B5_FIXED_INSPECTOR = ' + LOGIN_JS + ';   // (WOOMI) 점검자·확인자(소방안전관리자) = 로그인한 관리자'),
+    ('  const B5_FIXED_INSPECTOR = "";   // 점검자(소방안전관리자) 고정',
+     '  const B5_FIXED_INSPECTOR = ' + LOGIN_JS + ';   // (WOOMI) 점검자·확인자(소방안전관리자) = 로그인한 관리자\n'
+     '  try{ document.getElementById("b5-pdf-r-inspector").value = B5_FIXED_INSPECTOR; const __cf = document.getElementById("b5-pdf-r-confirmer"); if(!__cf.value.trim()) __cf.value = B5_FIXED_INSPECTOR; }catch(e){}'),
     # 교육·훈련: 실시자 성명이 비어 있으면 로그인한 관리자로 (저장된 기록을 열 때는 그 기록의 이름 그대로)
     ('''    if(!nameEl.value.trim()){
       try{ nameEl.value = (JSON.parse(localStorage.getItem(B3A_SIGNER_DEFAULT_KEY) || "{}").name) || ""; }catch(e){}''',

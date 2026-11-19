@@ -3595,14 +3595,14 @@
         <p style="font-weight:700; font-size:13px; margin:0 0 8px">🔎 읽어온 내용 (확인·수정 후 적용하세요)</p>
         <div class="field-row">
           <div class="field"><label for="b5-pdf-r-date">점검일</label><input type="date" id="b5-pdf-r-date" /></div>
-          <div class="field"><label for="b5-pdf-r-inspector">점검자 (고정)</label><input type="text" id="b5-pdf-r-inspector" value="허정욱" readonly /></div>
+          <div class="field"><label for="b5-pdf-r-inspector">점검자 (고정)</label><input type="text" id="b5-pdf-r-inspector" value="" readonly /></div>
         </div>
         <p class="save-note" style="margin:0 0 6px">📨 별지 6 (조치 결과 통보서)도 함께 작성돼요.</p>
         <div class="field-row">
           <div class="field"><label for="b5-pdf-r-noticeno">통보서 번호</label><input type="text" id="b5-pdf-r-noticeno" placeholder="비워두면 비어있는 채로" /></div>
           <div class="field"><label for="b5-pdf-r-submitter">제출자</label><input type="text" id="b5-pdf-r-submitter" /></div>
         </div>
-        <div class="field"><label for="b5-pdf-r-confirmer">확인자</label><input type="text" id="b5-pdf-r-confirmer" value="허정욱" /></div>
+        <div class="field"><label for="b5-pdf-r-confirmer">확인자</label><input type="text" id="b5-pdf-r-confirmer" value="" /></div>
         <div id="b5-pdf-review-list"></div>
         <div class="field-row" style="margin-top:8px">
           <button type="button" class="reset-btn" id="b5-pdf-apply">적용하기</button>
@@ -3615,7 +3615,7 @@
       <legend>점검 정보</legend>
       <div class="field-row">
         <div class="field"><label for="b5-date">점검일</label><input type="date" id="b5-date" /></div>
-        <div class="field"><label for="b5-inspector">점검자</label><input type="text" id="b5-inspector" value="허정욱" readonly title="점검자는 허정욱으로 고정되어 있어요" /></div>
+        <div class="field"><label for="b5-inspector">점검자</label><input type="text" id="b5-inspector" value="" readonly title="점검자는 로그인한 소방안전관리자예요" /></div>
       </div>
     </fieldset>
 
@@ -8659,7 +8659,7 @@
     const t = [r.company, r.trade].map(v => (v||"").trim()).filter(Boolean).join(" · ");
     return t ? `<b>[${esc3a(t)}]</b> ` : "";
   }
-  const B5_FIXED_INSPECTOR = "허정욱";   // 점검자(소방안전관리자) 고정
+  const B5_FIXED_INSPECTOR = "";   // 점검자(소방안전관리자) 고정
   function loadB5Meta(){
     try{
       const meta = JSON.parse(localStorage.getItem(B5_META_KEY)||"{}");

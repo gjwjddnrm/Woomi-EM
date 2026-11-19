@@ -20,7 +20,7 @@ def rep(s, old, new, count=1):
 
 
 CSP = ("default-src 'none'; "
-       "script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; "
+       "script-src __WSEC_SCRIPT_HASHES__ 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; "   # 'unsafe-inline' 없음: 이 파일 안의 스크립트(지문 등록)만 실행
        "style-src 'unsafe-inline'; "
        "img-src data: blob:; font-src data:; media-src data: blob:; "
        "connect-src https://cdn.jsdelivr.net data: blob:; "
@@ -29,7 +29,7 @@ CSP = ("default-src 'none'; "
        "object-src 'none'; base-uri 'none'; form-action 'none'")
 
 # ---------------- B (화기작업) : 프레임용으로 가공 ----------------
-B = rep(B, "<head>\n", "<head>\n<meta name=\"color-scheme\" content=\"only light\">\n<meta name=\"darkreader-lock\">\n<style>:root{ color-scheme: only light; } *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3), *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::before, *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::after{ filter:none !important; -webkit-filter:none !important; mix-blend-mode:normal !important; }</style>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window);</script>\n")
+B = rep(B, "<head>\n", "<head>\n<meta name=\"color-scheme\" content=\"only light\">\n<meta name=\"darkreader-lock\">\n<style>:root{ color-scheme: only light; } *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3), *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::before, *:not(#wsec_n1):not(#wsec_n2):not(#wsec_n3)::after{ filter:none !important; -webkit-filter:none !important; mix-blend-mode:normal !important; }</style>\n<script>/* WOOMI 보안 코어 연결 */ var WoomiSec = parent.WoomiSec; WoomiSec.installFrame(window); var __wsrc = WoomiSec.src;</script>\n")
 B = rep(B, "const idbGet = async (k)=>", "const idbGetRaw = async (k)=>")
 B = rep(B, "const idbSet = async (k, v)=>", "const idbSetRaw = async (k, v)=>")
 B = rep(B, "let chain = Promise.resolve();\n",
@@ -54,8 +54,25 @@ for _o, _n in _m9.PAIRS: B = rep(B, _o, _n)
 # 화기작업: 허가서 PDF의 작업자 명단·화기작업자 읽기
 _spW = _u2.spec_from_file_location("patch_hotwork_workers", HERE / "patch_hotwork_workers.py"); _mW = _u2.module_from_spec(_spW); _spW.loader.exec_module(_mW)
 for _o, _n in _mW.PAIRS: B = rep(B, _o, _n)
+# 보안: 그림 주소 src="${…}" 는 모두 검사·이스케이프 (조작된 백업으로 속성 탈출 → 화면 위조 차단)
+import re as _re
+def _wsrc(t, need):
+    n = len(_re.findall(r'src="\$\{(.+?)\}"', t))
+    if n != need: raise SystemExit(f"src 자리 수가 달라졌어요: {n} (예상 {need})")
+    return _re.sub(r'src="\$\{(.+?)\}"', lambda m: 'src="${__wsrc(' + m.group(1) + ')}"', t)
+B = _wsrc(B, 5)
 # PC 전용: 화면(프레임)이 좁아도 입력창·미리보기를 좌우로 유지
 B = rep(B, "@media screen and (max-width:900px){", "@media screen and (max-width:0px){", count=2)
+import hashlib as _hl
+def _script_hashes(t):
+    out = []
+    for m in _re.finditer(r'<script(\s[^>]*)?>(.*?)</script>', t, flags=_re.S):
+        attrs = m.group(1) or ""
+        if _re.search(r'\ssrc\s*=', attrs) or 'application/octet-stream' in attrs: continue
+        out.append("'sha256-" + base64.b64encode(_hl.sha256(m.group(2).encode("utf-8")).digest()).decode() + "'")
+    return out
+if _re.search(r'\son[a-z]+\s*=\s*["\']', B): raise SystemExit("화기작업 화면에 인라인 이벤트 처리기가 있어요 (CSP 에서 막힘)")
+_B_HASHES = _script_hashes(B)   # 화기작업 화면(srcdoc)은 바깥 화면의 CSP 를 그대로 물려받음
 B_b64 = base64.b64encode(B.encode("utf-8")).decode("ascii")
 
 # ---------------- A (소방안전교육·훈련) + 통합 ----------------
@@ -143,7 +160,18 @@ import importlib.util as _u
 _sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
 for _o, _n in _m.PAIRS: s = rep(s, _o, _n)
 
+# 보안 2차(레드팀) 대응: 저장이 끝난 뒤에만 "저장했어요", 큰 사진 줄이기 등
+_spS2 = _u.spec_from_file_location("patch_sec_app2", HERE / "patch_sec_app2.py"); _mS2 = _u.module_from_spec(_spS2); _spS2.loader.exec_module(_mS2)
+for _o, _n in _mS2.PAIRS: s = rep(s, _o, _n)
+s = _wsrc(s, 30)
+# CSP 에서 'unsafe-inline' 을 빼기 위해: 인라인 onclick 을 data-속성으로 바꾸고 공통 처리기(보안 코어)에서 처리
+s, _n1 = _re.subn(r'onclick="location\.hash=\'(#[^\'"]*)\'"', r'data-wroute="\1"', s)
+s, _n2 = _re.subn(r'onclick="downloadDeadlineICS\(\'([^\'"]*)\'\)"', r'data-wics="\1"', s)
+if (_n1, _n2) != (36, 1): raise SystemExit(f"인라인 처리기 수가 달라졌어요: {_n1}, {_n2}")
+if _re.search(r'\son[a-z]+\s*=\s*["\']', s): raise SystemExit("남은 인라인 이벤트 처리기가 있어요 (CSP 에서 막힘): " + _re.search(r'.{60}\son[a-z]+\s*=\s*["\'].{60}', s).group(0))
 s = rep(s, "</body>", f"<script>\n{ui}</script>\n</body>")
+_hashes = sorted(set(_script_hashes(s) + _B_HASHES))
+s = rep(s, "__WSEC_SCRIPT_HASHES__", " ".join(_hashes))
 
 OUT.write_text(s, "utf-8")
 print("ok", OUT, len(s.encode()) // 1024, "KB")

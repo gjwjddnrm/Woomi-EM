@@ -37,11 +37,8 @@
   };
 
   /* ---------- 잠금 화면 ---------- */
-  // 틀린 횟수·대기 시각은 저장해 두어 새로고침해도 유지 (자동 대입 방지)
-  var TRY_KEY = "woomi_sec_tries_v1";
-  var fails = 0, waitUntil = 0;
-  try{ var t0 = JSON.parse(localStorage.getItem(TRY_KEY) || "{}"); fails = +t0.f || 0; waitUntil = +t0.w || 0; }catch(e){}
-  function saveTries(){ try{ if(fails) localStorage.setItem(TRY_KEY, JSON.stringify({ f:fails, w:waitUntil })); else localStorage.removeItem(TRY_KEY); }catch(e){} }
+  // 틀린 횟수·대기 시간은 보안 코어(S.unlock)가 직접 지킴 → 화면을 거치지 않고 불러도 똑같이 막힘
+  var PW_RULE = "10자 이상, 영문·숫자·특수문자 중 2가지 이상";
   function msg(t, ok){ var m = $("wsecMsg"); m.textContent = t || ""; m.className = "wsec-msg" + (ok ? " ok" : ""); }
 
   function renderProfile(){
@@ -59,7 +56,7 @@
     renderProfile();
     $("wsecTitle").textContent = setup ? "처음 사용 · 비밀번호 설정" : "잠금 해제";
     $("wsecDesc").innerHTML = setup
-      ? "이 컴퓨터에 저장되는 현장 자료(이름·연락처·서명·사진)를 <b>암호화</b>할 비밀번호를 정해 주세요. <b>" + S.MIN_PW + "자 이상</b>이어야 해요."
+      ? "이 컴퓨터에 저장되는 현장 자료(이름·연락처·서명·사진)를 <b>암호화</b>할 비밀번호를 정해 주세요. <b>" + PW_RULE + "</b>이어야 해요."
       : "이 컴퓨터에 저장된 현장 자료는 암호화되어 있어요. 비밀번호를 입력하면 열려요.";
     $("wsecPw2Row").style.display = setup ? "" : "none";
     $("wsecWarn").style.display = setup ? "" : "none";
@@ -72,10 +69,10 @@
   async function onSubmit(e){
     e.preventDefault();
     var pw = $("wsecPw").value, btn = $("wsecGo");
-    if(Date.now() < waitUntil){ msg("잠시 후 다시 시도해 주세요. (" + Math.ceil((waitUntil - Date.now()) / 1000) + "초)"); return; }
+    var w = S.waitSeconds(); if(w && S.hasPassword()){ msg("잠시 후 다시 시도해 주세요. (" + w + "초)"); return; }
     if(!S.hasPassword()){
       if(!$("wsecSite").value.trim() || !$("wsecManager").value.trim()){ msg("현장명과 소방안전관리자 이름을 입력해 주세요."); return; }
-      if(pw.length < S.MIN_PW){ msg("비밀번호는 " + S.MIN_PW + "자 이상이어야 해요."); return; }
+      var bad = S.pwProblem(pw); if(bad){ msg(bad); return; }
       if(pw !== $("wsecPw2").value){ msg("두 비밀번호가 서로 달라요."); return; }
       btn.disabled = true; msg("암호화 설정 중...", true);
       try{ await S.setupPassword(pw, { site:$("wsecSite").value, manager:$("wsecManager").value }); renderProfile(); }catch(err){ console.error(err); btn.disabled = false; msg("설정에 실패했어요: " + err.message); return; }
@@ -84,13 +81,17 @@
     }
     btn.disabled = true; msg("확인 중...", true);
     var ok = false;
-    try{ ok = await S.unlock(pw); }catch(err){ console.error(err); }
+    try{ ok = await S.unlock(pw); }
+    catch(err){
+      btn.disabled = false;
+      if(err && err.code === "wait"){ msg(err.message); return; }
+      if(err && err.code === "meta-corrupt"){ msg("⚠️ 이 컴퓨터의 잠금 정보가 손상(변조)되어 열 수 없어요. 백업 파일(.woomi)이 있다면 아래 '비밀번호를 잊었어요'로 초기화한 뒤 [보안 설정 → 백업 가져오기]로 되살릴 수 있어요."); return; }
+      console.error(err); msg("열지 못했어요: " + err.message); return;
+    }
     btn.disabled = false;
-    if(ok){ fails = 0; waitUntil = 0; saveTries(); $("wsecPw").value = ""; msg(""); bootApp(); return; }
-    fails++;
-    if(fails >= 5) waitUntil = Date.now() + Math.min(900, 15 * Math.pow(2, fails - 5)) * 1000;
-    saveTries();
-    msg("비밀번호가 맞지 않아요." + (fails >= 5 ? " 잠시 기다린 뒤 다시 시도해 주세요." : ""));
+    if(ok){ $("wsecPw").value = ""; msg(""); bootApp(); return; }
+    var w2 = S.waitSeconds();
+    msg("비밀번호가 맞지 않아요." + (w2 ? " " + w2 + "초 기다린 뒤 다시 시도해 주세요." : ""));
     $("wsecPw").select();
   }
 
@@ -102,7 +103,6 @@
     await new Promise(function(r){ setTimeout(r, 1500); });
     try{ await S.wipeAll(); }
     catch(e){ alert("삭제하지 못했어요: " + e.message + "\n(자료는 그대로 남아 있을 수 있어요. 화면을 다시 불러와요.)"); location.reload(); return; }
-    fails = 0; waitUntil = 0; saveTries();
     location.reload();
   }
 
@@ -118,9 +118,9 @@
 
   async function onChangePw(){
     var o = $("wsecOld").value, n = $("wsecNew").value, n2 = $("wsecNew2").value;
-    if(n.length < S.MIN_PW) return setMsg("새 비밀번호는 " + S.MIN_PW + "자 이상이어야 해요.");
+    var bad = S.pwProblem(n); if(bad) return setMsg("새 " + bad);
     if(n !== n2) return setMsg("새 비밀번호 두 개가 서로 달라요.");
-    setMsg("모든 자료를 새 비밀번호로 다시 암호화하는 중...");
+    setMsg("비밀번호를 바꾸는 중...");
     try{ if(!(await S.changePassword(o, n))) return setMsg("현재 비밀번호가 맞지 않아요."); }
     catch(e){ console.error(e); return setMsg("변경 실패: " + e.message); }
     $("wsecOld").value = $("wsecNew").value = $("wsecNew2").value = "";
@@ -130,7 +130,7 @@
     var pw = $("wsecBkPw").value;
     if(!pw) return setMsg("현재 비밀번호를 입력해 주세요.");
     setMsg("백업 파일을 만드는 중...");
-    try{ if(!(await S.exportBackup(pw))) return setMsg("비밀번호가 맞지 않아요."); }
+    try{ if(!(await S.exportBackup(pw))) return setMsg("비밀번호가 맞지 않아요." + (S.waitSeconds() ? " (" + S.waitSeconds() + "초 뒤 다시)" : "")); }
     catch(e){ console.error(e); return setMsg("백업 실패: " + e.message); }
     $("wsecBkPw").value = "";
     setMsg("✅ 암호화 백업 파일을 저장했어요. 이 파일은 백업할 때 쓴 비밀번호로만 열려요.");
@@ -148,8 +148,33 @@
     S.lock();
   }
 
+  // 다른 창(탭)에 WOOMI가 이미 열려 있으면: 여기서는 열지 않고, 원하면 그 창을 잠그고 이 창에서 열기
+  function busyView(on){
+    $("wsecForm").style.display = on ? "none" : "";
+    var box = $("wsecBusy");
+    if(!on){ if(box) box.remove(); return; }
+    if(box) return;
+    box = document.createElement("div"); box.id = "wsecBusy"; box.className = "wsec-busy";
+    var p = document.createElement("p"); p.className = "wsec-desc";
+    p.innerHTML = "<b>다른 창(탭)에 WOOMI가 이미 열려 있어요.</b><br>두 창에서 같이 고치면 한쪽 기록이 지워질 수 있어서 WOOMI는 한 창에서만 열려요.";
+    var go = document.createElement("button"); go.type = "button"; go.className = "wsec-btn pri"; go.textContent = "이 창에서 열기 (다른 창은 저장 후 잠겨요)";
+    go.onclick = function(){
+      go.disabled = true; go.textContent = "다른 창을 잠그는 중...";
+      S.takeover().then(function(ok){
+        if(ok){ busyView(false); renderLock(); }
+        else { go.disabled = false; go.textContent = "이 창에서 열기 (다른 창은 저장 후 잠겨요)"; p.textContent = "다른 창이 응답하지 않아요. 다른 WOOMI 창을 직접 닫고 이 창을 새로고침해 주세요."; }
+      });
+    };
+    box.append(p, go);
+    $("wsecForm").before(box);
+  }
   function init(){
     document.documentElement.classList.add("wsec-locked");
+    if(window.top !== window){   // 다른 사이트가 이 화면을 몰래 끼워 넣은 경우 열지 않음
+      $("wsecTitle").textContent = "이 화면에서는 열 수 없어요";
+      $("wsecDesc").textContent = "WOOMI는 주소창에 직접 주소를 입력해서 열어 주세요.";
+      $("wsecForm").style.display = "none"; return;
+    }
     if(!S || !S.supported){
       $("wsecTitle").textContent = "이 환경에서는 열 수 없어요";
       $("wsecDesc").innerHTML = "보안(암호화) 기능을 쓸 수 없는 환경이에요. <b>최신 크롬·엣지·사파리</b>에서, 파일을 직접 열거나 <b>https://</b> 주소로 열어 주세요.";
@@ -170,6 +195,7 @@
     $("wsecExportBtn").addEventListener("click", onExport);
     $("wsecImportBtn").addEventListener("click", onImport);
     renderLock();
+    S.tabReady().then(function(ok){ if(!ok) busyView(true); });
   }
   init();
 })();

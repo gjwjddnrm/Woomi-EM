@@ -22,3 +22,4 @@ PAIRS = [
     ('    b3aSaveChain = b3aSaveChain.then(()=> b3IdbSet("entries", snapshot)).then(()=>{',
      '    b3aSaveChain = b3aSaveChain.then(()=> b3aLogReady).then(()=> b3IdbSet("entries", b3aLogLoaded ? JSON.parse(JSON.stringify(b3aLogEntries)) : snapshot)).then(()=>{   // (WOOMI) 불러오기 전 일부 목록으로 덮어쓰지 않게'),
 ]
+
