@@ -20,6 +20,7 @@
     }
     if(document.readyState === "complete") window.dispatchEvent(new Event("load"));
     S.guardUnload();
+    renderProfile();   // 잠금이 풀린 뒤에야 현장명·이름을 알 수 있음(암호화)
     setTimeout(S.checkDark, 600); setInterval(S.checkDark, 3000); window.addEventListener("hashchange", function(){ setTimeout(S.checkDark, 800); });
   }
 
@@ -36,7 +37,11 @@
   };
 
   /* ---------- 잠금 화면 ---------- */
+  // 틀린 횟수·대기 시각은 저장해 두어 새로고침해도 유지 (자동 대입 방지)
+  var TRY_KEY = "woomi_sec_tries_v1";
   var fails = 0, waitUntil = 0;
+  try{ var t0 = JSON.parse(localStorage.getItem(TRY_KEY) || "{}"); fails = +t0.f || 0; waitUntil = +t0.w || 0; }catch(e){}
+  function saveTries(){ try{ if(fails) localStorage.setItem(TRY_KEY, JSON.stringify({ f:fails, w:waitUntil })); else localStorage.removeItem(TRY_KEY); }catch(e){} }
   function msg(t, ok){ var m = $("wsecMsg"); m.textContent = t || ""; m.className = "wsec-msg" + (ok ? " ok" : ""); }
 
   function renderProfile(){
@@ -81,17 +86,23 @@
     var ok = false;
     try{ ok = await S.unlock(pw); }catch(err){ console.error(err); }
     btn.disabled = false;
-    if(ok){ $("wsecPw").value = ""; msg(""); bootApp(); return; }
+    if(ok){ fails = 0; waitUntil = 0; saveTries(); $("wsecPw").value = ""; msg(""); bootApp(); return; }
     fails++;
-    if(fails >= 5) waitUntil = Date.now() + Math.min(300, 15 * Math.pow(2, fails - 5)) * 1000;
+    if(fails >= 5) waitUntil = Date.now() + Math.min(900, 15 * Math.pow(2, fails - 5)) * 1000;
+    saveTries();
     msg("비밀번호가 맞지 않아요." + (fails >= 5 ? " 잠시 기다린 뒤 다시 시도해 주세요." : ""));
     $("wsecPw").select();
   }
 
   async function onForgot(){
-    var t = prompt("비밀번호를 잊으면 암호화된 자료는 누구도 복구할 수 없어요.\n\n이 컴퓨터의 WOOMI 자료를 모두 삭제하고 새로 시작하려면 아래에 \"전체삭제\"라고 입력하세요.\n(암호화 백업 파일이 있다면, 새 비밀번호를 정한 뒤 [보안 설정 → 백업 가져오기]로 되살릴 수 있어요.)");
+    var t = prompt("비밀번호를 잊으면 암호화된 자료는 누구도 열 수 없어요.\n\n이 컴퓨터의 WOOMI 자료를 모두 삭제하고 새로 시작하려면 아래에 \"전체삭제\"라고 입력하세요.\n\n· 삭제하기 전에 지금 자료를 '암호화 보관 파일'로 먼저 내려받아요. 나중에 예전 비밀번호가 생각나면 [보안 설정 → 백업 가져오기]로 되살릴 수 있어요.\n· 일반 백업 파일(.woomi)이 있다면 그것으로도 되살릴 수 있어요.");
     if(t !== "전체삭제") return;
-    await S.wipeAll();
+    if(!confirm("정말 삭제할까요? 되돌릴 수 없어요.\n\n[확인]을 누르면 ① 암호화 보관 파일을 내려받고 ② 이 컴퓨터의 WOOMI 자료를 지워요.")) return;
+    try{ await S.exportRaw(); }catch(e){ console.error(e); if(!confirm("암호화 보관 파일을 만들지 못했어요. 그래도 삭제할까요?")) return; }
+    await new Promise(function(r){ setTimeout(r, 1500); });
+    try{ await S.wipeAll(); }
+    catch(e){ alert("삭제하지 못했어요: " + e.message + "\n(자료는 그대로 남아 있을 수 있어요. 화면을 다시 불러와요.)"); location.reload(); return; }
+    fails = 0; waitUntil = 0; saveTries();
     location.reload();
   }
 
@@ -127,6 +138,7 @@
   async function onImport(){
     var f = $("wsecImpFile").files[0], pw = $("wsecImpPw").value;
     if(!f) return setMsg("백업 파일(.woomi)을 골라 주세요.");
+    if(f.size > 1024 * 1024 * 1024) return setMsg("파일이 너무 커요.");
     if(!pw) return setMsg("백업을 만들 때 쓴 비밀번호를 입력해 주세요.");
     if(!confirm("지금 이 컴퓨터에 있는 WOOMI 자료를 백업 파일 내용으로 바꿀까요?\n(현재 자료는 지워집니다)")) return;
     setMsg("복원하는 중...");
@@ -153,7 +165,7 @@
     $("wsecChangeBtn").addEventListener("click", onChangePw);
     $("wsecProfileBtn").addEventListener("click", function(){
       if(!$("wsecSetSite").value.trim() || !$("wsecSetManager").value.trim()) return setMsg("현장명과 이름을 모두 입력해 주세요.");
-      S.setProfile($("wsecSetSite").value, $("wsecSetManager").value); renderProfile(); setMsg("✅ 현장 정보를 저장했어요.");
+      S.setProfile($("wsecSetSite").value, $("wsecSetManager").value).then(function(){ renderProfile(); setMsg("✅ 현장 정보를 저장했어요. (서류의 소방안전관리자 이름은 화면을 다시 불러오면 바뀌어요)"); }, function(e){ setMsg("저장 실패: " + e.message); });
     });
     $("wsecExportBtn").addEventListener("click", onExport);
     $("wsecImportBtn").addEventListener("click", onImport);

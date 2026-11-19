@@ -134,6 +134,9 @@ for _o, _n in _m8.PAIRS: s = rep(s, _o, _n)
 # 소방안전관리자 = 로그인한 관리자
 _spL = _u7.spec_from_file_location("patch_login_officer", HERE / "patch_login_officer.py"); _mL = _u7.module_from_spec(_spL); _spL.loader.exec_module(_mL)
 for _o, _n in _mL.PAIRS: s = rep(s, _o, _n)
+# 보안 점검 대응(앱 쪽): XSS 이스케이프, 기록 유실 방지
+_spS = _u7.spec_from_file_location("patch_sec_app", HERE / "patch_sec_app.py"); _mS = _u7.module_from_spec(_spS); _spS.loader.exec_module(_mS)
+for _o, _n in _mS.PAIRS: s = rep(s, _o, _n)
 
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u

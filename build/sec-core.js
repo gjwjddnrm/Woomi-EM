@@ -15,7 +15,8 @@
   var IDLE_KEY   = "woomi_sec_idle_min";    // 자동 잠금 시간(분)
   var APP_PREFIX = "fireplan_";             // 두 앱이 쓰는 모든 저장 키의 접두어
   var ENV        = "WSEC1:";                // 암호문 표시
-  var ITER       = 310000;                  // PBKDF2 반복 횟수 (OWASP 권장치)
+  var ITER       = 600000;                  // PBKDF2 반복 횟수 (OWASP 2023 권장치, 예전 자료는 31만)
+  var ITER_MIN   = 100000, ITER_MAX = 2000000;   // 백업·저장값의 반복 횟수는 이 범위만 허용 (조작된 파일로 멈춤 방지)
   var MIN_PW     = 8;
   var IDB_NAMES  = ["fireplan_b3a_db", "fireplan_hotwork_db", "fireplan_b56_db"];
 
@@ -31,6 +32,8 @@
   var ver = new Map();            // 키별 쓰기 버전
   var chain = Promise.resolve();  // 암호화 쓰기 순서 보장
   var pendingWrites = 0;
+  var FROZEN = false;             // 복원·전체삭제 뒤 다시 불러올 때까지 어떤 저장도 하지 않음
+  var PROFILE = { site:"", manager:"" };   // 현장명·관리자 이름 (잠금이 풀린 뒤에만, 메모리)
 
   /* ---------------- 공통 유틸 ---------------- */
   function b64(u8){ var s = "", C = 0x8000; for(var i = 0; i < u8.length; i += C) s += String.fromCharCode.apply(null, u8.subarray(i, i + C)); return btoa(s); }
@@ -38,7 +41,9 @@
   function rnd(n){ var u = new Uint8Array(n); crypto.getRandomValues(u); return u; }
   function isAppKey(k){ return typeof k === "string" ? k.indexOf(APP_PREFIX) === 0 : String(k).indexOf(APP_PREFIX) === 0; }
 
+  function safeIter(n){ n = Number(n); if(!(n >= ITER_MIN && n <= ITER_MAX) || Math.floor(n) !== n) throw new Error("파일 형식이 올바르지 않아요."); return n; }
   async function deriveKey(pw, salt, iter){
+    iter = safeIter(iter);
     var base = await subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
     return subtle.deriveKey({ name:"PBKDF2", hash:"SHA-256", salt:salt, iterations:iter }, base,
       { name:"AES-GCM", length:256 }, false, ["encrypt", "decrypt"]);
@@ -63,6 +68,7 @@
      앱 코드는 localStorage.getItem/setItem 을 그대로 쓰고,
      실제 저장소에는 암호문만 들어갑니다. */
   function queueWrite(k){
+    if(FROZEN) return;
     var v = (ver.get(k) || 0) + 1; ver.set(k, v); pendingWrites++;
     chain = chain.then(async function(){
       try{
@@ -95,6 +101,7 @@
     };
     P.setItem = function(k, v){
       if(this === ls && isAppKey(k)){
+        if(FROZEN) return;
         if(!KEY) throw new Error("잠금 상태에서는 저장할 수 없어요.");
         k = String(k); v = String(v);
         probeQuota(k, v);   // 공간이 부족하면 앱이 알 수 있게 즉시 QuotaExceededError
@@ -111,6 +118,7 @@
   /* ---------------- IndexedDB 값 암호화 (앱의 idbGet/idbSet 에서 호출) ---------------- */
   async function encVal(v){
     if(v === undefined) return v;
+    if(FROZEN) throw new Error("다시 불러오는 중");
     if(!KEY) throw new Error("잠금 상태");
     var r = await encBytes(KEY, te.encode(JSON.stringify(v)));
     return { __wsec:1, iv:r.iv, ct:r.ct };
@@ -182,20 +190,54 @@
     }
   }
   function installSanitizer(win){
-    var EP = win.Element.prototype;
+    var EP = win.Element.prototype, XHTML = "http://www.w3.org/1999/xhtml";
     var d = Object.getOwnPropertyDescriptor(EP, "innerHTML");
     if(!d || !d.set) return;
+    var RAWTEXT = { STYLE:1, TEXTAREA:1, TITLE:1, SCRIPT:1, XMP:1, NOSCRIPT:1, IFRAME:1, NOEMBED:1, NOFRAMES:1, PLAINTEXT:1 };
+    // 정화한 결과를 다시 글자로 바꾸지 않고 "노드 그대로" 붙임 → 다시 해석되며 구조가 바뀌는 변형 XSS(mXSS) 차단
+    function frag(html){
+      var t = win.document.createElement("template");
+      d.set.call(t, html);
+      sanitizeTree(t.content);
+      return t.content;
+    }
+    function needs(html){ return html.indexOf("<") >= 0 || RISKY.test(html); }
+    function str(html){ return html == null ? "" : String(html); }
+    function cleanStr(html){   // 글자로 돌려줘야 하는 곳(SVG 안 등)만: 정화 후 두 번 해석해도 같은지 확인
+      var f = frag(html), t = win.document.createElement("template"); t.content.appendChild(f);
+      var once = d.get.call(t), t2 = win.document.createElement("template"); d.set.call(t2, once); sanitizeTree(t2.content);
+      var t3 = win.document.createElement("template"); t3.content.appendChild(t2.content); var twice = d.get.call(t3);
+      return once === twice ? once : t3.content.textContent;   // 해석할 때마다 달라지면(수상함) 글자만 남김
+    }
     Object.defineProperty(EP, "innerHTML", {
       configurable:true, enumerable:d.enumerable, get:d.get,
       set:function(html){
-        html = html == null ? "" : String(html);
-        if(!RISKY.test(html)) return d.set.call(this, html);
-        var t = win.document.createElement("template");
-        d.set.call(t, html);
-        sanitizeTree(t.content);
-        return d.set.call(this, d.get.call(t));
+        html = str(html);
+        if(!needs(html) || RAWTEXT[this.tagName]) return d.set.call(this, html);
+        if(this.namespaceURI !== XHTML || this.tagName === "TEMPLATE") return d.set.call(this, cleanStr(html));
+        var f = frag(html);
+        while(this.firstChild) this.removeChild(this.firstChild);
+        this.appendChild(f);
       }
     });
+    var iah = EP.insertAdjacentHTML;
+    if(iah) EP.insertAdjacentHTML = function(pos, html){
+      html = str(html); if(!needs(html)) return iah.call(this, pos, html);
+      var f = frag(html), p = String(pos).toLowerCase();
+      if(p === "beforebegin"){ if(this.parentNode) this.parentNode.insertBefore(f, this); }
+      else if(p === "afterbegin") this.insertBefore(f, this.firstChild);
+      else if(p === "beforeend") this.appendChild(f);
+      else if(p === "afterend"){ if(this.parentNode) this.parentNode.insertBefore(f, this.nextSibling); }
+      else return iah.call(this, pos, "");
+    };
+    var od = Object.getOwnPropertyDescriptor(EP, "outerHTML");
+    if(od && od.set) Object.defineProperty(EP, "outerHTML", { configurable:true, enumerable:od.enumerable, get:od.get, set:function(html){
+      html = str(html); if(!needs(html)) return od.set.call(this, html);
+      if(!this.parentNode) return od.set.call(this, "");
+      this.parentNode.replaceChild(frag(html), this);
+    } });
+    var RP = win.Range && win.Range.prototype, ccf = RP && RP.createContextualFragment;
+    if(ccf) RP.createContextualFragment = function(html){ html = str(html); return needs(html) ? frag(html) : ccf.call(this, html); };
   }
 
   /* ---------------- CDN 라이브러리 무결성 검사 (SRI) ---------------- */
@@ -243,7 +285,8 @@
       p.style.cssText = "position:fixed;left:-9999px;top:0;width:4px;height:4px;margin:0;background-color:#ffffff;color:#000000;";
       doc.body.appendChild(p);
     }
-    var w = doc.defaultView, cs = w.getComputedStyle(p);
+    var w = doc.defaultView; if(!w) return false;   // 프레임이 바뀌는 중이면 건너뜀
+    var cs = w.getComputedStyle(p);
     var f1 = w.getComputedStyle(doc.documentElement).filter || "", f2 = w.getComputedStyle(doc.body).filter || "";
     return cs.backgroundColor !== "rgb(255, 255, 255)" || cs.color !== "rgb(0, 0, 0)" || /invert/.test(f1 + f2);
   }
@@ -309,7 +352,7 @@
   var locking = false;
   async function lock(){
     if(locking) return; locking = true;
-    if(KEY){
+    if(KEY && !FROZEN){
       // 앱의 "창 닫을 때 작성 중인 내용 기록으로 보관" 처리를 키가 살아 있을 때 먼저 실행
       try{ window.dispatchEvent(new Event("pagehide")); }catch(e){ console.error(e); }
       try{ await settle(); }catch(e){ console.error(e); }
@@ -344,17 +387,26 @@
   }
 
   function clean(t){ return String(t == null ? "" : t).replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40); }
-  function getProfile(){ var m = getMeta(); return { site: m ? clean(m.site) : "", manager: m ? clean(m.manager) : "" }; }
-  function setProfile(site, manager){
+  // 현장명·관리자 이름은 암호화해서 보관하고, 잠금이 풀린 뒤에만 보여 줌 (잠긴 화면·저장소에 실명이 남지 않게)
+  function getProfile(){ return KEY ? { site: PROFILE.site, manager: PROFILE.manager } : { site:"", manager:"" }; }
+  async function writeProfile(m, key){ m.prof = await encStr(key, JSON.stringify(PROFILE)); delete m.site; delete m.manager; }
+  async function setProfile(site, manager){
     if(!KEY) throw new Error("잠금 상태");
-    var m = getMeta(); m.site = clean(site); m.manager = clean(manager);
+    PROFILE = { site: clean(site), manager: clean(manager) };
+    var m = getMeta(); await writeProfile(m, KEY);
     raw.set.call(realLS, META_KEY, JSON.stringify(m));
+  }
+  async function readProfile(m, key){
+    if(m.prof){ try{ var p = JSON.parse(await decStr(key, m.prof)); PROFILE = { site: clean(p.site), manager: clean(p.manager) }; }catch(e){ PROFILE = { site:"", manager:"" }; } return; }
+    PROFILE = { site: clean(m.site), manager: clean(m.manager) };
+    if(m.site || m.manager){ await writeProfile(m, key); raw.set.call(realLS, META_KEY, JSON.stringify(m)); }   // 예전 평문 → 암호화
   }
   async function setupPassword(pw, profile){
     var salt = rnd(16);
     KEY = await deriveKey(pw, salt, ITER);
-    var meta = { v:1, salt:b64(salt), iter:ITER, check: await encStr(KEY, "woomi-ok"), created:new Date().toISOString(),
-      site: clean(profile && profile.site), manager: clean(profile && profile.manager) };
+    PROFILE = { site: clean(profile && profile.site), manager: clean(profile && profile.manager) };
+    var meta = { v:1, salt:b64(salt), iter:ITER, check: await encStr(KEY, "woomi-ok"), created:new Date().toISOString() };
+    await writeProfile(meta, KEY);
     raw.set.call(realLS, META_KEY, JSON.stringify(meta));
     await loadAll();
   }
@@ -362,6 +414,7 @@
     var m = getMeta(); if(!m) throw new Error("no-meta");
     var k = await deriveKey(pw, unb64(m.salt), m.iter || ITER);
     try{ if(await decStr(k, m.check) !== "woomi-ok") throw 0; }catch(e){ return false; }
+    await readProfile(m, k);
     KEY = k; await loadAll(); return true;
   }
 
@@ -385,7 +438,9 @@
     }
     var keys = Array.from(cache.keys());
     for(var z = 0; z < keys.length; z++) raw.set.call(realLS, keys[z], await encStr(k1, cache.get(keys[z])));
-    raw.set.call(realLS, META_KEY, JSON.stringify({ v:1, salt:b64(salt), iter:ITER, check: await encStr(k1, "woomi-ok"), created:m.created, changed:new Date().toISOString(), site:m.site || "", manager:m.manager || "" }));
+    var nm = { v:1, salt:b64(salt), iter:ITER, check: await encStr(k1, "woomi-ok"), created:m.created, changed:new Date().toISOString() };
+    await writeProfile(nm, k1);
+    raw.set.call(realLS, META_KEY, JSON.stringify(nm));
     return true;
   }
 
@@ -417,11 +472,27 @@
     var buf = new Uint8Array(await file.arrayBuffer());
     var nl = buf.indexOf(10); if(nl < 0) throw new Error("백업 파일 형식이 아니에요.");
     var head = JSON.parse(td.decode(buf.subarray(0, nl)));
-    if(!head.woomiBackup) throw new Error("백업 파일 형식이 아니에요.");
-    var bk = await deriveKey(pw, unb64(head.salt), head.iter);
     var data;
-    try{ data = JSON.parse(td.decode(await decBytes(bk, unb64(head.iv), buf.subarray(nl + 1)))); }
-    catch(e){ return false; }
+    if(head.woomiRaw){   // 전체삭제 직전에 저장한 "암호화 보관 파일": 그때 쓰던 비밀번호로 풀어서 되살림
+      var rk = await deriveKey(pw, unb64(head.meta.salt), head.meta.iter);
+      try{ if(await decStr(rk, head.meta.check) !== "woomi-ok") throw 0; }catch(e){ return false; }
+      var body = JSON.parse(td.decode(buf.subarray(nl + 1)));
+      data = { ls:{}, idb:{} };
+      for(var lk in (body.ls || {})){ if(isAppKey(lk)) try{ data.ls[lk] = await decStr(rk, body.ls[lk]); }catch(e){} }
+      for(var dn in (body.idb || {})){
+        if(IDB_NAMES.indexOf(dn) < 0) continue; data.idb[dn] = [];
+        for(var q = 0; q < body.idb[dn].length; q++){
+          var it = body.idb[dn][q], val = it[1];
+          if(val && val.__wsec === 1){ try{ val = JSON.parse(td.decode(await decBytes(rk, unb64(val.iv), unb64(val.ct)))); }catch(e){ continue; } }
+          data.idb[dn].push([it[0], val]);
+        }
+      }
+    }else{
+      if(!head.woomiBackup) throw new Error("백업 파일 형식이 아니에요.");
+      var bk = await deriveKey(pw, unb64(head.salt), head.iter);
+      try{ data = JSON.parse(td.decode(await decBytes(bk, unb64(head.iv), buf.subarray(nl + 1)))); }
+      catch(e){ return false; }
+    }
     // 기존 자료를 백업 내용으로 교체
     appKeys().forEach(function(k){ raw.rm.call(realLS, k); });
     cache.clear();
@@ -432,15 +503,43 @@
       for(var j = 0; j < pairs.length; j++) enc.push([pairs[j][0], await encVal(pairs[j][1])]);
       await idbPutAll(IDB_NAMES[i], enc, true);
     }
+    FROZEN = true;   // 복원한 내용을 화면 닫기 처리가 덮어쓰지 않게, 다시 불러올 때까지 저장 멈춤
+    return true;
+  }
+  // 전체삭제 직전 "암호화 보관 파일": 저장된 암호문을 그대로 묶어 내려받음 (비밀번호가 생각나면 복원 가능)
+  async function exportRaw(){
+    var m = getMeta(); if(!m) return false;
+    var body = { ls:{}, idb:{} };
+    appKeys().forEach(function(k){ body.ls[k] = raw.get.call(realLS, k); });
+    for(var i = 0; i < IDB_NAMES.length; i++){
+      try{
+        var all = await idbAll(IDB_NAMES[i]);
+        body.idb[IDB_NAMES[i]] = all.map(function(p){ var v = p[1]; return [p[0], (v && v.__wsec === 1) ? { __wsec:1, iv:b64(new Uint8Array(v.iv)), ct:b64(new Uint8Array(v.ct)) } : v]; });
+      }catch(e){}
+    }
+    var head = { woomiRaw:1, meta:{ salt:m.salt, iter:m.iter || 310000, check:m.check }, saved:new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(head), "\n", JSON.stringify(body)], { type:"application/octet-stream" });
+    var a = document.createElement("a"), d = new Date(), p = function(n){ return String(n).padStart(2, "0"); };
+    a.href = URL.createObjectURL(blob);
+    a.download = "WOOMI_삭제전_암호화보관_" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes()) + ".woomi";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
     return true;
   }
 
   async function wipeAll(){
+    FROZEN = true;
+    // 기록 DB를 먼저 지움: 다른 탭이 열려 있어 막히면 "실패"로 알리고 아무것도 지우지 않은 것처럼 멈춤
+    for(var i = 0; i < IDB_NAMES.length; i++){
+      await new Promise(function(res, rej){
+        var r = indexedDB.deleteDatabase(IDB_NAMES[i]), done = false;
+        r.onsuccess = function(){ done = true; res(); };
+        r.onerror = function(){ done = true; rej(new Error("기록 저장소를 지우지 못했어요.")); };
+        r.onblocked = function(){ setTimeout(function(){ if(!done) rej(new Error("다른 창이나 탭에 WOOMI가 열려 있어서 지우지 못했어요. 다른 WOOMI 창을 모두 닫고 다시 해 주세요.")); }, 1500); };
+      });
+    }
     appKeys().forEach(function(k){ raw.rm.call(realLS, k); });
     raw.rm.call(realLS, META_KEY);
-    for(var i = 0; i < IDB_NAMES.length; i++){
-      await new Promise(function(res){ var r = indexedDB.deleteDatabase(IDB_NAMES[i]); r.onsuccess = r.onerror = r.onblocked = function(){ res(); }; });
-    }
   }
 
   /* ---------------- 알림 ---------------- */
@@ -461,7 +560,7 @@
     getProfile: getProfile, setProfile: setProfile,
     isUnlocked: function(){ return !!KEY; },
     setupPassword: setupPassword, unlock: unlock, lock: lock,
-    changePassword: changePassword, exportBackup: exportBackup, importBackup: importBackup, wipeAll: wipeAll,
+    changePassword: changePassword, exportBackup: exportBackup, importBackup: importBackup, wipeAll: wipeAll, exportRaw: exportRaw,
     encVal: encVal, decVal: decVal, trackIdb: trackIdb, guardUnload: guardUnload,
     installFrame: function(win){ installAll(win); },
     idleMinutes: idleMinutes,
