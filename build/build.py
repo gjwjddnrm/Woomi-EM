@@ -163,6 +163,9 @@ for _o, _n in _m.PAIRS: s = rep(s, _o, _n)
 # 보안 2차(레드팀) 대응: 저장이 끝난 뒤에만 "저장했어요", 큰 사진 줄이기 등
 _spS2 = _u.spec_from_file_location("patch_sec_app2", HERE / "patch_sec_app2.py"); _mS2 = _u.module_from_spec(_spS2); _spS2.loader.exec_module(_mS2)
 for _o, _n in _mS2.PAIRS: s = rep(s, _o, _n)
+# 안전점검: 별지 9 소방시설 오동작 관리대장 (날짜별 기록의 마지막 장)
+_spB9 = _u.spec_from_file_location("patch_b9", HERE / "patch_b9.py"); _mB9 = _u.module_from_spec(_spB9); _spB9.loader.exec_module(_mB9)
+for _o, _n in _mB9.PAIRS: s = rep(s, _o, _n)
 s = _wsrc(s, 30)
 # CSP 에서 'unsafe-inline' 을 빼기 위해: 인라인 onclick 을 data-속성으로 바꾸고 공통 처리기(보안 코어)에서 처리
 s, _n1 = _re.subn(r'onclick="location\.hash=\'(#[^\'"]*)\'"', r'data-wroute="\1"', s)
