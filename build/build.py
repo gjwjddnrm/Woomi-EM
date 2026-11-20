@@ -74,12 +74,12 @@ s = rep(s, '<div class="gs-footer">소방안전 교육 및 훈련 서류</div>\n
         '  </div>\n')
 
 # 앱 스크립트는 잠금 해제 후에 실행
-app_marker = "<script>\n(function mergeB3(){"
+app_marker = "<script>\n/*WOOMI_APP*/\n"
 s = rep(s, app_marker,
         '<!-- ============ 화기작업 신청서·허가서 (별지 7·8) ============ -->\n'
         '<div id="hotworkView" class="view-hidden"><iframe id="hotworkFrame" title="화기작업 신청서·허가서"></iframe></div>\n'
         f'<script type="application/octet-stream" id="woomiHotworkSrc">{B_b64}</script>\n'
-        '<script type="text/x-woomi-app">\n(function mergeB3(){')
+        '<script type="text/x-woomi-app">\n')
 s = rep(s, "</script>\n<script>\n  /* ================= 화기작업 허가 캘린더",
         "</script>\n<script type=\"text/x-woomi-app\">\n  /* ================= 화기작업 허가 캘린더")
 
@@ -110,16 +110,15 @@ import importlib.util as _u6
 
 # 안전점검 지적내역서(별지 5)·조치 결과 통보서(별지 6)
 import importlib.util as _u7
-_sp7 = _u7.spec_from_file_location("patch_b56", HERE / "patch_b56.py"); _m7 = _u7.module_from_spec(_sp7); _sp7.loader.exec_module(_m7)
-for _o, _n in _m7.PAIRS: s = rep(s, _o, _n)
 # 교육·훈련 화면 상단 바
-_sp8 = _u7.spec_from_file_location("patch_b3_top", HERE / "patch_b3_top.py"); _m8 = _u7.module_from_spec(_sp8); _sp8.loader.exec_module(_m8)
-for _o, _n in _m8.PAIRS: s = rep(s, _o, _n)
 # 소방안전관리자 = 로그인한 관리자
 
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u
 
+# (WOOMI) 통합 글루: 안전점검(별지 5·6) 라우팅·푸터
+s = rep(s, '    if(hash !== "form/byeolji-3-1" && hash !== "hotwork"){', '    if(hash === "form/byeolji-6") hash = "form/byeolji-5";\n    if(hash !== "form/byeolji-3-1" && hash !== "hotwork" && hash !== "form/byeolji-5"){')
+s = rep(s, '소방안전 교육·훈련 · 화기작업 서류', '소방안전 교육·훈련 · 화기작업 · 안전점검 서류')
 s = rep(s, "</body>", f"<script>\n{ui}</script>\n</body>")
 
 OUT.write_text(s, "utf-8")
