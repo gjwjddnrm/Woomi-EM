@@ -5820,6 +5820,8 @@
     return new Promise((res, rej)=>{ const tx = db.transaction("kv", "readwrite"); tx.objectStore("kv").put(val, key); tx.oncomplete = ()=> res(); tx.onerror = tx.onabort = ()=> rej(tx.error); });
   }
   let b3aLogLoaded = false;
+  let b3aLoadReadyResolve;
+  const b3aLoadReady = new Promise(r => { b3aLoadReadyResolve = r; });   // 기존 기록 로드 완료 신호
   function loadB3aLogEntries(){
     // 1) 예전 방식(localStorage)에 있던 기록을 먼저 보여주고, 2) IndexedDB 내용으로 바꿔 끼웁니다.
     try{
@@ -5832,22 +5834,25 @@
         const ids = new Set(v.map(x => x.id));
         b3aLogEntries = v.concat(b3aLogEntries.filter(x => !ids.has(x.id)));
       }
-      b3aLogLoaded = true;
+      b3aLogLoaded = true; b3aLoadReadyResolve();
       if(legacy.length){ try{ await b3IdbSet("entries", b3aLogEntries); localStorage.removeItem(B3A_LOG_KEY); }catch(e){} }
       renderB3aLogList();
-    }).catch(()=>{ b3aLogLoaded = true; });
+    }).catch(()=>{ b3aLogLoaded = true; b3aLoadReadyResolve(); });
     try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   }
 
   let b3aSaveChain = Promise.resolve();
   function saveB3aLogEntries(){
     b3aLastSaveOk = true;
-    const snapshot = JSON.parse(JSON.stringify(b3aLogEntries));
-    b3aSaveChain = b3aSaveChain.then(()=> b3IdbSet("entries", snapshot)).then(()=>{
-      try{ localStorage.removeItem(B3A_LOG_KEY); }catch(e){}
-    }).catch(()=>{
-      alert("기록 저장에 실패했어요. 컴퓨터(폰)의 저장 공간이 부족할 수 있어요.");
-    });
+    // 기존 기록 로드가 끝난 뒤에만, 그 시점의 최신 상태를 저장한다.
+    // (부팅 중 로드보다 저장이 먼저 끝나 기존 기록을 덮어쓰던 경쟁 방지)
+    b3aSaveChain = b3aSaveChain
+      .then(()=> b3aLoadReady)
+      .then(()=> b3IdbSet("entries", JSON.parse(JSON.stringify(b3aLogEntries))))
+      .then(()=>{ try{ localStorage.removeItem(B3A_LOG_KEY); }catch(e){} })
+      .catch(()=>{
+        alert("기록 저장에 실패했어요. 컴퓨터(폰)의 저장 공간이 부족할 수 있어요.");
+      });
   }
   let b3aSilentSave = false, b3aLastSaveOk = true;
 
