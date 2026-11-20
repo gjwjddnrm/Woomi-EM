@@ -49,6 +49,18 @@ async function run() {
     result.hotworkFrameLoaded = !!(page.frames().length > 1);
   } catch (e) {}
 
+  // XSS 가드: 정화기 우회 payload 가 실행되면 안 됨(0 이어야 안전)
+  try {
+    result.xssExecuted = await page.evaluate(() => new Promise(r => {
+      window.__xss = 0;
+      const mk = h => { const d = document.createElement("div"); d.innerHTML = h; document.body.appendChild(d); };
+      mk('<img/src=x /onerror="window.__xss++">');
+      mk('<details/open/ontoggle="window.__xss++"></details>');
+      mk('<img src=x onerror="window.__xss++">');
+      setTimeout(() => r(window.__xss), 500);
+    }));
+  } catch (e) { result.xssExecuted = "ERR:" + e.message; }
+
   await browser.close();
   console.log(JSON.stringify(result, null, 2));
 }

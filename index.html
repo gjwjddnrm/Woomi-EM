@@ -201,7 +201,9 @@
       configurable:true, enumerable:d.enumerable, get:d.get,
       set:function(html){
         html = html == null ? "" : String(html);
-        if(!RISKY.test(html)) return d.set.call(this, html);
+        // 태그가 없으면(순수 텍스트) 그대로, <가 하나라도 있으면 항상 정화한다.
+        // (예전엔 RISKY 정규식에 걸릴 때만 정화해서 <img/src=x/onerror=..> 같은 변형이 통과했음)
+        if(html.indexOf("<") < 0) return d.set.call(this, html);
         var t = win.document.createElement("template");
         d.set.call(t, html);
         sanitizeTree(t.content);
