@@ -38,22 +38,12 @@ B = rep(B, "let chain = Promise.resolve();\n",
         "let chain = Promise.resolve();\n")
 # 화기작업 허가서 칸 비율
 import importlib.util as _u4
-_sp4 = _u4.spec_from_file_location("patch_hotwork_layout", HERE / "patch_hotwork_layout.py"); _m4 = _u4.module_from_spec(_sp4); _sp4.loader.exec_module(_m4)
-for _o, _n in _m4.PAIRS: B = rep(B, _o, _n)
 # 화기작업: 입력 탭 저장 버튼, 허가번호 이어서 매기기
 import importlib.util as _u5
-_sp5 = _u5.spec_from_file_location("patch_hotwork_save", HERE / "patch_hotwork_save.py"); _m5 = _u5.module_from_spec(_sp5); _sp5.loader.exec_module(_m5)
-for _o, _n in _m5.PAIRS: B = rep(B, _o, _n)
 # 화기작업 서명 진하게 보정
 import importlib.util as _u2
-_sp2 = _u2.spec_from_file_location("patch_hotwork_sig", HERE / "patch_hotwork_sig.py"); _m2 = _u2.module_from_spec(_sp2); _sp2.loader.exec_module(_m2)
-for _o, _n in _m2.PAIRS: B = rep(B, _o, _n)
 # 화기작업 소방안전관리자 서명: Ctrl+V 붙여넣기
-_sp9 = _u2.spec_from_file_location("patch_hotwork_mgrpaste", HERE / "patch_hotwork_mgrpaste.py"); _m9 = _u2.module_from_spec(_sp9); _sp9.loader.exec_module(_m9)
-for _o, _n in _m9.PAIRS: B = rep(B, _o, _n)
 # 화기작업: 허가서 PDF의 작업자 명단·화기작업자 읽기
-_spW = _u2.spec_from_file_location("patch_hotwork_workers", HERE / "patch_hotwork_workers.py"); _mW = _u2.module_from_spec(_spW); _spW.loader.exec_module(_mW)
-for _o, _n in _mW.PAIRS: B = rep(B, _o, _n)
 # PC 전용: 화면(프레임)이 좁아도 입력창·미리보기를 좌우로 유지
 B = rep(B, "@media screen and (max-width:900px){", "@media screen and (max-width:0px){", count=2)
 B_b64 = base64.b64encode(B.encode("utf-8")).decode("ascii")
@@ -113,16 +103,10 @@ s = rep(s, "  async function b3IdbSet(key, val){\n    const db", "  async functi
 
 # 별지 3-1: 사진 많은 쪽을 어두운 쪽으로 잘못 판단해 사진이 반전되던 문제
 import importlib.util as _u3
-_sp3 = _u3.spec_from_file_location("patch_b3a_darkpage", HERE / "patch_b3a_darkpage.py"); _m3 = _u3.module_from_spec(_sp3); _sp3.loader.exec_module(_m3)
-for _o, _n in _m3.PAIRS: s = rep(s, _o, _n)
 # 교육일지 PDF 읽기 보완(제목 띠 사진 제외, 공종명 칸 깨진 업체 정리)
-_spE = _u3.spec_from_file_location("patch_b3a_edu", HERE / "patch_b3a_edu.py"); _mE = _u3.module_from_spec(_spE); _spE.loader.exec_module(_mE)
-for _o, _n in _mE.PAIRS: s = rep(s, _o, _n)
 
 # 별지 3-1: 비상대비훈련 보고서(스캔본) 불러오기 + 별지 3-2 손글씨 소속·성명 그림
 import importlib.util as _u6
-_sp6 = _u6.spec_from_file_location("patch_b3a_training", HERE / "patch_b3a_training.py"); _m6 = _u6.module_from_spec(_sp6); _sp6.loader.exec_module(_m6)
-for _o, _n in _m6.PAIRS: s = rep(s, _o, _n)
 
 # 안전점검 지적내역서(별지 5)·조치 결과 통보서(별지 6)
 import importlib.util as _u7
@@ -132,13 +116,9 @@ for _o, _n in _m7.PAIRS: s = rep(s, _o, _n)
 _sp8 = _u7.spec_from_file_location("patch_b3_top", HERE / "patch_b3_top.py"); _m8 = _u7.module_from_spec(_sp8); _sp8.loader.exec_module(_m8)
 for _o, _n in _m8.PAIRS: s = rep(s, _o, _n)
 # 소방안전관리자 = 로그인한 관리자
-_spL = _u7.spec_from_file_location("patch_login_officer", HERE / "patch_login_officer.py"); _mL = _u7.module_from_spec(_spL); _spL.loader.exec_module(_mL)
-for _o, _n in _mL.PAIRS: s = rep(s, _o, _n)
 
 # 별지 3-1: 하루치 PDF도 적용 즉시 기록 저장
 import importlib.util as _u
-_sp = _u.spec_from_file_location("patch_b3a_ocr", HERE / "patch_b3a_ocr.py"); _m = _u.module_from_spec(_sp); _sp.loader.exec_module(_m)
-for _o, _n in _m.PAIRS: s = rep(s, _o, _n)
 
 s = rep(s, "</body>", f"<script>\n{ui}</script>\n</body>")
 
