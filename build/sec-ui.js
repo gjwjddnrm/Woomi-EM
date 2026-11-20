@@ -37,6 +37,10 @@
 
   /* ---------- 잠금 화면 ---------- */
   var fails = 0, waitUntil = 0;
+  // 비밀번호 대입 지연을 저장소에 남겨 새로고침해도 유지(무차별 대입 방어)
+  try{ var _th = JSON.parse(localStorage.getItem("woomi_sec_throttle") || "null"); if(_th){ fails = _th.fails || 0; waitUntil = _th.waitUntil || 0; } }catch(e){}
+  function saveThrottle(){ try{ localStorage.setItem("woomi_sec_throttle", JSON.stringify({ fails: fails, waitUntil: waitUntil })); }catch(e){} }
+  function clearThrottle(){ fails = 0; waitUntil = 0; try{ localStorage.removeItem("woomi_sec_throttle"); }catch(e){} }
   function msg(t, ok){ var m = $("wsecMsg"); m.textContent = t || ""; m.className = "wsec-msg" + (ok ? " ok" : ""); }
 
   function renderProfile(){
@@ -81,9 +85,10 @@
     var ok = false;
     try{ ok = await S.unlock(pw); }catch(err){ console.error(err); }
     btn.disabled = false;
-    if(ok){ $("wsecPw").value = ""; msg(""); bootApp(); return; }
+    if(ok){ clearThrottle(); $("wsecPw").value = ""; msg(""); bootApp(); return; }
     fails++;
     if(fails >= 5) waitUntil = Date.now() + Math.min(300, 15 * Math.pow(2, fails - 5)) * 1000;
+    saveThrottle();
     msg("비밀번호가 맞지 않아요." + (fails >= 5 ? " 잠시 기다린 뒤 다시 시도해 주세요." : ""));
     $("wsecPw").select();
   }

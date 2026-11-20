@@ -420,6 +420,9 @@
     var nl = buf.indexOf(10); if(nl < 0) throw new Error("백업 파일 형식이 아니에요.");
     var head = JSON.parse(td.decode(buf.subarray(0, nl)));
     if(!head.woomiBackup) throw new Error("백업 파일 형식이 아니에요.");
+    // 조작된 백업이 비정상적으로 큰 반복 횟수로 브라우저를 멈추지 못하게(DoS) 범위 검증
+    if(typeof head.iter !== "number" || !isFinite(head.iter) || head.iter < 100000 || head.iter > 1000000 || !head.salt || !head.iv)
+      throw new Error("백업 파일의 보안 설정 값이 올바르지 않아요.");
     var bk = await deriveKey(pw, unb64(head.salt), head.iter);
     var data;
     try{ data = JSON.parse(td.decode(await decBytes(bk, unb64(head.iv), buf.subarray(nl + 1)))); }
