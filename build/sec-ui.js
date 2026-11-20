@@ -96,6 +96,8 @@
   async function onForgot(){
     var t = prompt("비밀번호를 잊으면 암호화된 자료는 누구도 복구할 수 없어요.\n\n이 컴퓨터의 WOOMI 자료를 모두 삭제하고 새로 시작하려면 아래에 \"전체삭제\"라고 입력하세요.\n(암호화 백업 파일이 있다면, 새 비밀번호를 정한 뒤 [보안 설정 → 백업 가져오기]로 되살릴 수 있어요.)");
     if(t !== "전체삭제") return;
+    // 지나가던 사람이 실수/고의로 지우지 못하게 마지막으로 한 번 더 확인
+    if(!confirm("정말 이 컴퓨터의 모든 WOOMI 현장 자료(기록·명단·서명·사진)를 삭제할까요?\n이 작업은 되돌릴 수 없어요.")) return;
     await S.wipeAll();
     location.reload();
   }
@@ -138,7 +140,7 @@
     try{ if(!(await S.importBackup(f, pw))) return setMsg("백업 비밀번호가 맞지 않거나 파일이 손상됐어요."); }
     catch(e){ console.error(e); return setMsg("복원 실패: " + e.message); }
     alert("복원했어요. 화면을 다시 불러온 뒤 비밀번호를 입력해 주세요.");
-    S.lock();
+    S.lock(true);   // 복원된 자료를 화면의 옛 내용으로 덮어쓰지 않도록 보관 없이 바로 재로드
   }
 
   function init(){

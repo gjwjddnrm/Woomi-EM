@@ -9205,6 +9205,7 @@
   }
   let b3aClosing = false;
   function b3aOnClose(){
+    if(window.__woomiNoArchive) return;   // 백업 복원 직후엔 화면의 옛 내용을 보관하지 않음(복원본 보호)
     if(b3aClosing) return;
     b3aClosing = true;
     b3aArchiveCurrent();

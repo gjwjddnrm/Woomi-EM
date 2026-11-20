@@ -321,13 +321,16 @@
     }
   }
   var locking = false;
-  async function lock(){
+  async function lock(skipSave){
     if(locking) return; locking = true;
-    if(KEY){
+    // 복원 직후: 재로드가 일으키는 unload 에서도 앱이 옛 내용을 보관하지 않도록 플래그를 켠다
+    if(skipSave){ try{ window.__woomiNoArchive = true; }catch(e){} }
+    if(KEY && !skipSave){
       // 앱의 "창 닫을 때 작성 중인 내용 기록으로 보관" 처리를 키가 살아 있을 때 먼저 실행
       try{ window.dispatchEvent(new Event("pagehide")); }catch(e){ console.error(e); }
       try{ await settle(); }catch(e){ console.error(e); }
     }
+    // skipSave: 백업 복원 직후처럼, 화면에 남은 옛 내용을 복원된 자료 위에 덮어쓰면 안 될 때 사용
     KEY = null; cache.clear();
     location.reload();
   }
@@ -456,7 +459,14 @@
     appKeys().forEach(function(k){ raw.rm.call(realLS, k); });
     raw.rm.call(realLS, META_KEY);
     for(var i = 0; i < IDB_NAMES.length; i++){
-      await new Promise(function(res){ var r = indexedDB.deleteDatabase(IDB_NAMES[i]); r.onsuccess = r.onerror = r.onblocked = function(){ res(); }; });
+      await new Promise(function(res){
+        var r = indexedDB.deleteDatabase(IDB_NAMES[i]), done = false;
+        var fin = function(){ if(!done){ done = true; res(); } };
+        r.onsuccess = fin; r.onerror = fin;
+        // 다른 탭이 DB 를 잡고 있으면(blocked) 즉시 성공 처리하지 않고, 연결이 풀려 삭제가
+        // 끝날 시간을 준 뒤 넘어간다(삭제가 조용히 누락되는 것을 줄임).
+        r.onblocked = function(){ setTimeout(fin, 3000); };
+      });
     }
   }
 
@@ -10025,6 +10035,7 @@ html.wsec-locked #wsecLock{ display:flex; }
   }
   let b3aClosing = false;
   function b3aOnClose(){
+    if(window.__woomiNoArchive) return;   // 백업 복원 직후엔 화면의 옛 내용을 보관하지 않음(복원본 보호)
     if(b3aClosing) return;
     b3aClosing = true;
     b3aArchiveCurrent();
@@ -12674,6 +12685,8 @@ html.wsec-locked #wsecLock{ display:flex; }
   async function onForgot(){
     var t = prompt("비밀번호를 잊으면 암호화된 자료는 누구도 복구할 수 없어요.\n\n이 컴퓨터의 WOOMI 자료를 모두 삭제하고 새로 시작하려면 아래에 \"전체삭제\"라고 입력하세요.\n(암호화 백업 파일이 있다면, 새 비밀번호를 정한 뒤 [보안 설정 → 백업 가져오기]로 되살릴 수 있어요.)");
     if(t !== "전체삭제") return;
+    // 지나가던 사람이 실수/고의로 지우지 못하게 마지막으로 한 번 더 확인
+    if(!confirm("정말 이 컴퓨터의 모든 WOOMI 현장 자료(기록·명단·서명·사진)를 삭제할까요?\n이 작업은 되돌릴 수 없어요.")) return;
     await S.wipeAll();
     location.reload();
   }
@@ -12716,7 +12729,7 @@ html.wsec-locked #wsecLock{ display:flex; }
     try{ if(!(await S.importBackup(f, pw))) return setMsg("백업 비밀번호가 맞지 않거나 파일이 손상됐어요."); }
     catch(e){ console.error(e); return setMsg("복원 실패: " + e.message); }
     alert("복원했어요. 화면을 다시 불러온 뒤 비밀번호를 입력해 주세요.");
-    S.lock();
+    S.lock(true);   // 복원된 자료를 화면의 옛 내용으로 덮어쓰지 않도록 보관 없이 바로 재로드
   }
 
   function init(){
