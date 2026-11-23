@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import * as DB from '../db';
 import { BigButton, Header, Icon } from '../components/ui';
-import { type KeyName, getKey, maskKey, setKey } from '../keys';
+import { type Engine, type KeyName, getEngine, getKey, maskKey, setEngine, setKey } from '../keys';
 import { useNav } from '../nav';
 import { C, F, S } from '../theme';
 
@@ -61,6 +61,7 @@ function KeyField(props: { name: KeyName; label: string; hint: string; placehold
 export default function SettingsScreen() {
   const nav = useNav();
   const [shutter, setShutter] = useState(DB.getSetting('shutterSound') === '1');
+  const [engine, setEngineState] = useState<Engine>(getEngine());
   return (
     <View style={styles.root}>
       <Header title="설정" subtitle="촬영 · API 키 · 안정성" onBack={() => nav.back()} />
@@ -79,25 +80,65 @@ export default function SettingsScreen() {
               setShutter(v);
               DB.setSetting('shutterSound', v ? '1' : '0');
             }}
-            trackColor={{ true: C.primary, false: '#555' }}
+            trackColor={{ true: C.primary, false: '#C9D0DA' }}
             thumbColor={shutter ? '#fff' : '#ccc'}
             style={{ transform: [{ scale: 1.4 }], marginLeft: 12 }}
           />
         </View>
-        <KeyField
-          name="openai"
-          label="OpenAI API 키 (음성 → 텍스트)"
-          hint="platform.openai.com → API keys에서 만든 키 (sk-로 시작). Whisper로 녹음을 글로 바꿉니다. 1시간에 약 0.36달러."
-          placeholder="sk-..."
-        />
-        <KeyField
-          name="anthropic"
-          label="Claude API 키 (보고서 초안)"
-          hint="console.anthropic.com → API Keys에서 만든 키 (sk-ant-로 시작). 사진과 대화로 보고서 초안을 만듭니다."
-          placeholder="sk-ant-..."
-        />
+        <Text style={styles.section}>정리 기능에 쓸 AI</Text>
+        <View style={{ gap: 10, marginBottom: 14 }}>
+          {(
+            [
+              { id: 'gemini', title: 'Google Gemini', sub: '무료 사용량 안에서 무료 · 키 1개로 음성 변환과 보고서 모두', icon: 'google' },
+              { id: 'paid', title: 'OpenAI + Claude', sub: '유료(점검 1회 약 500~700원) · 가장 정확', icon: 'star-four-points-outline' },
+            ] as const
+          ).map((o) => {
+            const on = engine === o.id;
+            return (
+              <Pressable
+                key={o.id}
+                onPress={() => {
+                  setEngineState(o.id);
+                  setEngine(o.id);
+                }}
+                style={[styles.choice, on && styles.choiceOn]}
+              >
+                <Icon name={on ? 'radiobox-marked' : 'radiobox-blank'} size={24} color={on ? C.primary : C.faint} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.choiceTitle}>{o.title}</Text>
+                  <Text style={styles.choiceSub}>{o.sub}</Text>
+                </View>
+                <Icon name={o.icon} size={22} color={on ? C.primary : C.faint} />
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {engine === 'gemini' ? (
+          <KeyField
+            name="gemini"
+            label="Gemini API 키"
+            hint={'aistudio.google.com 접속 → 구글 로그인 → "Get API key" → "Create API key" → 복사. 카드 등록 없이 무료로 받을 수 있습니다.\n※ Gemini 앱 유료 구독과는 별개입니다. 무료 사용분은 구글이 서비스 개선에 쓸 수 있습니다.'}
+            placeholder="AIza..."
+          />
+        ) : (
+          <>
+            <KeyField
+              name="openai"
+              label="OpenAI API 키 (음성 → 텍스트)"
+              hint="platform.openai.com → API keys에서 만든 키 (sk-로 시작). Whisper로 녹음을 글로 바꿉니다."
+              placeholder="sk-..."
+            />
+            <KeyField
+              name="anthropic"
+              label="Claude API 키 (보고서 초안)"
+              hint="console.anthropic.com → API Keys에서 만든 키 (sk-ant-로 시작). 사진과 대화로 보고서 초안을 만듭니다."
+              placeholder="sk-ant-..."
+            />
+          </>
+        )}
         <Text style={styles.note}>
-          녹음·사진은 이 폰 안에만 저장됩니다. "텍스트 변환"과 "보고서 초안"을 누를 때만 해당 녹음·사진이 OpenAI·Anthropic으로
+          녹음·사진은 이 폰 안에만 저장됩니다. "텍스트 변환"과 "보고서 초안"을 누를 때만 말소리 부분과 사진이 선택한 AI로
           전송됩니다.
         </Text>
         <BigButton title="녹음 안정성 설정" icon="shield-check-outline" kind="dark" onPress={() => nav.push({ name: 'setup' })} />
@@ -123,5 +164,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 10,
   },
+  section: { fontFamily: F.bold, fontSize: 12.5, letterSpacing: 0.6, color: C.faint, marginTop: 6, marginBottom: 8 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1.5, borderColor: C.border, padding: 14 },
+  choiceOn: { borderColor: C.primary, backgroundColor: C.primarySoft },
+  choiceTitle: { fontFamily: F.bold, fontSize: 17, color: C.text },
+  choiceSub: { fontFamily: F.medium, fontSize: 13.5, color: C.sub, marginTop: 2, lineHeight: 19 },
   note: { color: C.sub, fontSize: 15, lineHeight: 22, marginBottom: 16 },
 });

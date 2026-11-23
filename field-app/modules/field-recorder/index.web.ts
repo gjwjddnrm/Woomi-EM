@@ -60,6 +60,12 @@ const Mock = {
   async zipFiles(): Promise<number> {
     return 1;
   },
+  async writeSpansAac(): Promise<number> {
+    return 0;
+  },
+  async readBase64(): Promise<string> {
+    return '';
+  },
   getDeviceHealth(): DeviceHealth {
     return {
       batteryPct: 82,

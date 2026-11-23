@@ -96,4 +96,30 @@ object SpeechUtil {
     }
     return ptsUs / 1000
   }
+
+  /** spans 부분의 ADTS 프레임(헤더 포함)을 그대로 이어 붙인 .aac (Gemini 등 audio/aac 입력용). 길이(ms) */
+  fun writeSpansAdts(audio: File, spans: LongArray?, outPath: String): Long {
+    val p = AdtsUtil.parse(audio)
+    if (p.frames.isEmpty()) return 0L
+    val out = File(outPath)
+    out.parentFile?.mkdirs()
+    val fd = p.frameDurationMs
+    var n = 0
+    java.io.FileOutputStream(out).use { os ->
+      val ranges = if (spans == null || spans.isEmpty()) longArrayOf(0L, (p.frames.size * fd).toLong() + 1) else spans
+      var k = 0
+      while (k + 1 < ranges.size) {
+        val a = (ranges[k] / fd).toInt().coerceIn(0, p.frames.size)
+        val b = Math.ceil(ranges[k + 1] / fd).toInt().coerceIn(0, p.frames.size)
+        for (f in a until b) {
+          val fr = p.frames[f]
+          os.write(p.bytes, fr[2], fr[3]); n++
+        }
+        k += 2
+      }
+    }
+    return (n * fd).toLong()
+  }
+
+  fun base64(path: String): String = android.util.Base64.encodeToString(File(path).readBytes(), android.util.Base64.NO_WRAP)
 }

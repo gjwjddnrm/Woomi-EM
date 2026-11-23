@@ -133,6 +133,15 @@ class FieldRecorderModule : Module() {
       SpeechUtil.writeSpansM4a(File(path), spans.map { it.toLong() }.toLongArray(), outPath).toDouble()
     }
 
+    /** 말소리 구간(없으면 전체)만 이어 붙인 ADTS .aac. 길이(ms) */
+    AsyncFunction("writeSpansAac") { path: String, spans: List<Double>?, outPath: String ->
+      SpeechUtil.writeSpansAdts(File(path), spans?.map { it.toLong() }?.toLongArray(), outPath).toDouble()
+    }
+
+    AsyncFunction("readBase64") { path: String ->
+      SpeechUtil.base64(path)
+    }
+
     // ── 내보내기 ──
     AsyncFunction("saveToGallery") { paths: List<String>, names: List<String>, folder: String ->
       ExportUtil.saveToGallery(context, paths, names, folder)

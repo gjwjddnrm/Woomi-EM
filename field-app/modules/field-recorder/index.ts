@@ -61,6 +61,8 @@ type NativeModuleShape = {
   writeSpans(path: string, spans: number[], outPath: string): Promise<number>;
   saveToGallery(paths: string[], names: string[], folder: string): Promise<number>;
   zipFiles(paths: string[], names: string[], textNames: string[], texts: string[], outPath: string): Promise<number>;
+  writeSpansAac(path: string, spans: number[] | null, outPath: string): Promise<number>;
+  readBase64(path: string): Promise<string>;
   getDeviceHealth(): DeviceHealth;
   requestIgnoreBatteryOptimizations(): boolean;
   openAppSettings(): boolean;

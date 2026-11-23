@@ -7,6 +7,7 @@ import { buildPdf, sharePdf } from '../pdf';
 import { exportPhotosZip, savePhotosToGallery } from '../export';
 import { type Report, type ReportItem, generateReport, loadReport, saveReportEdits } from '../report';
 import { listChunks } from '../storage';
+import { getEngine } from '../keys';
 import { type TranscribeProgress, transcribeInspection } from '../transcribe';
 import { C, F, S } from '../theme';
 import { errMsg } from '../util';
@@ -64,6 +65,18 @@ export default function ReportScreen({ id }: { id: string }) {
 
   if (!insp) return null;
 
+  const engine = getEngine();
+  const engineName = engine === 'gemini' ? { stt: 'Gemini', report: 'Gemini' } : { stt: 'OpenAI Whisper', report: 'Claude' };
+  const showError = (title: string, e: unknown) => {
+    const m = errMsg(e);
+    if (/설정에서/.test(m)) {
+      Alert.alert(title, m, [
+        { text: '닫기', style: 'cancel' },
+        { text: '설정 열기', onPress: () => nav.push({ name: 'settings' }) },
+      ]);
+    } else Alert.alert(title, m);
+  };
+
   const runStt = async () => {
     setBusy('stt');
     cancelRef.current = false;
@@ -74,7 +87,7 @@ export default function ReportScreen({ id }: { id: string }) {
         Alert.alert('변환 완료', `무음인 ${p.skipped}개 조각은 보내지 않고 건너뛰었습니다.`);
       if (p.failed > 0) Alert.alert('일부 실패', `${p.failed}개 조각을 변환하지 못했습니다. 다시 누르면 실패한 것만 다시 합니다.\n${p.message ?? ''}`);
     } catch (e) {
-      Alert.alert('텍스트 변환 실패', errMsg(e));
+      showError('텍스트 변환 실패', e);
     } finally {
       setBusy(null);
       setDoneCount(DB.listTranscripts(id).length);
@@ -88,7 +101,7 @@ export default function ReportScreen({ id }: { id: string }) {
         const r = await generateReport(insp, setStatus);
         setReport(r);
       } catch (e) {
-        Alert.alert('보고서 초안 실패', errMsg(e));
+        showError('보고서 초안 실패', e);
       } finally {
         setBusy(null);
         setStatus('');
@@ -183,10 +196,11 @@ export default function ReportScreen({ id }: { id: string }) {
             </View>
           ) : null}
           <BigButton title={sttLabel} icon="text-recognition" onPress={runStt} disabled={!!busy} kind={sttDone ? 'dark' : 'primary'} />
+          {busy === 'stt' && prog?.message ? <Text style={styles.help}>{prog.message}</Text> : null}
           {busy === 'stt' ? (
             <BigButton title="멈추기" icon="pause" kind="dark" onPress={() => (cancelRef.current = true)} style={{ marginTop: 8 }} />
           ) : null}
-          <Text style={styles.help}>OpenAI Whisper · 말소리 부분만 골라 보내고 무음은 건너뜁니다. 끊겨도 이어서 하고, 변환되면 사진마다 앞뒤 대화가 붙습니다.</Text>
+          <Text style={styles.help}>{engineName.stt} · 말소리 부분만 골라 보내고 무음은 건너뜁니다. 끊겨도 이어서 하고, 변환되면 사진마다 앞뒤 대화가 붙습니다.</Text>
         </StepCard>
 
         <StepCard n={2} title="보고서 초안" done={!!report}>
@@ -198,7 +212,7 @@ export default function ReportScreen({ id }: { id: string }) {
             busy={busy === 'report'}
             kind={report ? 'dark' : 'primary'}
           />
-          <Text style={styles.help}>Claude · 지적사항 / 조치 필요사항 / 담당·기한. 만든 뒤 아래에서 바로 고칠 수 있습니다.</Text>
+          <Text style={styles.help}>{engineName.report} · 지적사항 / 조치 필요사항 / 담당·기한. 만든 뒤 아래에서 바로 고칠 수 있습니다.</Text>
         </StepCard>
 
         <StepCard n={3} title="PDF 내보내기 · 공유">

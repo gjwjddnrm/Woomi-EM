@@ -20,7 +20,7 @@ object AdtsUtil {
 
   class Parsed(
     val bytes: ByteArray,
-    /** [payloadStart, payloadLength] */
+    /** [payloadStart, payloadLength, frameStart, frameLength] */
     val frames: List<IntArray>,
     val sampleRate: Int,
     val sampleRateIndex: Int,
@@ -63,7 +63,7 @@ object AdtsUtil {
       } else if (sfi != sri) {
         i++; continue
       }
-      frames.add(intArrayOf(i + headerLen, frameLen - headerLen))
+      frames.add(intArrayOf(i + headerLen, frameLen - headerLen, i, frameLen))
       i += frameLen
     }
     return Parsed(bytes, frames, sr, sri, ch, prof)
