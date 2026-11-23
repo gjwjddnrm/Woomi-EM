@@ -32,10 +32,17 @@ Expo(React Native, TypeScript) · 안드로이드 전용 · 데이터는 모두 
 ### 1) APK 내려받기
 이 저장소에서 `field-app/`이 바뀌어 푸시되면 GitHub Actions가 자동으로 APK를 만듭니다.
 
-1. 폰 브라우저(크롬 또는 삼성 인터넷)로 저장소의 **Releases** 페이지를 엽니다.
-   `https://github.com/gjwjddnrm/Woomi-EM/releases`
-2. 맨 위 **"현장점검 앱 v… (빌드 N)"** 을 누르고, Assets의 `field-inspection-v…-bN.apk`를 누릅니다.
+**방법 A – Releases (권장, 처음 한 번 설정 필요)**
+- PC에서 저장소 **Settings → Actions → General → Workflow permissions → "Read and write permissions"** 선택 → Save.
+  (이후 빌드부터 Releases에 APK가 올라갑니다. 이미 끝난 빌드는 Actions 화면에서 "Re-run all jobs".)
+1. 폰 브라우저(크롬 또는 삼성 인터넷)로 `https://github.com/gjwjddnrm/Woomi-EM/releases` 를 엽니다.
+2. 맨 위 **"현장점검 앱 v… (빌드 N)"** → Assets의 `field-inspection-v…-bN.apk`를 누릅니다.
 3. "이 파일은 기기에 해를 끼칠 수 있습니다" 경고가 나오면 **"무시하고 다운로드"**.
+
+**방법 B – Actions 결과물 (설정 없이, GitHub 로그인 필요)**
+1. 폰 브라우저에서 GitHub에 로그인 → 저장소 **Actions** → **field-app APK** → 맨 위 초록색 ✓ 실행을 엽니다.
+2. 아래쪽 **Artifacts**의 `field-inspection-v…-bN.apk`를 눌러 zip을 받습니다.
+3. **내 파일 → 다운로드**에서 zip을 눌러 **압축 풀기** → 나온 `.apk`를 누릅니다.
 
 ### 2) 출처를 알 수 없는 앱 허용 (처음 한 번)
 1. 다운로드 완료 알림(또는 내 파일 → 다운로드)에서 APK를 누릅니다.
