@@ -86,7 +86,12 @@ export default function CaptureScreen({ id }: { id: string }) {
     setCapturing(true);
     const takenAt = Date.now();
     try {
-      const pic = await camRef.current.takePictureAsync({ quality: 0.85, exif: false });
+      const pic = await camRef.current.takePictureAsync({
+        quality: 0.85,
+        exif: false,
+        // 촬영음: 설정에서 켜야만 남 (기본 끔 — 녹음에 찰칵 소리가 섞이지 않게)
+        shutterSound: DB.getSetting('shutterSound') === '1',
+      });
       if (!pic?.uri) throw new Error('사진 파일이 없습니다');
       const p = savePhotoNow(insp, pic.uri, takenAt, { width: pic.width, height: pic.height });
       Vibration.vibrate(60);

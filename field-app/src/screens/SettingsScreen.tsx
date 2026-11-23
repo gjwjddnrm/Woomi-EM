@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import * as DB from '../db';
 import { BigButton, Header } from '../components/ui';
 import { type KeyName, getKey, maskKey, setKey } from '../keys';
 import { useNav } from '../nav';
@@ -55,10 +56,27 @@ function KeyField(props: { name: KeyName; label: string; hint: string; placehold
 
 export default function SettingsScreen() {
   const nav = useNav();
+  const [shutter, setShutter] = useState(DB.getSetting('shutterSound') === '1');
   return (
     <View style={styles.root}>
       <Header title="설정" onBack={() => nav.back()} />
       <ScrollView contentContainerStyle={{ padding: S.pad, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
+        <View style={[styles.box, { flexDirection: 'row', alignItems: 'center' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>촬영음</Text>
+            <Text style={styles.hint}>끄면 찰칵 소리 없이 진동과 화면 깜박임으로만 알려 줍니다. 녹음에도 소리가 섞이지 않습니다.</Text>
+          </View>
+          <Switch
+            value={shutter}
+            onValueChange={(v) => {
+              setShutter(v);
+              DB.setSetting('shutterSound', v ? '1' : '0');
+            }}
+            trackColor={{ true: C.yellow, false: '#555' }}
+            thumbColor={shutter ? '#fff' : '#ccc'}
+            style={{ transform: [{ scale: 1.4 }], marginLeft: 12 }}
+          />
+        </View>
         <KeyField
           name="openai"
           label="OpenAI API 키 (음성 → 텍스트)"
