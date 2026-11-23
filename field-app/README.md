@@ -114,3 +114,10 @@ cd android && ./gradlew assembleRelease       # APK: android/app/build/outputs/a
    Actions의 "Run workflow → EAS Build로도 빌드"로도 돌릴 수 있습니다.
    ⚠ EAS는 서명키가 달라서, Actions APK가 깔린 폰에 EAS APK를 덮어 설치할 수 없습니다(지우고 다시 설치 = 데이터 삭제).
    계속 쓸 정식판은 한 가지 방식으로 정해 주세요.
+
+### 디자인 미리보기 (웹)
+실제 폰 없이 화면 디자인을 확인할 때 씁니다. `*.web.ts(x)` 파일이 가짜 데이터·녹음 모듈·카메라를 대신합니다(앱에는 들어가지 않음).
+```bash
+npx expo export --platform web --output-dir /tmp/web && cp -r preview /tmp/web/
+python3 -m http.server 8765 --directory /tmp/web   # http://localhost:8765/#home, #capture:demo-active, #timeline:demo1, #report:demo1
+```

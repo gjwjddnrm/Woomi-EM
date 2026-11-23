@@ -80,6 +80,21 @@ class RecorderService : Service() {
   private var storageAlerted = false
   private var lastNotifText: String? = null
 
+  // ── 소리 크기 기록 (말소리 구간 찾기용) ──
+  // 0.25초마다 최대 진폭을 dB로 바꿔 1바이트(0..255 = dB*2.8)로 chunk_<시작>.lvl 에 덧붙인다.
+  private val levelBuf = java.io.ByteArrayOutputStream()
+  private var levelFile: File? = null
+  private var levelPeak = 0
+  private var levelTicks = 0
+  private var noiseFloorDb = 45.0
+  private var lastVoiceAt = 0L
+  private val levelRunnable = object : Runnable {
+    override fun run() {
+      try { sampleLevel() } catch (_: Throwable) {}
+      if (RecorderState.running) handler.postDelayed(this, 50L)
+    }
+  }
+
   private val rotateRunnable = Runnable { rotate("timer") }
   private var retryScheduled = false
   private val retryRunnable = Runnable {
@@ -220,6 +235,8 @@ class RecorderService : Service() {
     startChunk()
     handler.removeCallbacks(watchdogRunnable)
     handler.postDelayed(watchdogRunnable, WATCHDOG_MS)
+    handler.removeCallbacks(levelRunnable)
+    handler.postDelayed(levelRunnable, 250L)
   }
 
   private fun startChunk() {
@@ -271,6 +288,11 @@ class RecorderService : Service() {
 
     recorder = r
     currentFile = file
+    flushLevels()
+    levelFile = File(folder, "chunk_$start.lvl")
+    levelPeak = 0
+    levelTicks = 0
+    try { r.maxAmplitude } catch (_: Throwable) {} // 첫 호출은 0을 돌려주므로 버림
     lastSizeCheckBytes = -1L
     lastGrowthAt = System.currentTimeMillis()
     RecorderState.currentChunkPath = file.absolutePath
@@ -301,6 +323,39 @@ class RecorderService : Service() {
     try { r.reset() } catch (_: Throwable) {}
     try { r.release() } catch (_: Throwable) {}
     RecorderState.currentChunkPath = null
+    flushLevels()
+    levelFile = null
+    RecorderState.level = 0.0
+  }
+
+  /** 50ms마다 진폭을 읽고, 0.25초(5번)마다 최대값을 한 바이트로 기록 */
+  private fun sampleLevel() {
+    val r = recorder ?: return
+    val amp = try { r.maxAmplitude } catch (_: Throwable) { 0 }
+    if (amp > levelPeak) levelPeak = amp
+    levelTicks++
+    if (levelTicks < 5) return
+    val db = 20.0 * Math.log10(Math.max(levelPeak, 1).toDouble())
+    levelPeak = 0
+    levelTicks = 0
+    levelBuf.write((db * 2.8).toInt().coerceIn(0, 255))
+    if (levelBuf.size() >= 20) flushLevels()
+
+    // 소음 바닥값을 천천히 따라가고, 그보다 충분히 크면 말소리로 본다
+    noiseFloorDb = if (db < noiseFloorDb) noiseFloorDb * 0.7 + db * 0.3 else noiseFloorDb * 0.995 + db * 0.005
+    val now = System.currentTimeMillis()
+    if (db > Math.max(noiseFloorDb + 12.0, 50.0)) lastVoiceAt = now
+    RecorderState.voice = now - lastVoiceAt < 1500
+    RecorderState.level = ((db - 35.0) / 50.0).coerceIn(0.0, 1.0)
+  }
+
+  private fun flushLevels() {
+    val f = levelFile ?: run { levelBuf.reset(); return }
+    if (levelBuf.size() == 0) return
+    try {
+      java.io.FileOutputStream(f, true).use { it.write(levelBuf.toByteArray()) }
+    } catch (_: Throwable) {}
+    levelBuf.reset()
   }
 
   private fun rotate(reason: String) {
@@ -326,8 +381,10 @@ class RecorderService : Service() {
     handler.removeCallbacks(rotateRunnable)
     handler.removeCallbacks(retryRunnable)
     handler.removeCallbacks(watchdogRunnable)
+    handler.removeCallbacks(levelRunnable)
     stopChunk()
     RecorderState.running = false
+    RecorderState.voice = false
     RecorderState.phase = "stopped"
     getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     releaseWakeLock()

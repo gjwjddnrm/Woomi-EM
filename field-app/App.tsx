@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Font from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { Alert, BackHandler, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as DB from './src/db';
 import { NavContext, type Nav, type Route } from './src/nav';
@@ -29,7 +29,7 @@ class ErrorBoundary extends Component<{ children: ReactNode; onReset: () => void
     if (this.state.error) {
       return (
         <View style={{ flex: 1, backgroundColor: C.bg, padding: 20, justifyContent: 'center', gap: 16 }}>
-          <Text style={{ color: C.text, fontSize: 22, fontWeight: '900' }}>화면 오류가 났습니다</Text>
+          <Text style={{ color: C.text, fontSize: 22, fontWeight: '800' }}>화면 오류가 났습니다</Text>
           <Text style={{ color: C.sub, fontSize: 17 }}>
             녹음은 별도로 계속 저장되고 있습니다.{'\n'}
             {this.state.error.message}
@@ -72,7 +72,14 @@ export default function App() {
   const [fontsReady, setFontsReady] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setFontsReady(true), 3000); // 글꼴이 늦어도 앱은 연다
-    Font.loadAsync(MaterialCommunityIcons.font)
+    Font.loadAsync({
+      ...MaterialCommunityIcons.font,
+      'Pretendard-Regular': require('./assets/fonts/Pretendard-Regular.otf'),
+      'Pretendard-Medium': require('./assets/fonts/Pretendard-Medium.otf'),
+      'Pretendard-SemiBold': require('./assets/fonts/Pretendard-SemiBold.otf'),
+      'Pretendard-Bold': require('./assets/fonts/Pretendard-Bold.otf'),
+      'Pretendard-ExtraBold': require('./assets/fonts/Pretendard-ExtraBold.otf'),
+    })
       .catch(() => {})
       .finally(() => {
         clearTimeout(t);
@@ -87,6 +94,13 @@ export default function App() {
       resumePendingCompression();
       clearClipCache();
       const setupDone = DB.getSetting('setupDone') === '1';
+      // 웹 미리보기: 주소 #capture:id 처럼 화면을 바로 연다
+      const hash = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+      if (hash) {
+        const [name, id] = hash.split(':');
+        set([{ name, id } as Route]);
+        return;
+      }
       set([setupDone ? { name: 'home' } : { name: 'setup' }]);
     } catch (e) {
       Alert.alert('저장소를 열지 못했습니다', String(e));
@@ -155,5 +169,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1, backgroundColor: C.navy },
 });

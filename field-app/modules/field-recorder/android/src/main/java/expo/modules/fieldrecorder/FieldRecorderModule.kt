@@ -86,7 +86,15 @@ class FieldRecorderModule : Module() {
           val start = m.groupValues[1].toLongOrNull() ?: return@mapNotNull null
           val dur = AdtsUtil.durationMs(f)
           if (dur <= 0L) return@mapNotNull null
+          val spans = try { SpeechUtil.speechSpans(f, dur) } catch (_: Throwable) { null }
+          var speech = -1L
+          if (spans != null) {
+            speech = 0L
+            var k = 0
+            while (k + 1 < spans.size) { speech += spans[k + 1] - spans[k]; k += 2 }
+          }
           mapOf(
+            "speechMs" to speech.toDouble(),
             "path" to f.absolutePath,
             "startMs" to start.toDouble(),
             "durationMs" to dur.toDouble(),
@@ -111,6 +119,18 @@ class FieldRecorderModule : Module() {
       if (r == null) null else mapOf(
         "path" to r.path, "startMs" to r.startMs.toDouble(), "endMs" to r.endMs.toDouble(), "durationMs" to r.durationMs.toDouble()
       )
+    }
+
+    /** 말소리 구간 [s,e,...] (ms, 조각 기준). 알 수 없으면 null */
+    AsyncFunction("speechSpans") { path: String ->
+      val f = File(path)
+      val dur = AdtsUtil.durationMs(f)
+      SpeechUtil.speechSpans(f, dur)?.map { it.toDouble() }
+    }
+
+    /** 말소리 구간만 이어 붙인 m4a. 길이(ms) */
+    AsyncFunction("writeSpans") { path: String, spans: List<Double>, outPath: String ->
+      SpeechUtil.writeSpansM4a(File(path), spans.map { it.toLong() }.toLongArray(), outPath).toDouble()
     }
 
     // ── 기기 상태 ──

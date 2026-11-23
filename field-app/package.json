@@ -4,6 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@anthropic-ai/sdk": "^1.13.0",
+    "@expo/metro-runtime": "~58.0.17",
     "@expo/vector-icons": "^15.0.2",
     "expo": "~58.0.26",
     "expo-audio": "~58.0.12",
@@ -20,8 +21,10 @@
     "expo-status-bar": "~58.0.5",
     "expo-system-ui": "~58.0.7",
     "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-native": "0.88.1",
-    "react-native-safe-area-context": "~5.11.1"
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-web": "~0.21.4"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",

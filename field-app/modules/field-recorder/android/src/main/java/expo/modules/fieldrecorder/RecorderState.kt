@@ -19,6 +19,10 @@ object RecorderState {
   @Volatile var lowStorage: Boolean = false
   @Volatile var lowBattery: Boolean = false
   @Volatile var lastBytes: Long = 0L
+  /** 현재 소리 크기 0..1 */
+  @Volatile var level: Double = 0.0
+  /** 최근 1.5초 안에 말소리가 있었는지 */
+  @Volatile var voice: Boolean = false
 
   fun toMap(): Map<String, Any?> = mapOf(
     "phase" to phase,
@@ -34,5 +38,7 @@ object RecorderState {
     "lastError" to lastError,
     "lowStorage" to lowStorage,
     "lowBattery" to lowBattery,
+    "level" to level,
+    "voice" to voice,
   )
 }

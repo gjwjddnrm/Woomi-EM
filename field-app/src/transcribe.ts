@@ -3,7 +3,7 @@ import FieldRecorder, { type Chunk } from '../modules/field-recorder';
 import * as DB from './db';
 import { getKey } from './keys';
 import { listChunks } from './storage';
-import { toFileUri, toNativePath } from './util';
+import { toNativePath } from './util';
 import type { Transcript } from './db';
 
 export type Seg = { start: number; end: number; text: string }; // 절대 시각(ms)
@@ -56,7 +56,7 @@ export function photoContext(
 const WHISPER_URL = 'https://api.openai.com/v1/audio/transcriptions';
 const BASE_PROMPT = '건설 현장 소방·안전 점검 대화입니다. 지적사항, 조치, 담당자, 기한, 소화기, 스프링클러, 감지기, 유도등, 방화문.';
 
-export type TranscribeProgress = { done: number; total: number; failed: number; message?: string };
+export type TranscribeProgress = { done: number; total: number; failed: number; skipped: number; message?: string };
 
 async function whisperOnce(key: string, fileUri: string, prompt: string): Promise<{ text: string; segments: Seg[] }> {
   const form = new FormData();
@@ -96,29 +96,66 @@ async function whisperOnce(key: string, fileUri: string, prompt: string): Promis
   }
 }
 
-async function transcribeChunk(key: string, insp: DB.Inspection, c: Chunk, prevText: string): Promise<void> {
+/** 말소리만 이어 붙인 오디오의 시각(초) → 원래 조각의 시각(초) */
+function mapToOriginal(t: number, spans: number[]): number {
+  let acc = 0;
+  for (let k = 0; k + 1 < spans.length; k += 2) {
+    const len = (spans[k + 1] - spans[k]) / 1000;
+    if (t <= acc + len) return spans[k] / 1000 + (t - acc);
+    acc += len;
+  }
+  return spans.length ? spans[spans.length - 1] / 1000 : t;
+}
+
+export type ChunkResult = 'done' | 'silent';
+
+async function transcribeChunk(key: string, insp: DB.Inspection, c: Chunk, prevText: string): Promise<ChunkResult> {
   const tmpDir = new Directory(Paths.cache, 'whisper');
   if (!tmpDir.exists) tmpDir.create({ intermediates: true, idempotent: true });
   const out = new File(tmpDir, `w_${c.startMs}.m4a`);
-  const r = await FieldRecorder.mergeToM4a([c.path], [c.startMs], toNativePath(out.uri));
-  if (!r) {
+  const empty = () =>
     DB.saveTranscript({ inspection_id: insp.id, chunk_start: c.startMs, duration_ms: c.durationMs, text: '', segments: '[]' });
-    return;
+
+  // 1) 말소리 구간 찾기. 무음뿐이면 보내지 않는다(비용 0, Whisper가 무음에서 지어내는 문장도 막음).
+  let spans: number[] | null = null;
+  try {
+    spans = await FieldRecorder.speechSpans(c.path);
+  } catch {
+    spans = null;
+  }
+  if (spans && spans.length === 0) {
+    empty();
+    return 'silent';
+  }
+  // 2) 말소리만 이어 붙인 파일(측정 불가 기기는 조각 전체)
+  if (spans) {
+    const ms = await FieldRecorder.writeSpans(c.path, spans, toNativePath(out.uri));
+    if (ms <= 0) spans = null;
+  }
+  if (!spans) {
+    const r = await FieldRecorder.mergeToM4a([c.path], [c.startMs], toNativePath(out.uri));
+    if (!r) {
+      empty();
+      return 'silent';
+    }
   }
   try {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const t = await whisperOnce(key, toFileUri(r.path), `${BASE_PROMPT} ${prevText}`);
+        const t = await whisperOnce(key, out.uri, `${BASE_PROMPT} ${prevText}`);
+        const segs = spans
+          ? t.segments.map((g) => ({ start: mapToOriginal(g.start, spans!), end: mapToOriginal(g.end, spans!), text: g.text }))
+          : t.segments;
         DB.saveTranscript({
           inspection_id: insp.id,
           chunk_start: c.startMs,
           duration_ms: c.durationMs,
           text: t.text,
           // 조각 기준 초 단위
-          segments: JSON.stringify(t.segments),
+          segments: JSON.stringify(segs),
         });
-        return;
+        return 'done';
       } catch (e) {
         lastErr = e;
         const status = (e as { status?: number }).status;
@@ -145,14 +182,15 @@ export async function transcribeInspection(
   const chunks = (await listChunks(insp)).filter((c) => !c.active);
   const doneSet = new Set(DB.listTranscripts(insp.id).map((t) => t.chunk_start));
   const todo = chunks.filter((c) => !doneSet.has(c.startMs));
-  const prog: TranscribeProgress = { done: chunks.length - todo.length, total: chunks.length, failed: 0 };
+  const prog: TranscribeProgress = { done: chunks.length - todo.length, total: chunks.length, failed: 0, skipped: 0 };
   onProgress({ ...prog });
   const textOf = (start: number) => DB.listTranscripts(insp.id).filter((t) => t.chunk_start < start).slice(-1)[0]?.text ?? '';
   for (const c of todo) {
     if (isCancelled()) break;
     try {
-      await transcribeChunk(key, insp, c, textOf(c.startMs).slice(-200));
+      const r = await transcribeChunk(key, insp, c, textOf(c.startMs).slice(-200));
       prog.done++;
+      if (r === 'silent') prog.skipped++;
     } catch (e) {
       prog.failed++;
       prog.message = e instanceof Error ? e.message : String(e);

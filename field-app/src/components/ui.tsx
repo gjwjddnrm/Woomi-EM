@@ -1,15 +1,15 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { C, S, T } from '../theme';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { C, F, S, T, shadow } from '../theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-export function Icon(props: { name: IconName; size?: number; color?: string }) {
-  return <MaterialCommunityIcons name={props.name} size={props.size ?? 22} color={props.color ?? C.text} />;
+export function Icon(props: { name: IconName; size?: number; color?: string; style?: TextStyle }) {
+  return <MaterialCommunityIcons name={props.name} size={props.size ?? 22} color={props.color ?? C.text} style={props.style} />;
 }
 
-type BtnKind = 'primary' | 'danger' | 'dark' | 'ghost';
+type BtnKind = 'primary' | 'danger' | 'secondary' | 'ghost' | 'dark';
 
 export function BigButton(props: {
   title: string;
@@ -20,10 +20,16 @@ export function BigButton(props: {
   busy?: boolean;
   style?: ViewStyle;
   sub?: string;
+  size?: 'md' | 'lg';
 }) {
-  const kind = props.kind ?? 'primary';
-  const bg = kind === 'primary' ? C.accent : kind === 'danger' ? C.red : kind === 'dark' ? C.surface2 : 'transparent';
-  const fg = kind === 'primary' ? '#1A1200' : C.text;
+  const kind = props.kind === 'dark' ? 'secondary' : (props.kind ?? 'primary');
+  const pal = {
+    primary: { bg: C.primary, fg: C.white, border: C.primary },
+    danger: { bg: C.red, fg: C.white, border: C.red },
+    secondary: { bg: C.surface, fg: C.text, border: C.borderStrong },
+    ghost: { bg: 'transparent', fg: C.primary, border: 'transparent' },
+  }[kind];
+  const lg = props.size === 'lg' || !!props.sub;
   return (
     <Pressable
       accessibilityRole="button"
@@ -31,19 +37,19 @@ export function BigButton(props: {
       onPress={props.onPress}
       style={({ pressed }) => [
         styles.btn,
-        { backgroundColor: bg, opacity: props.disabled ? 0.4 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        kind === 'dark' || kind === 'ghost' ? { borderWidth: 1, borderColor: C.borderStrong } : null,
+        lg && styles.btnLg,
+        { backgroundColor: pal.bg, borderColor: pal.border, opacity: props.disabled ? 0.45 : pressed ? 0.85 : 1 },
         props.style,
       ]}
     >
       {props.busy ? (
-        <ActivityIndicator color={fg} size="large" />
+        <ActivityIndicator color={pal.fg} />
       ) : (
         <View style={styles.btnRow}>
-          {props.icon ? <Icon name={props.icon} size={props.sub ? 30 : 24} color={fg} /> : null}
-          <View style={{ alignItems: props.icon ? 'flex-start' : 'center', flexShrink: 1 }}>
-            <Text style={[styles.btnText, { color: fg }]}>{props.title}</Text>
-            {props.sub ? <Text style={[styles.btnSub, { color: fg }]}>{props.sub}</Text> : null}
+          {props.icon ? <Icon name={props.icon} size={lg ? 26 : 21} color={pal.fg} /> : null}
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[styles.btnText, lg && styles.btnTextLg, { color: pal.fg }]}>{props.title}</Text>
+            {props.sub ? <Text style={[styles.btnSub, { color: pal.fg }]}>{props.sub}</Text> : null}
           </View>
         </View>
       )}
@@ -51,52 +57,49 @@ export function BigButton(props: {
   );
 }
 
-export function IconButton(props: { icon: IconName; onPress: () => void; label?: string; color?: string }) {
+export function IconButton(props: { icon: IconName; onPress: () => void; label?: string; color?: string; dark?: boolean }) {
+  const color = props.color ?? (props.dark ? C.white : C.text);
   return (
     <Pressable
       onPress={props.onPress}
       hitSlop={8}
       accessibilityLabel={props.label}
-      style={({ pressed }) => [styles.iconBtn, pressed && { backgroundColor: C.surface3 }]}
+      style={({ pressed }) => [styles.iconBtn, pressed && { backgroundColor: props.dark ? 'rgba(255,255,255,0.12)' : C.surface3 }]}
     >
-      <Icon name={props.icon} size={24} color={props.color ?? C.text} />
-      {props.label ? <Text style={[styles.iconBtnText, props.color ? { color: props.color } : null]}>{props.label}</Text> : null}
+      <Icon name={props.icon} size={24} color={color} />
+      {props.label ? <Text style={[styles.iconBtnText, { color }]}>{props.label}</Text> : null}
     </Pressable>
   );
 }
 
-export function Banner(props: {
-  text: string;
-  kind?: 'warn' | 'error' | 'info' | 'ok';
-  action?: string;
-  onAction?: () => void;
-}) {
+export function Banner(props: { text: string; kind?: 'warn' | 'error' | 'info' | 'ok'; action?: string; onAction?: () => void }) {
   const kind = props.kind ?? 'warn';
   const tone = {
-    warn: { bg: C.accentDark, fg: C.accent, icon: 'alert' as IconName },
-    error: { bg: C.redDark, fg: '#FF8A82', icon: 'alert-octagon' as IconName },
-    info: { bg: C.blueDark, fg: '#9CC5FF', icon: 'information' as IconName },
-    ok: { bg: C.greenDark, fg: '#7BE59A', icon: 'check-circle' as IconName },
+    warn: { bg: C.warnSoft, fg: C.warn, icon: 'alert-outline' as IconName },
+    error: { bg: C.redSoft, fg: C.red, icon: 'alert-octagon-outline' as IconName },
+    info: { bg: C.primarySoft, fg: C.primary, icon: 'information-outline' as IconName },
+    ok: { bg: C.greenSoft, fg: C.green, icon: 'check-circle-outline' as IconName },
   }[kind];
   return (
-    <View style={[styles.banner, { backgroundColor: tone.bg, borderColor: tone.fg }]}>
-      <Icon name={tone.icon} size={22} color={tone.fg} />
-      <Text style={[styles.bannerText, { color: C.text }]}>{props.text}</Text>
+    <View style={[styles.banner, { backgroundColor: tone.bg }]}>
+      <Icon name={tone.icon} size={20} color={tone.fg} />
+      <Text style={[styles.bannerText, { color: tone.fg }]}>{props.text}</Text>
       {props.action && props.onAction ? (
-        <Pressable onPress={props.onAction} style={[styles.bannerBtn, { backgroundColor: tone.fg }]}>
-          <Text style={styles.bannerBtnText}>{props.action}</Text>
+        <Pressable onPress={props.onAction} style={[styles.bannerBtn, { borderColor: tone.fg }]}>
+          <Text style={[styles.bannerBtnText, { color: tone.fg }]}>{props.action}</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
+/** 남색 상단 바 */
 export function Header(props: { title: string; subtitle?: string; onBack?: () => void; right?: ReactNode }) {
   return (
     <View style={styles.header}>
       {props.onBack ? (
         <Pressable onPress={props.onBack} style={styles.headerBack} hitSlop={12} accessibilityLabel="뒤로">
-          <Icon name="chevron-left" size={32} color={C.text} />
+          <Icon name="arrow-left" size={26} color={C.white} />
         </Pressable>
       ) : null}
       <View style={{ flex: 1 }}>
@@ -114,9 +117,16 @@ export function Header(props: { title: string; subtitle?: string; onBack?: () =>
   );
 }
 
-export function Card(props: { children: ReactNode; style?: ViewStyle; accent?: string }) {
+export function Card(props: { children: ReactNode; style?: ViewStyle; accent?: string; padded?: boolean }) {
   return (
-    <View style={[styles.card, props.accent ? { borderLeftWidth: 4, borderLeftColor: props.accent } : null, props.style]}>
+    <View
+      style={[
+        styles.card,
+        props.padded === false && { padding: 0 },
+        props.accent ? { borderLeftWidth: 4, borderLeftColor: props.accent } : null,
+        props.style,
+      ]}
+    >
       {props.children}
     </View>
   );
@@ -142,11 +152,15 @@ export function Pill(props: { text: string; color?: string; bg?: string; icon?: 
 }
 
 export function Stat(props: { icon: IconName; label: string; value: string; tone?: 'ok' | 'warn' | 'bad'; onPress?: () => void }) {
-  const color = props.tone === 'bad' ? C.red : props.tone === 'warn' ? C.accent : props.tone === 'ok' ? C.green : C.text;
+  const color = props.tone === 'bad' ? C.red : props.tone === 'warn' ? C.warn : props.tone === 'ok' ? C.green : C.text;
+  const iconBg = props.tone === 'bad' ? C.redSoft : props.tone === 'warn' ? C.warnSoft : props.tone === 'ok' ? C.greenSoft : C.primarySoft;
+  const iconFg = props.tone ? color : C.primary;
   return (
-    <Pressable style={styles.stat} onPress={props.onPress} disabled={!props.onPress}>
-      <Icon name={props.icon} size={22} color={color} />
-      <Text style={[styles.statValue, { color }]} numberOfLines={1}>
+    <Pressable style={({ pressed }) => [styles.stat, pressed && props.onPress && { backgroundColor: C.surface2 }]} onPress={props.onPress} disabled={!props.onPress}>
+      <View style={[styles.statIcon, { backgroundColor: iconBg }]}>
+        <Icon name={props.icon} size={18} color={iconFg} />
+      </View>
+      <Text style={[styles.statValue, { color }]} numberOfLines={1} adjustsFontSizeToFit>
         {props.value}
       </Text>
       <Text style={styles.statLabel} numberOfLines={1}>
@@ -156,93 +170,110 @@ export function Stat(props: { icon: IconName; label: string; value: string; tone
   );
 }
 
+/** 목록 한 줄 (왼쪽 아이콘 타일 + 제목/설명 + 오른쪽) */
+export function ListRow(props: {
+  icon?: IconName;
+  iconColor?: string;
+  iconBg?: string;
+  title: string;
+  sub?: string;
+  right?: ReactNode;
+  onPress?: () => void;
+  first?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={props.onPress}
+      disabled={!props.onPress}
+      style={({ pressed }) => [styles.listRow, !props.first && styles.listRowDivider, pressed && { backgroundColor: C.surface2 }]}
+    >
+      {props.icon ? (
+        <View style={[styles.listIcon, { backgroundColor: props.iconBg ?? C.primarySoft }]}>
+          <Icon name={props.icon} size={20} color={props.iconColor ?? C.primary} />
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.listTitle} numberOfLines={1}>
+          {props.title}
+        </Text>
+        {props.sub ? <Text style={styles.listSub}>{props.sub}</Text> : null}
+      </View>
+      {props.right ?? (props.onPress ? <Icon name="chevron-right" size={22} color={C.faint} /> : null)}
+    </Pressable>
+  );
+}
+
 export const ui = StyleSheet.create({
   input: {
-    backgroundColor: C.surface2,
+    backgroundColor: C.surface,
     color: C.text,
-    fontSize: 21,
-    fontWeight: '700',
+    fontFamily: F.semibold,
+    fontSize: 18,
     borderRadius: S.radiusSm,
     borderWidth: 1.5,
     borderColor: C.borderStrong,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 13,
   },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: 16 },
-  modal: { backgroundColor: C.surface, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: C.border },
-  modalTitle: { color: C.text, fontSize: 21, fontWeight: '800', marginBottom: 14 },
+  modalBg: { flex: 1, backgroundColor: 'rgba(16,24,40,0.6)', justifyContent: 'center', padding: 16 },
+  modal: { backgroundColor: C.surface, borderRadius: 18, padding: 20 },
+  modalTitle: { ...T.h2, marginBottom: 14 },
 });
 
 const styles = StyleSheet.create({
   btn: {
-    minHeight: S.touch,
-    borderRadius: S.radiusSm + 2,
+    minHeight: 52,
+    borderRadius: S.radiusSm,
+    borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  btnText: { fontSize: 20, fontWeight: '800', letterSpacing: -0.2 },
-  btnSub: { fontSize: 14, fontWeight: '600', marginTop: 2, opacity: 0.85 },
-  iconBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    minHeight: 44,
-  },
-  iconBtnText: { color: C.text, fontSize: 16, fontWeight: '700' },
-  banner: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
   },
-  bannerText: { flex: 1, fontSize: 16, fontWeight: '700', lineHeight: 22 },
-  bannerBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  bannerBtnText: { color: '#111', fontSize: 15, fontWeight: '900' },
+  btnLg: { minHeight: S.touch + 4, borderRadius: 12 },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  btnText: { fontFamily: F.bold, fontSize: 17, letterSpacing: -0.2 },
+  btnTextLg: { fontSize: 19 },
+  btnSub: { fontFamily: F.medium, fontSize: 13, marginTop: 1, opacity: 0.9 },
+  iconBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 10, minHeight: 44, minWidth: 44, justifyContent: 'center' },
+  iconBtnText: { fontFamily: F.semibold, fontSize: 15 },
+  banner: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bannerText: { flex: 1, fontFamily: F.semibold, fontSize: 14.5, lineHeight: 20 },
+  bannerBtn: { borderRadius: 8, borderWidth: 1.5, paddingHorizontal: 10, paddingVertical: 6 },
+  bannerBtnText: { fontFamily: F.bold, fontSize: 14 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    minHeight: 62,
-    backgroundColor: C.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    gap: 6,
+    minHeight: 60,
+    backgroundColor: C.navy,
+    gap: 8,
   },
-  headerBack: { padding: 4 },
-  headerTitle: { color: C.text, ...T.title },
-  headerSub: { color: C.sub, fontSize: 14, fontWeight: '600', marginTop: 1 },
-  card: {
-    backgroundColor: C.surface,
-    borderRadius: S.radius,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 16,
-  },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionLabel: { color: C.faint, ...T.label },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  pillText: { fontSize: 13, fontWeight: '800' },
+  headerBack: { padding: 6 },
+  headerTitle: { fontFamily: F.bold, fontSize: 19, color: C.white, letterSpacing: -0.3 },
+  headerSub: { fontFamily: F.medium, fontSize: 13, color: '#B6C2D9', marginTop: 1 },
+  card: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, padding: 16, ...shadow },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 2 },
+  sectionLabel: { ...T.label },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
+  pillText: { fontFamily: F.semibold, fontSize: 12.5 },
   stat: {
     flex: 1,
     backgroundColor: C.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: C.border,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    gap: 4,
+    padding: 12,
+    gap: 6,
+    ...shadow,
   },
-  statValue: { fontSize: 19, fontWeight: '900', ...T.num },
-  statLabel: { color: C.sub, fontSize: 13, fontWeight: '700' },
+  statIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  statValue: { fontFamily: F.xbold, fontSize: 18, letterSpacing: -0.3, ...T.num },
+  statLabel: { fontFamily: F.medium, fontSize: 12.5, color: C.sub },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13, minHeight: 60 },
+  listRowDivider: { borderTopWidth: 1, borderTopColor: C.border },
+  listIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  listTitle: { fontFamily: F.semibold, fontSize: 16, color: C.text },
+  listSub: { fontFamily: F.medium, fontSize: 13.5, color: C.sub, marginTop: 2, lineHeight: 19 },
 });

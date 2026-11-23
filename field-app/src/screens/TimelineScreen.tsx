@@ -18,7 +18,7 @@ import * as DB from '../db';
 import { BigButton, Card, Header, Icon, IconButton, Pill, SectionLabel, Stat, ui } from '../components/ui';
 import { useNav } from '../nav';
 import { deleteInspectionFiles, listChunks, makeClip, totalRecordedMs } from '../storage';
-import { C, S, T } from '../theme';
+import { C, F, S, T } from '../theme';
 import { errMsg, fmtClock, fmtDate, fmtDuration, toFileUri } from '../util';
 import { photoContext } from '../transcribe';
 
@@ -216,9 +216,14 @@ export default function TimelineScreen({ id }: { id: string }) {
                   <Icon
                     name={playing?.key === key ? 'stop-circle' : loadingKey === key ? 'progress-clock' : 'play-circle-outline'}
                     size={28}
-                    color={C.accent}
+                    color={C.primary}
                   />
                   <Text style={styles.chunkText}>{fmtClock(c.startMs)}</Text>
+                  {c.speechMs === 0 ? (
+                    <Pill text="무음" />
+                  ) : c.speechMs > 0 ? (
+                    <Pill icon="account-voice" text={`말소리 ${fmtDuration(c.speechMs)}`} color={C.green} bg={C.greenSoft} />
+                  ) : null}
                   <Text style={styles.chunkDur}>{fmtDuration(c.durationMs)}</Text>
                 </Pressable>
                 {renderPlayer(key)}
@@ -279,7 +284,7 @@ export default function TimelineScreen({ id }: { id: string }) {
                     setMemoFor(item);
                   }}
                 >
-                  <Icon name={item.memo ? 'note-text-outline' : 'pencil-plus-outline'} size={20} color={item.memo ? C.accent : C.faint} />
+                  <Icon name={item.memo ? 'note-text-outline' : 'pencil-plus-outline'} size={20} color={item.memo ? C.primary : C.faint} />
                   <Text style={item.memo ? styles.memo : styles.memoEmpty}>{item.memo ?? '메모 추가'}</Text>
                 </Pressable>
                 {ctx ? (
@@ -288,7 +293,7 @@ export default function TimelineScreen({ id }: { id: string }) {
                     {ctx.before ? <Text style={styles.ctxText}>{ctx.before}</Text> : null}
                     <View style={styles.ctxMarkRow}>
                       <View style={styles.ctxMarkLine} />
-                      <Icon name="camera" size={14} color={C.blue} />
+                      <Icon name="camera" size={14} color={C.primary} />
                       <View style={styles.ctxMarkLine} />
                     </View>
                     {ctx.after ? <Text style={styles.ctxText}>{ctx.after}</Text> : null}
@@ -334,35 +339,35 @@ export default function TimelineScreen({ id }: { id: string }) {
           </View>
         </View>
       </Modal>
-      {chunks === null ? <ActivityIndicator style={{ position: 'absolute', top: 80, right: 20 }} color={C.accent} /> : null}
+      {chunks === null ? <ActivityIndicator style={{ position: 'absolute', top: 80, right: 20 }} color={C.primary} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  text: { color: C.text, fontSize: 18 },
-  empty: { color: C.sub, fontSize: 16 },
-  site: { color: C.text, ...T.display },
-  meta: { color: C.sub, fontSize: 16, fontWeight: '600', marginTop: 4 },
+  text: { color: C.text, fontSize: 17, fontFamily: F.medium },
+  empty: { color: C.sub, fontSize: 15, fontFamily: F.medium },
+  site: { ...T.h1 },
+  meta: { color: C.sub, fontSize: 16, fontFamily: F.semibold, marginTop: 4 },
   stats: { flexDirection: 'row', gap: 8, marginTop: 14 },
   chunkToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 18, paddingVertical: 8 },
-  chunkToggleText: { color: C.sub, fontSize: 17, fontWeight: '800' },
+  chunkToggleText: { color: C.sub, fontSize: 17, fontFamily: F.xbold },
   chunkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  chunkText: { color: C.text, fontSize: 17, fontWeight: '700', flex: 1, ...T.num },
-  chunkDur: { color: C.sub, fontSize: 15, fontWeight: '700', ...T.num },
+  chunkText: { color: C.text, fontSize: 17, fontFamily: F.bold, flex: 1, ...T.num },
+  chunkDur: { color: C.sub, fontSize: 15, fontFamily: F.bold, ...T.num },
   tlRow: { flexDirection: 'row', paddingLeft: 10, paddingRight: S.pad },
   rail: { width: 40, alignItems: 'center' },
   railNum: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: C.accent,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 14,
   },
-  railNumText: { color: '#1A1200', fontSize: 15, fontWeight: '900' },
+  railNumText: { color: '#1A1200', fontSize: 15, fontFamily: F.xbold },
   railLine: { flex: 1, width: 2, backgroundColor: C.border, marginTop: 4 },
   card: {
     flex: 1,
@@ -374,24 +379,24 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  cardTime: { color: C.text, fontSize: 19, fontWeight: '900', ...T.num },
+  cardTime: { color: C.text, fontSize: 19, fontFamily: F.xbold, ...T.num },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10, backgroundColor: C.surface2 },
   zoom: { position: 'absolute', right: 8, bottom: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: 6 },
   memoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, minHeight: 32 },
-  memo: { color: C.text, fontSize: 18, fontWeight: '800', flex: 1 },
-  memoEmpty: { color: C.faint, fontSize: 16, fontWeight: '700' },
-  ctxBox: { marginTop: 10, backgroundColor: C.blueDark, borderRadius: 10, padding: 12 },
-  ctxLabel: { color: '#9CC5FF', fontSize: 12, fontWeight: '900', letterSpacing: 1, marginBottom: 6 },
+  memo: { color: C.text, fontSize: 18, fontFamily: F.xbold, flex: 1 },
+  memoEmpty: { color: C.faint, fontSize: 16, fontFamily: F.bold },
+  ctxBox: { marginTop: 10, backgroundColor: C.primarySoft, borderRadius: 10, padding: 12 },
+  ctxLabel: { color: '#9CC5FF', fontSize: 12, fontFamily: F.xbold, letterSpacing: 1, marginBottom: 6 },
   ctxText: { color: C.text, fontSize: 16, lineHeight: 24 },
   ctxMarkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 6 },
   ctxMarkLine: { flex: 1, height: 1, backgroundColor: '#2C4A73' },
   playerBox: { marginTop: 12, backgroundColor: C.surface2, borderRadius: 12, padding: 12 },
   progress: { height: 10, backgroundColor: C.surface3, borderRadius: 5, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: C.accent },
+  progressFill: { height: '100%', backgroundColor: C.primary },
   centerMark: { position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: C.red },
   playerTimeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  playerTime: { color: C.text, fontSize: 16, fontWeight: '800', ...T.num },
-  playerTimeSub: { color: C.sub, fontSize: 15, fontWeight: '700', ...T.num },
+  playerTime: { color: C.text, fontSize: 16, fontFamily: F.xbold, ...T.num },
+  playerTimeSub: { color: C.sub, fontSize: 15, fontFamily: F.bold, ...T.num },
   playerRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   pBtn: {
     flex: 1,
@@ -401,6 +406,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pBtnMain: { backgroundColor: C.accent, flex: 1.4 },
+  pBtnMain: { backgroundColor: C.primary, flex: 1.4 },
   viewerClose: { position: 'absolute', top: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 6 },
 });

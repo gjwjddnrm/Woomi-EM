@@ -1,46 +1,66 @@
-// 현장용 전문 테마: 짙은 슬레이트 바탕 + 안전 앰버 강조. 햇빛 아래에서도 대비가 충분하도록 글자는 밝게.
+// 업무용 밝은 테마 (Woomi-EM 웹과 같은 계열: 흰 카드 + 파랑 강조 + Pretendard)
+// 햇빛 아래에서는 밝은 바탕에 진한 글자가 가장 잘 보입니다. 촬영 화면만 어둡게 씁니다.
 export const C = {
-  bg: '#0B0E13',
-  surface: '#151A22',
-  surface2: '#1D2430',
-  surface3: '#263041',
-  border: '#2E3949',
-  borderStrong: '#3E4C61',
-  text: '#F4F6F9',
-  sub: '#A7B2C1',
-  faint: '#6F7C8F',
-  accent: '#FFB020', // 안전 앰버
-  accentDark: '#3A2A08',
-  red: '#FF453A',
-  redDark: '#3A1210',
-  green: '#30D158',
-  greenDark: '#0F2E1A',
-  blue: '#4C9AFF',
-  blueDark: '#0F2340',
-  black: '#000000',
+  bg: '#F2F4F7',
+  surface: '#FFFFFF',
+  surface2: '#F7F8FA',
+  surface3: '#EEF1F5',
+  border: '#E3E7ED',
+  borderStrong: '#C9D0DA',
+  text: '#101828',
+  sub: '#475467',
+  faint: '#8A94A6',
+  primary: '#2453C7',
+  primaryDark: '#163A94',
+  primarySoft: '#EAF0FD',
+  navy: '#0F1D3A',
+  navy2: '#1B2B4F',
+  red: '#D92D20',
+  redSoft: '#FEE4E2',
+  green: '#067647',
+  greenSoft: '#DCFAE6',
+  warn: '#B54708',
+  warnSoft: '#FEF0C7',
   white: '#FFFFFF',
-  // 예전 이름 호환
-  card: '#151A22',
-  cardBorder: '#2E3949',
-  yellow: '#FFB020',
-  orange: '#FF9500',
+  black: '#000000',
+  // 촬영 화면(어두운 카메라 UI)
+  camBg: '#0A0D12',
+  camPanel: '#11161F',
+  camLine: '#273041',
+  camText: '#F4F6F9',
+  camSub: '#A9B3C3',
+  amber: '#FFB020',
+};
+
+export const F = {
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
+  xbold: 'Pretendard-ExtraBold',
 };
 
 export const S = {
   pad: 16,
-  radius: 16,
+  radius: 14,
   radiusSm: 10,
-  touch: 64,
-  font: 18,
-  fontBig: 22,
-  fontHuge: 34,
+  touch: 60,
 };
 
 export const T = {
-  // 글자 체계
-  display: { fontSize: 30, fontWeight: '900' as const, letterSpacing: -0.5 },
-  title: { fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.3 },
-  body: { fontSize: 17, fontWeight: '500' as const },
-  label: { fontSize: 13, fontWeight: '800' as const, letterSpacing: 1.2 },
   num: { fontVariant: ['tabular-nums' as const] },
+  h1: { fontFamily: F.xbold, fontSize: 26, letterSpacing: -0.6, color: C.text },
+  h2: { fontFamily: F.bold, fontSize: 20, letterSpacing: -0.4, color: C.text },
+  h3: { fontFamily: F.bold, fontSize: 17, letterSpacing: -0.2, color: C.text },
+  body: { fontFamily: F.medium, fontSize: 16, color: C.text, lineHeight: 23 },
+  sub: { fontFamily: F.medium, fontSize: 14, color: C.sub, lineHeight: 20 },
+  label: { fontFamily: F.bold, fontSize: 12.5, letterSpacing: 0.6, color: C.faint },
+};
+
+export const shadow = {
+  shadowColor: '#101828',
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
 };

@@ -1,4 +1,4 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from '../camera';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,7 +20,7 @@ import { Banner, BigButton, Icon, ui } from '../components/ui';
 import { finishInspection, getHealth, getStatus, healthWarnings, startRecording } from '../inspection';
 import { useNav } from '../nav';
 import { savePhotoNow } from '../storage';
-import { C, T } from '../theme';
+import { C, F, T } from '../theme';
 import { errMsg, fmtDuration } from '../util';
 
 export default function CaptureScreen({ id }: { id: string }) {
@@ -70,7 +70,7 @@ export default function CaptureScreen({ id }: { id: string }) {
       }
     };
     tick();
-    const t = setInterval(tick, 1000);
+    const t = setInterval(tick, 400);
     return () => clearInterval(t);
   }, [insp]);
 
@@ -173,7 +173,7 @@ export default function CaptureScreen({ id }: { id: string }) {
 
   const recOk = !!status && status.running && status.sessionId === insp.id;
   const phase = recOk ? status!.phase : 'stopped';
-  const dotColor = phase === 'recording' ? C.red : phase === 'stopped' || phase === 'error' ? '#777' : C.yellow;
+  const dotColor = phase === 'recording' ? C.red : phase === 'stopped' || phase === 'error' ? '#777' : C.amber;
   const blink = phase === 'recording' && Math.floor(now / 700) % 2 === 0;
   const recLabel =
     phase === 'recording'
@@ -213,7 +213,7 @@ export default function CaptureScreen({ id }: { id: string }) {
           />
         ) : (
           <View style={styles.noCam}>
-            <Icon name="camera-off-outline" size={48} color={C.faint} />
+            <Icon name="camera-off-outline" size={48} color={'#6F7C8F'} />
             <Text style={styles.msg}>카메라 권한이 필요합니다</Text>
             <BigButton
               title="권한 허용"
@@ -234,13 +234,29 @@ export default function CaptureScreen({ id }: { id: string }) {
               <Text style={styles.elapsed}>{fmtDuration(now - insp.started_at)}</Text>
             </View>
             <View style={{ flex: 1 }} />
+            {recOk && phase === 'recording' ? (
+              <View style={[styles.voiceCapsule, status?.voice && styles.voiceOn]}>
+                <View style={styles.bars}>
+                  {[0.25, 0.5, 0.75, 1].map((k) => (
+                    <View
+                      key={k}
+                      style={[
+                        styles.bar,
+                        { height: 6 + k * 14, backgroundColor: (status?.level ?? 0) >= k * 0.8 ? (status?.voice ? '#4ADE80' : C.camSub) : 'rgba(255,255,255,0.18)' },
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Text style={[styles.voiceText, status?.voice && { color: '#4ADE80' }]}>{status?.voice ? '말소리' : '조용'}</Text>
+              </View>
+            ) : null}
             <View style={styles.countCapsule}>
-              <Icon name="camera" size={18} color={C.accent} />
+              <Icon name="camera" size={18} color={C.amber} />
               <Text style={styles.count}>{count}</Text>
             </View>
           </View>
           <View style={styles.siteCapsule}>
-            <Icon name="map-marker" size={16} color={C.sub} />
+            <Icon name="map-marker" size={16} color={C.camSub} />
             <Text style={styles.site} numberOfLines={1}>
               {insp.site}
             </Text>
@@ -272,7 +288,7 @@ export default function CaptureScreen({ id }: { id: string }) {
         </View>
 
         <View style={styles.hint} pointerEvents="none">
-          <Icon name="volume-high" size={15} color={C.sub} />
+          <Icon name="volume-high" size={15} color={C.camSub} />
           <Text style={styles.hintText}>볼륨 버튼으로도 촬영</Text>
         </View>
       </View>
@@ -289,7 +305,7 @@ export default function CaptureScreen({ id }: { id: string }) {
               </View>
             </>
           ) : (
-            <Icon name="image-outline" size={30} color={C.faint} />
+            <Icon name="image-outline" size={30} color={'#6F7C8F'} />
           )}
         </Pressable>
 
@@ -299,7 +315,7 @@ export default function CaptureScreen({ id }: { id: string }) {
           disabled={!perm?.granted || ending}
           style={({ pressed }) => [styles.shutter, (pressed || capturing) && { transform: [{ scale: 0.93 }] }]}
         >
-          <View style={[styles.shutterInner, capturing && { backgroundColor: C.accent }]}>
+          <View style={[styles.shutterInner, capturing && { backgroundColor: C.amber }]}>
             <Icon name="camera" size={38} color={capturing ? '#1A1200' : '#111'} />
           </View>
         </Pressable>
@@ -320,7 +336,7 @@ export default function CaptureScreen({ id }: { id: string }) {
               onChangeText={setMemoText}
               autoFocus
               placeholder="예: 소화기 압력 미달"
-              placeholderTextColor={C.faint}
+              placeholderTextColor={'#6F7C8F'}
               style={ui.input}
               maxLength={80}
               returnKeyType="done"
@@ -340,7 +356,7 @@ export default function CaptureScreen({ id }: { id: string }) {
 const overlay = 'rgba(11,14,19,0.78)';
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.camBg },
   cameraWrap: { flex: 1, backgroundColor: '#05070A', overflow: 'hidden' },
   noCam: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 14 },
   topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, padding: 12, gap: 8 },
@@ -357,8 +373,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   dot: { width: 16, height: 16, borderRadius: 8 },
-  recLabel: { fontSize: 16, fontWeight: '900', letterSpacing: 1 },
-  elapsed: { color: C.white, fontSize: 28, fontWeight: '900', ...T.num, letterSpacing: -0.5 },
+  recLabel: { fontSize: 16, fontFamily: F.xbold, letterSpacing: 1 },
+  elapsed: { color: C.white, fontSize: 28, fontFamily: F.xbold, ...T.num, letterSpacing: -0.5 },
+  voiceCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: overlay,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  voiceOn: { borderColor: '#4ADE80' },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 20 },
+  bar: { width: 4, borderRadius: 2 },
+  voiceText: { color: C.camSub, fontFamily: F.bold, fontSize: 13 },
   countCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,7 +400,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  count: { color: C.white, fontSize: 22, fontWeight: '900', ...T.num },
+  count: { color: C.white, fontSize: 22, fontFamily: F.xbold, ...T.num },
   siteCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  site: { color: C.text, fontSize: 15, fontWeight: '700', flexShrink: 1 },
+  site: { color: C.camText, fontSize: 15, fontFamily: F.bold, flexShrink: 1 },
   banners: { marginTop: 2 },
   hint: {
     position: 'absolute',
@@ -394,7 +426,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  hintText: { color: C.sub, fontSize: 14, fontWeight: '700' },
+  hintText: { color: C.camSub, fontSize: 14, fontFamily: F.bold },
   bottom: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -402,17 +434,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 22,
-    backgroundColor: C.surface,
+    backgroundColor: C.camPanel,
     borderTopWidth: 1,
-    borderTopColor: C.border,
+    borderTopColor: C.camLine,
   },
   thumbBox: {
     width: 80,
     height: 80,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: C.borderStrong,
-    backgroundColor: C.surface2,
+    borderColor: C.camLine,
+    backgroundColor: '#1D2430',
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -427,10 +459,10 @@ const styles = StyleSheet.create({
     gap: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: C.accent,
+    backgroundColor: C.amber,
     paddingVertical: 3,
   },
-  thumbTagText: { color: '#1A1200', fontSize: 12, fontWeight: '900' },
+  thumbTagText: { color: '#1A1200', fontSize: 12, fontFamily: F.xbold },
   shutter: {
     width: 112,
     height: 112,
@@ -457,7 +489,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
-  endText: { color: C.white, fontSize: 15, fontWeight: '900' },
-  msg: { color: C.text, fontSize: 19, fontWeight: '700', textAlign: 'center' },
-  memoPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, marginBottom: 14, backgroundColor: C.surface2 },
+  endText: { color: C.white, fontSize: 15, fontFamily: F.xbold },
+  msg: { color: C.camText, fontSize: 19, fontFamily: F.bold, textAlign: 'center' },
+  memoPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, marginBottom: 14, backgroundColor: '#1D2430' },
 });

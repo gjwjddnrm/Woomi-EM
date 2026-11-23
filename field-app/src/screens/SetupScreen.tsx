@@ -5,7 +5,7 @@ import * as DB from '../db';
 import { BigButton, Header, Icon, type IconName, Pill } from '../components/ui';
 import { type PermResult, checkPermissions, getHealth, requestPermissions } from '../inspection';
 import { useNav } from '../nav';
-import { C, S } from '../theme';
+import { C, F, S } from '../theme';
 import { fmtBytes } from '../util';
 
 function Step(props: { n: number; title: string; icon: IconName; done?: boolean; children: React.ReactNode }) {
@@ -19,7 +19,7 @@ function Step(props: { n: number; title: string; icon: IconName; done?: boolean;
           <Text style={styles.stepNo}>단계 {props.n}</Text>
           <Text style={styles.stepTitle}>{props.title}</Text>
         </View>
-        {props.done ? <Pill text="완료" color={C.green} bg={C.greenDark} /> : <Pill text="필요" color={C.accent} bg={C.accentDark} />}
+        {props.done ? <Pill text="완료" color={C.green} bg={C.greenSoft} /> : <Pill text="필요" color={C.primary} bg={C.warnSoft} />}
       </View>
       {props.children}
     </View>
@@ -174,7 +174,7 @@ export default function SetupScreen({ first }: { first?: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  lead: { color: C.text, fontSize: 18, fontWeight: '600', lineHeight: 27, marginBottom: 16 },
+  lead: { color: C.text, fontSize: 18, fontFamily: F.semibold, lineHeight: 27, marginBottom: 16 },
   step: {
     backgroundColor: C.surface,
     borderRadius: S.radius,
@@ -188,16 +188,16 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: C.accent,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepNo: { color: C.faint, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  stepTitle: { color: C.text, fontSize: 19, fontWeight: '800' },
+  stepNo: { color: C.faint, fontSize: 12, fontFamily: F.xbold, letterSpacing: 1 },
+  stepTitle: { color: C.text, fontSize: 19, fontFamily: F.xbold },
   body: { color: C.sub, fontSize: 16, lineHeight: 24 },
   howto: { backgroundColor: C.surface2, borderRadius: 12, padding: 14, marginTop: 12, gap: 2 },
-  howtoLine: { color: C.text, fontSize: 16, lineHeight: 26, fontWeight: '600' },
+  howtoLine: { color: C.text, fontSize: 16, lineHeight: 26, fontFamily: F.semibold },
   info: { marginTop: 6, padding: 16, borderRadius: S.radius, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
-  infoTitle: { color: C.faint, fontSize: 13, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8 },
+  infoTitle: { color: C.faint, fontSize: 13, fontFamily: F.xbold, letterSpacing: 1.2, marginBottom: 8 },
   infoLine: { color: C.sub, fontSize: 16, lineHeight: 26 },
 });

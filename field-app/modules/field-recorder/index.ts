@@ -16,6 +16,10 @@ export type RecorderStatus = {
   lastError: string | null;
   lowStorage: boolean;
   lowBattery: boolean;
+  /** 현재 소리 크기 0..1 */
+  level: number;
+  /** 최근 1.5초 안에 말소리 */
+  voice: boolean;
 };
 
 export type Chunk = {
@@ -24,6 +28,8 @@ export type Chunk = {
   durationMs: number;
   size: number;
   active: boolean;
+  /** 말소리 길이(ms). -1이면 측정 불가 */
+  speechMs: number;
 };
 
 export type ClipResult = {
@@ -51,6 +57,8 @@ type NativeModuleShape = {
   listChunks(dir: string): Promise<Chunk[]>;
   writeClip(paths: string[], starts: number[], fromMs: number, toMs: number, outPath: string): Promise<ClipResult | null>;
   mergeToM4a(paths: string[], starts: number[], outPath: string): Promise<ClipResult | null>;
+  speechSpans(path: string): Promise<number[] | null>;
+  writeSpans(path: string, spans: number[], outPath: string): Promise<number>;
   getDeviceHealth(): DeviceHealth;
   requestIgnoreBatteryOptimizations(): boolean;
   openAppSettings(): boolean;

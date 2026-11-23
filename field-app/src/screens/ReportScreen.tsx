@@ -7,7 +7,7 @@ import { buildPdf, sharePdf } from '../pdf';
 import { type Report, type ReportItem, generateReport, loadReport, saveReportEdits } from '../report';
 import { listChunks } from '../storage';
 import { type TranscribeProgress, transcribeInspection } from '../transcribe';
-import { C, S } from '../theme';
+import { C, F, S } from '../theme';
 import { errMsg } from '../util';
 
 function Field(props: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
@@ -69,6 +69,8 @@ export default function ReportScreen({ id }: { id: string }) {
     try {
       const p = await transcribeInspection(insp, setProg, () => cancelRef.current);
       setDoneCount(DB.listTranscripts(id).length);
+      if (p.skipped > 0 && p.failed === 0)
+        Alert.alert('변환 완료', `무음인 ${p.skipped}개 조각은 보내지 않고 건너뛰었습니다.`);
       if (p.failed > 0) Alert.alert('일부 실패', `${p.failed}개 조각을 변환하지 못했습니다. 다시 누르면 실패한 것만 다시 합니다.\n${p.message ?? ''}`);
     } catch (e) {
       Alert.alert('텍스트 변환 실패', errMsg(e));
@@ -160,7 +162,7 @@ export default function ReportScreen({ id }: { id: string }) {
           {busy === 'stt' ? (
             <BigButton title="멈추기" icon="pause" kind="dark" onPress={() => (cancelRef.current = true)} style={{ marginTop: 8 }} />
           ) : null}
-          <Text style={styles.help}>OpenAI Whisper · 1분씩 변환·저장, 끊겨도 이어서. 변환되면 사진마다 앞뒤 대화가 붙습니다.</Text>
+          <Text style={styles.help}>OpenAI Whisper · 말소리 부분만 골라 보내고 무음은 건너뜁니다. 끊겨도 이어서 하고, 변환되면 사진마다 앞뒤 대화가 붙습니다.</Text>
         </StepCard>
 
         <StepCard n={2} title="보고서 초안" done={!!report}>
@@ -181,7 +183,7 @@ export default function ReportScreen({ id }: { id: string }) {
 
         {status ? (
           <View style={styles.statusBox}>
-            <ActivityIndicator color={C.accent} />
+            <ActivityIndicator color={C.primary} />
             <Text style={styles.statusText}>{status}</Text>
           </View>
         ) : null}
@@ -260,20 +262,20 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   stepCard: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 12 },
   stepHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  stepNum: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' },
-  stepNumText: { color: '#1A1200', fontSize: 17, fontWeight: '900' },
-  stepTitle: { color: C.text, fontSize: 19, fontWeight: '800' },
+  stepNum: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
+  stepNumText: { color: '#1A1200', fontSize: 17, fontFamily: F.xbold },
+  stepTitle: { color: C.text, fontSize: 19, fontFamily: F.xbold },
   bar: { height: 8, borderRadius: 4, backgroundColor: C.surface3, overflow: 'hidden', marginBottom: 12 },
   barFill: { height: '100%', backgroundColor: C.green },
   help: { color: C.sub, fontSize: 14, lineHeight: 21, marginTop: 10 },
   statusBox: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 4, padding: 14, borderRadius: 12, backgroundColor: C.surface2 },
-  statusText: { color: C.text, fontSize: 16, fontWeight: '700', flex: 1 },
+  statusText: { color: C.text, fontSize: 16, fontFamily: F.bold, flex: 1 },
   docCard: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 12 },
-  item: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, borderLeftWidth: 4, borderLeftColor: C.accent, padding: 14, marginBottom: 12 },
+  item: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, borderLeftWidth: 4, borderLeftColor: C.primary, padding: 14, marginBottom: 12 },
   itemHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   itemNo: { width: 30, height: 30, borderRadius: 8, backgroundColor: C.surface3, alignItems: 'center', justifyContent: 'center' },
-  itemNoText: { color: C.text, fontSize: 16, fontWeight: '900' },
-  fLabel: { color: C.faint, fontSize: 13, fontWeight: '900', letterSpacing: 0.8 },
+  itemNoText: { color: C.text, fontSize: 16, fontFamily: F.xbold },
+  fLabel: { color: C.faint, fontSize: 13, fontFamily: F.xbold, letterSpacing: 0.8 },
   fInput: {
     backgroundColor: C.surface2,
     color: C.text,

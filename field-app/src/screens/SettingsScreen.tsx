@@ -4,7 +4,7 @@ import * as DB from '../db';
 import { BigButton, Header, Icon } from '../components/ui';
 import { type KeyName, getKey, maskKey, setKey } from '../keys';
 import { useNav } from '../nav';
-import { C, S } from '../theme';
+import { C, F, S } from '../theme';
 
 function KeyField(props: { name: KeyName; label: string; hint: string; placeholder: string }) {
   const [saved, setSaved] = useState<string | null>(null);
@@ -15,7 +15,7 @@ function KeyField(props: { name: KeyName; label: string; hint: string; placehold
   return (
     <View style={styles.box}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Icon name="key-variant" size={22} color={C.accent} />
+        <Icon name="key-variant" size={22} color={C.primary} />
         <Text style={styles.label}>{props.label}</Text>
       </View>
       <Text style={styles.hint}>{props.hint}</Text>
@@ -68,7 +68,7 @@ export default function SettingsScreen() {
         <View style={[styles.box, { flexDirection: 'row', alignItems: 'center' }]}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Icon name={shutter ? 'volume-high' : 'volume-off'} size={22} color={C.accent} />
+              <Icon name={shutter ? 'volume-high' : 'volume-off'} size={22} color={C.primary} />
               <Text style={styles.label}>촬영음</Text>
             </View>
             <Text style={styles.hint}>끄면 찰칵 소리 없이 진동과 화면 깜박임으로만 알려 줍니다. 녹음에도 소리가 섞이지 않습니다.</Text>
@@ -79,7 +79,7 @@ export default function SettingsScreen() {
               setShutter(v);
               DB.setSetting('shutterSound', v ? '1' : '0');
             }}
-            trackColor={{ true: C.yellow, false: '#555' }}
+            trackColor={{ true: C.primary, false: '#555' }}
             thumbColor={shutter ? '#fff' : '#ccc'}
             style={{ transform: [{ scale: 1.4 }], marginLeft: 12 }}
           />
@@ -109,9 +109,9 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   box: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 14 },
-  label: { color: C.text, fontSize: 19, fontWeight: '800', flexShrink: 1 },
+  label: { color: C.text, fontSize: 19, fontFamily: F.xbold, flexShrink: 1 },
   hint: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 6 },
-  saved: { color: C.accent, fontSize: 15, fontWeight: '800', marginTop: 10 },
+  saved: { color: C.primary, fontSize: 15, fontFamily: F.xbold, marginTop: 10 },
   input: {
     backgroundColor: C.surface2,
     color: C.text,
