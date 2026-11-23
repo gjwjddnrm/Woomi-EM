@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import FieldRecorder, { type RecorderStatus } from '../../modules/field-recorder';
 import * as DB from '../db';
-import { Banner, BigButton } from '../components/ui';
+import { Banner, BigButton, Icon, ui } from '../components/ui';
 import { finishInspection, getHealth, getStatus, healthWarnings, startRecording } from '../inspection';
 import { useNav } from '../nav';
 import { savePhotoNow } from '../storage';
-import { C } from '../theme';
+import { C, T } from '../theme';
 import { errMsg, fmtDuration } from '../util';
 
 export default function CaptureScreen({ id }: { id: string }) {
@@ -198,42 +198,7 @@ export default function CaptureScreen({ id }: { id: string }) {
 
   return (
     <View style={styles.root}>
-      {/* 녹음 상태: 항상 표시 */}
-      <View style={styles.statusBar}>
-        <View style={[styles.dot, { backgroundColor: dotColor, opacity: blink ? 0.35 : 1 }]} />
-        <Text style={styles.recLabel}>{recLabel}</Text>
-        <Text style={styles.elapsed}>{fmtDuration(now - insp.started_at)}</Text>
-        <View style={{ flex: 1 }} />
-        <Text style={styles.count}>사진 {count}</Text>
-      </View>
-      <Text style={styles.site} numberOfLines={1}>
-        {insp.site}
-      </Text>
-
-      <View style={styles.banners}>
-        {!recOk && !ending ? <Banner kind="error" text="녹음이 멈췄습니다. 다시 시작하는 중…" /> : null}
-        {recOk && phase === 'interrupted' ? (
-          <Banner text="통화 중 — 통화가 끝나면 자동으로 이어서 녹음합니다" />
-        ) : null}
-        {recOk && phase === 'retrying' ? <Banner text="마이크 다시 연결 중…" /> : null}
-        {status?.lowStorage ? <Banner kind="error" text="저장공간 부족!" /> : null}
-        {warns.map((w) => (
-          <Banner key={w} text={w} />
-        ))}
-        {saveError ? <Banner kind="error" text={saveError} /> : null}
-        {camError ? (
-          <Banner
-            kind="error"
-            text={`카메라 오류: ${camError}`}
-            action="다시"
-            onAction={() => {
-              setCamError(null);
-              setCamKey((k) => k + 1);
-            }}
-          />
-        ) : null}
-      </View>
-
+      {/* 카메라: 화면을 꽉 채움 */}
       <View style={styles.cameraWrap}>
         {perm?.granted ? (
           <CameraView
@@ -248,28 +213,83 @@ export default function CaptureScreen({ id }: { id: string }) {
           />
         ) : (
           <View style={styles.noCam}>
+            <Icon name="camera-off-outline" size={48} color={C.faint} />
             <Text style={styles.msg}>카메라 권한이 필요합니다</Text>
             <BigButton
               title="권한 허용"
+              icon="camera"
               onPress={() => (perm?.canAskAgain ? requestPerm() : FieldRecorder.openAppSettings())}
             />
           </View>
         )}
-        <Text style={styles.hint}>볼륨 버튼으로도 촬영</Text>
+
+        {/* 위쪽 상태 표시 (항상 보임) */}
+        <View style={styles.topOverlay} pointerEvents="box-none">
+          <View style={styles.topRow}>
+            <View style={[styles.recCapsule, { borderColor: dotColor }]}>
+              <View style={[styles.dot, { backgroundColor: dotColor, opacity: blink ? 0.3 : 1 }]} />
+              <Text style={[styles.recLabel, { color: dotColor === C.red ? '#FF8A82' : dotColor }]}>
+                {phase === 'recording' ? 'REC' : recLabel}
+              </Text>
+              <Text style={styles.elapsed}>{fmtDuration(now - insp.started_at)}</Text>
+            </View>
+            <View style={{ flex: 1 }} />
+            <View style={styles.countCapsule}>
+              <Icon name="camera" size={18} color={C.accent} />
+              <Text style={styles.count}>{count}</Text>
+            </View>
+          </View>
+          <View style={styles.siteCapsule}>
+            <Icon name="map-marker" size={16} color={C.sub} />
+            <Text style={styles.site} numberOfLines={1}>
+              {insp.site}
+            </Text>
+          </View>
+
+          <View style={styles.banners}>
+            {!recOk && !ending ? <Banner kind="error" text="녹음이 멈췄습니다. 다시 시작하는 중…" /> : null}
+            {recOk && phase === 'interrupted' ? (
+              <Banner text="통화 중 — 통화가 끝나면 자동으로 이어서 녹음합니다" />
+            ) : null}
+            {recOk && phase === 'retrying' ? <Banner text="마이크 다시 연결 중…" /> : null}
+            {status?.lowStorage ? <Banner kind="error" text="저장공간 부족!" /> : null}
+            {warns.map((w) => (
+              <Banner key={w} text={w} />
+            ))}
+            {saveError ? <Banner kind="error" text={saveError} /> : null}
+            {camError ? (
+              <Banner
+                kind="error"
+                text={`카메라 오류: ${camError}`}
+                action="다시"
+                onAction={() => {
+                  setCamError(null);
+                  setCamKey((k) => k + 1);
+                }}
+              />
+            ) : null}
+          </View>
+        </View>
+
+        <View style={styles.hint} pointerEvents="none">
+          <Icon name="volume-high" size={15} color={C.sub} />
+          <Text style={styles.hintText}>볼륨 버튼으로도 촬영</Text>
+        </View>
       </View>
 
-      {/* 한 손 조작: 아래쪽에 큰 버튼 */}
+      {/* 아래 조작부: 한 손으로 */}
       <View style={styles.bottom}>
         <Pressable style={styles.thumbBox} onPress={() => last && openMemo(last)} disabled={!last}>
           {last ? (
             <>
               <Image source={{ uri: last.uri }} style={styles.thumb} />
-              <Text style={styles.thumbLabel} numberOfLines={1}>
-                {last.memo ? '✎ 메모됨' : '+ 메모'}
-              </Text>
+              <View style={styles.thumbTag}>
+                <Icon name={last.memo ? 'note-check-outline' : 'pencil-plus-outline'} size={14} color="#1A1200" />
+                <Text style={styles.thumbTagText}>{last.memo ? '메모됨' : '메모'}</Text>
+              </View>
             </>
           ) : (
-            <Text style={styles.thumbEmpty}>사진 없음</Text>
+            <Icon name="image-outline" size={30} color={C.faint} />
           )}
         </Pressable>
 
@@ -277,34 +297,38 @@ export default function CaptureScreen({ id }: { id: string }) {
           accessibilityLabel="촬영"
           onPress={shoot}
           disabled={!perm?.granted || ending}
-          style={({ pressed }) => [styles.shutter, (pressed || capturing) && { transform: [{ scale: 0.92 }] }]}
+          style={({ pressed }) => [styles.shutter, (pressed || capturing) && { transform: [{ scale: 0.93 }] }]}
         >
-          <View style={[styles.shutterInner, capturing && { backgroundColor: C.yellow }]} />
+          <View style={[styles.shutterInner, capturing && { backgroundColor: C.accent }]}>
+            <Icon name="camera" size={38} color={capturing ? '#1A1200' : '#111'} />
+          </View>
         </Pressable>
 
         <Pressable style={styles.endBtn} onPress={endInspection} disabled={ending}>
-          <Text style={styles.endText}>{ending ? '종료 중' : '점검\n종료'}</Text>
+          <Icon name={ending ? 'progress-clock' : 'stop'} size={30} color={C.white} />
+          <Text style={styles.endText}>{ending ? '종료 중' : '종료'}</Text>
         </Pressable>
       </View>
 
       <Modal visible={!!memoFor} transparent animationType="fade" onRequestClose={() => setMemoFor(null)}>
-        <View style={styles.modalBg}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>사진 메모 (한 줄)</Text>
+        <View style={ui.modalBg}>
+          <View style={ui.modal}>
+            <Text style={ui.modalTitle}>사진 메모</Text>
+            {memoFor ? <Image source={{ uri: memoFor.uri }} style={styles.memoPhoto} /> : null}
             <TextInput
               value={memoText}
               onChangeText={setMemoText}
               autoFocus
               placeholder="예: 소화기 압력 미달"
-              placeholderTextColor="#777"
-              style={styles.memoInput}
+              placeholderTextColor={C.faint}
+              style={ui.input}
               maxLength={80}
               returnKeyType="done"
               onSubmitEditing={saveMemo}
             />
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               <BigButton title="취소" kind="dark" onPress={() => setMemoFor(null)} style={{ flex: 1 }} />
-              <BigButton title="저장" onPress={saveMemo} style={{ flex: 1 }} />
+              <BigButton title="저장" icon="check" onPress={saveMemo} style={{ flex: 1 }} />
             </View>
           </View>
         </View>
@@ -313,85 +337,127 @@ export default function CaptureScreen({ id }: { id: string }) {
   );
 }
 
+const overlay = 'rgba(11,14,19,0.78)';
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  statusBar: {
+  cameraWrap: { flex: 1, backgroundColor: '#05070A', overflow: 'hidden' },
+  noCam: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 14 },
+  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, padding: 12, gap: 8 },
+  topRow: { flexDirection: 'row', alignItems: 'center' },
+  recCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 10,
     gap: 10,
+    backgroundColor: overlay,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    paddingLeft: 14,
+    paddingRight: 16,
+    paddingVertical: 8,
   },
-  dot: { width: 22, height: 22, borderRadius: 11 },
-  recLabel: { color: C.text, fontSize: 22, fontWeight: '900' },
-  elapsed: { color: C.text, fontSize: 30, fontWeight: '900', fontVariant: ['tabular-nums'] },
-  count: { color: C.yellow, fontSize: 24, fontWeight: '900' },
-  site: { color: C.sub, fontSize: 17, fontWeight: '700', paddingHorizontal: 14, paddingBottom: 6 },
-  banners: { paddingHorizontal: 10 },
-  cameraWrap: { flex: 1, backgroundColor: '#111', overflow: 'hidden' },
-  noCam: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 16 },
+  dot: { width: 16, height: 16, borderRadius: 8 },
+  recLabel: { fontSize: 16, fontWeight: '900', letterSpacing: 1 },
+  elapsed: { color: C.white, fontSize: 28, fontWeight: '900', ...T.num, letterSpacing: -0.5 },
+  countCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: overlay,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  count: { color: C.white, fontSize: 22, fontWeight: '900', ...T.num },
+  siteCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    backgroundColor: overlay,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  site: { color: C.text, fontSize: 15, fontWeight: '700', flexShrink: 1 },
+  banners: { marginTop: 2 },
   hint: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 12,
     alignSelf: 'center',
-    color: C.text,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    fontSize: 15,
-    fontWeight: '700',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: overlay,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
+  hintText: { color: C.sub, fontSize: 14, fontWeight: '700' },
   bottom: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 22,
+    backgroundColor: C.surface,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
   },
   thumbBox: {
-    width: 84,
-    height: 96,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: C.cardBorder,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: C.borderStrong,
+    backgroundColor: C.surface2,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  thumb: { width: '100%', height: 70 },
-  thumbLabel: { color: C.yellow, fontSize: 14, fontWeight: '800', paddingVertical: 3 },
-  thumbEmpty: { color: '#777', fontSize: 14, textAlign: 'center' },
+  thumb: { width: '100%', height: '100%' },
+  thumbTag: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: C.accent,
+    paddingVertical: 3,
+  },
+  thumbTagText: { color: '#1A1200', fontSize: 12, fontWeight: '900' },
   shutter: {
-    width: 118,
-    height: 118,
-    borderRadius: 59,
-    borderWidth: 6,
-    borderColor: C.text,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 5,
+    borderColor: C.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  shutterInner: { width: 92, height: 92, borderRadius: 46, backgroundColor: C.text },
+  shutterInner: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: C.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   endBtn: {
-    width: 84,
-    height: 96,
-    borderRadius: 10,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
     backgroundColor: C.red,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 2,
   },
-  endText: { color: C.text, fontSize: 19, fontWeight: '900', textAlign: 'center' },
-  msg: { color: C.text, fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 16 },
-  modal: { backgroundColor: C.card, borderRadius: 16, padding: 18, borderWidth: 2, borderColor: C.cardBorder },
-  modalTitle: { color: C.text, fontSize: 22, fontWeight: '900', marginBottom: 12 },
-  memoInput: {
-    backgroundColor: '#fff',
-    color: '#000',
-    fontSize: 22,
-    fontWeight: '700',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
+  endText: { color: C.white, fontSize: 15, fontWeight: '900' },
+  msg: { color: C.text, fontSize: 19, fontWeight: '700', textAlign: 'center' },
+  memoPhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, marginBottom: 14, backgroundColor: C.surface2 },
 });

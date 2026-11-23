@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Font from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
@@ -66,7 +68,19 @@ export default function App() {
     };
   }, [stack, set]);
 
-  // 부팅: DB 준비 → 첫 실행 안내 또는 진행 중 점검 복구
+  // 부팅: 아이콘 글꼴 → DB 준비 → 첫 실행 안내 또는 진행 중 점검 복구
+  const [fontsReady, setFontsReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFontsReady(true), 3000); // 글꼴이 늦어도 앱은 연다
+    Font.loadAsync(MaterialCommunityIcons.font)
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(t);
+        setFontsReady(true);
+      });
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     try {
       DB.getDb();
@@ -101,7 +115,7 @@ export default function App() {
     return () => sub.remove();
   }, [set]);
 
-  if (!nav) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
+  if (!nav || !fontsReady) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
 
   const r = nav.route;
   let screen: ReactNode;

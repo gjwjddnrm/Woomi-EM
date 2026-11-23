@@ -15,10 +15,10 @@ import {
 } from 'react-native';
 import type { Chunk } from '../../modules/field-recorder';
 import * as DB from '../db';
-import { BigButton, Header } from '../components/ui';
+import { BigButton, Card, Header, Icon, IconButton, Pill, SectionLabel, Stat, ui } from '../components/ui';
 import { useNav } from '../nav';
 import { deleteInspectionFiles, listChunks, makeClip, totalRecordedMs } from '../storage';
-import { C, S } from '../theme';
+import { C, S, T } from '../theme';
 import { errMsg, fmtClock, fmtDate, fmtDuration, toFileUri } from '../util';
 import { photoContext } from '../transcribe';
 
@@ -144,18 +144,24 @@ export default function TimelineScreen({ id }: { id: string }) {
           <View style={[styles.progressFill, { width: `${pct * 100}%` }]} />
           <View style={[styles.centerMark, { left: `${centerPct * 100}%` }]} />
         </View>
-        <Text style={styles.playerTime}>
-          {fmtClock(playing.clipStart + cur * 1000)} · {fmtDuration(cur * 1000)} / {fmtDuration(dur * 1000)}
-        </Text>
+        <View style={styles.playerTimeRow}>
+          <Text style={styles.playerTime}>{fmtClock(playing.clipStart + cur * 1000)}</Text>
+          <Text style={styles.playerTimeSub}>
+            {fmtDuration(cur * 1000)} / {fmtDuration(dur * 1000)}
+          </Text>
+        </View>
         <View style={styles.playerRow}>
           <Pressable style={styles.pBtn} onPress={() => player.seekTo(Math.max(0, cur - 10))}>
-            <Text style={styles.pBtnText}>−10초</Text>
+            <Icon name="rewind-10" size={28} />
           </Pressable>
-          <Pressable style={styles.pBtn} onPress={() => (st.playing ? player.pause() : player.play())}>
-            <Text style={styles.pBtnText}>{st.playing ? '❚❚ 일시정지' : '▶ 재생'}</Text>
+          <Pressable style={[styles.pBtn, styles.pBtnMain]} onPress={() => (st.playing ? player.pause() : player.play())}>
+            <Icon name={st.playing ? 'pause' : 'play'} size={32} color="#1A1200" />
           </Pressable>
           <Pressable style={styles.pBtn} onPress={() => player.seekTo(Math.min(dur, cur + 10))}>
-            <Text style={styles.pBtnText}>+10초</Text>
+            <Icon name="fast-forward-10" size={28} />
+          </Pressable>
+          <Pressable style={styles.pBtn} onPress={stop}>
+            <Icon name="stop" size={28} />
           </Pressable>
         </View>
       </View>
@@ -166,17 +172,25 @@ export default function TimelineScreen({ id }: { id: string }) {
     <View style={{ padding: S.pad }}>
       <Text style={styles.site}>{insp.site}</Text>
       <Text style={styles.meta}>
-        {fmtDate(insp.started_at)} {fmtClock(insp.started_at)}
+        {fmtDate(insp.started_at)} · {fmtClock(insp.started_at)}
         {insp.ended_at ? ` ~ ${fmtClock(insp.ended_at)}` : ' (진행 중)'}
       </Text>
-      <Text style={styles.meta}>
-        사진 {photos.length}장 · 녹음 {chunks ? `${fmtDuration(totalMs)} (${chunks.length}개 파일)` : '확인 중…'}
-      </Text>
+      <View style={styles.stats}>
+        <Stat icon="camera-outline" label="사진" value={`${photos.length}장`} />
+        <Stat icon="microphone-outline" label="녹음" value={chunks ? fmtDuration(totalMs) : '…'} />
+        <Stat
+          icon="text-box-check-outline"
+          label="텍스트 변환"
+          value={chunks ? `${transcripts.length}/${chunks.filter((c) => !c.active).length}` : '…'}
+          tone={chunks && chunks.length > 0 && transcripts.length >= chunks.filter((c) => !c.active).length ? 'ok' : undefined}
+        />
+      </View>
 
       {insp.status === 'ended' ? (
         <BigButton
-          title="정리하기: 텍스트·보고서·PDF"
-          sub="음성 변환 → 사진별 대화 연결 → 보고서 초안"
+          title="정리하기"
+          sub="텍스트 변환 · 보고서 초안 · PDF 공유"
+          icon="file-document-edit-outline"
           onPress={() => {
             stop();
             nav.push({ name: 'report', id: insp.id });
@@ -186,41 +200,47 @@ export default function TimelineScreen({ id }: { id: string }) {
       ) : null}
 
       <Pressable onPress={() => setShowChunks((v) => !v)} style={styles.chunkToggle}>
-        <Text style={styles.chunkToggleText}>{showChunks ? '▾' : '▸'} 녹음 파일 목록</Text>
+        <Icon name={showChunks ? 'chevron-down' : 'chevron-right'} size={22} color={C.sub} />
+        <Text style={styles.chunkToggleText}>녹음 파일 {chunks ? `${chunks.length}개` : ''}</Text>
       </Pressable>
-      {showChunks && chunks
-        ? chunks.map((c) => {
+      {showChunks && chunks ? (
+        <Card style={{ paddingVertical: 4 }}>
+          {chunks.map((c, i) => {
             const key = `chunk_${c.startMs}`;
             return (
               <View key={key}>
-                <Pressable style={styles.chunkRow} onPress={() => playAround(key, c.startMs + c.durationMs / 2, c.durationMs / 2 + 1000, c.durationMs / 2 + 1000)}>
-                  <Text style={styles.chunkText}>
-                    {playing?.key === key ? '■' : loadingKey === key ? '…' : '▶'} {fmtClock(c.startMs)} · {fmtDuration(c.durationMs)}
-                  </Text>
+                <Pressable
+                  style={[styles.chunkRow, i > 0 && { borderTopWidth: 1, borderTopColor: C.border }]}
+                  onPress={() => playAround(key, c.startMs + c.durationMs / 2, c.durationMs / 2 + 1000, c.durationMs / 2 + 1000)}
+                >
+                  <Icon
+                    name={playing?.key === key ? 'stop-circle' : loadingKey === key ? 'progress-clock' : 'play-circle-outline'}
+                    size={28}
+                    color={C.accent}
+                  />
+                  <Text style={styles.chunkText}>{fmtClock(c.startMs)}</Text>
+                  <Text style={styles.chunkDur}>{fmtDuration(c.durationMs)}</Text>
                 </Pressable>
                 {renderPlayer(key)}
               </View>
             );
-          })
-        : null}
-      <Text style={styles.section}>시간순 타임라인</Text>
-      {photos.length === 0 ? <Text style={styles.text}>사진이 없습니다.</Text> : null}
+          })}
+        </Card>
+      ) : null}
+      <SectionLabel text="시간순 타임라인" style={{ marginTop: 22, marginBottom: 4 }} />
+      {photos.length === 0 ? <Text style={styles.empty}>사진이 없습니다.</Text> : null}
     </View>
   );
 
   return (
     <View style={styles.root}>
       <Header
-        title="타임라인"
+        title="점검 타임라인"
         onBack={() => {
           stop();
           nav.reset({ name: 'home' });
         }}
-        right={
-          <Pressable onPress={onDelete} hitSlop={10}>
-            <Text style={{ color: C.red, fontSize: 18, fontWeight: '800' }}>삭제</Text>
-          </Pressable>
-        }
+        right={<IconButton icon="trash-can-outline" color={C.red} onPress={onDelete} />}
       />
       <FlatList
         data={photos}
@@ -230,38 +250,64 @@ export default function TimelineScreen({ id }: { id: string }) {
         renderItem={({ item, index }) => {
           const key = `photo_${item.id}`;
           const ctx = transcripts.length ? photoContext(transcripts, item.taken_at) : null;
+          const isLast = index === photos.length - 1;
           return (
-            <View style={styles.card}>
-              <Text style={styles.cardTime}>
-                #{index + 1} · +{fmtDuration(item.offset_ms)} · {fmtClock(item.taken_at)}
-              </Text>
-              <Pressable onPress={() => setViewer(item)}>
-                <Image source={{ uri: item.uri }} style={styles.photo} resizeMode="cover" />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setMemoText(item.memo ?? '');
-                  setMemoFor(item);
-                }}
-              >
-                <Text style={item.memo ? styles.memo : styles.memoEmpty}>{item.memo ? `✎ ${item.memo}` : '+ 메모 추가'}</Text>
-              </Pressable>
-              {ctx ? (
-                <View style={styles.ctxBox}>
-                  {ctx.before ? <Text style={styles.ctxText}>{ctx.before}</Text> : null}
-                  <Text style={styles.ctxMark}>📷 촬영</Text>
-                  {ctx.after ? <Text style={styles.ctxText}>{ctx.after}</Text> : null}
+            <View style={styles.tlRow}>
+              {/* 시간선 */}
+              <View style={styles.rail}>
+                <View style={styles.railNum}>
+                  <Text style={styles.railNumText}>{index + 1}</Text>
                 </View>
-              ) : null}
-              <BigButton
-                kind="dark"
-                title={playing?.key === key ? '■ 정지' : '▶ 앞뒤 30초 듣기'}
-                busy={loadingKey === key}
-                disabled={!chunks}
-                onPress={() => playAround(key, item.taken_at)}
-                style={{ marginTop: 10 }}
-              />
-              {renderPlayer(key)}
+                {!isLast ? <View style={styles.railLine} /> : null}
+              </View>
+
+              <View style={styles.card}>
+                <View style={styles.cardHead}>
+                  <Text style={styles.cardTime}>{fmtClock(item.taken_at)}</Text>
+                  <Pill text={`+${fmtDuration(item.offset_ms)}`} />
+                </View>
+                <Pressable onPress={() => setViewer(item)}>
+                  <Image source={{ uri: item.uri }} style={styles.photo} resizeMode="cover" />
+                  <View style={styles.zoom}>
+                    <Icon name="arrow-expand" size={18} color={C.white} />
+                  </View>
+                </Pressable>
+                <Pressable
+                  style={styles.memoRow}
+                  onPress={() => {
+                    setMemoText(item.memo ?? '');
+                    setMemoFor(item);
+                  }}
+                >
+                  <Icon name={item.memo ? 'note-text-outline' : 'pencil-plus-outline'} size={20} color={item.memo ? C.accent : C.faint} />
+                  <Text style={item.memo ? styles.memo : styles.memoEmpty}>{item.memo ?? '메모 추가'}</Text>
+                </Pressable>
+                {ctx ? (
+                  <View style={styles.ctxBox}>
+                    <Text style={styles.ctxLabel}>촬영 전후 대화</Text>
+                    {ctx.before ? <Text style={styles.ctxText}>{ctx.before}</Text> : null}
+                    <View style={styles.ctxMarkRow}>
+                      <View style={styles.ctxMarkLine} />
+                      <Icon name="camera" size={14} color={C.blue} />
+                      <View style={styles.ctxMarkLine} />
+                    </View>
+                    {ctx.after ? <Text style={styles.ctxText}>{ctx.after}</Text> : null}
+                  </View>
+                ) : null}
+                {playing?.key === key ? (
+                  renderPlayer(key)
+                ) : (
+                  <BigButton
+                    kind="dark"
+                    icon="play-circle-outline"
+                    title="앞뒤 30초 듣기"
+                    busy={loadingKey === key}
+                    disabled={!chunks}
+                    onPress={() => playAround(key, item.taken_at)}
+                    style={{ marginTop: 12, minHeight: 56 }}
+                  />
+                )}
+              </View>
             </View>
           );
         }}
@@ -270,29 +316,25 @@ export default function TimelineScreen({ id }: { id: string }) {
       <Modal visible={!!viewer} onRequestClose={() => setViewer(null)} animationType="fade">
         <Pressable style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }} onPress={() => setViewer(null)}>
           {viewer ? <Image source={{ uri: viewer.uri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
+          <View style={styles.viewerClose}>
+            <Icon name="close" size={28} color={C.white} />
+          </View>
         </Pressable>
       </Modal>
 
       <Modal visible={!!memoFor} transparent animationType="fade" onRequestClose={() => setMemoFor(null)}>
-        <View style={styles.modalBg}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>사진 메모</Text>
-            <TextInput
-              value={memoText}
-              onChangeText={setMemoText}
-              autoFocus
-              style={styles.memoInput}
-              maxLength={80}
-              onSubmitEditing={saveMemo}
-            />
+        <View style={ui.modalBg}>
+          <View style={ui.modal}>
+            <Text style={ui.modalTitle}>사진 메모</Text>
+            <TextInput value={memoText} onChangeText={setMemoText} autoFocus style={ui.input} maxLength={80} onSubmitEditing={saveMemo} />
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               <BigButton title="취소" kind="dark" onPress={() => setMemoFor(null)} style={{ flex: 1 }} />
-              <BigButton title="저장" onPress={saveMemo} style={{ flex: 1 }} />
+              <BigButton title="저장" icon="check" onPress={saveMemo} style={{ flex: 1 }} />
             </View>
           </View>
         </View>
       </Modal>
-      {chunks === null ? <ActivityIndicator style={{ position: 'absolute', top: 80, right: 20 }} color={C.yellow} /> : null}
+      {chunks === null ? <ActivityIndicator style={{ position: 'absolute', top: 80, right: 20 }} color={C.accent} /> : null}
     </View>
   );
 }
@@ -300,55 +342,65 @@ export default function TimelineScreen({ id }: { id: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   text: { color: C.text, fontSize: 18 },
-  site: { color: C.text, fontSize: 28, fontWeight: '900' },
-  meta: { color: C.sub, fontSize: 17, marginTop: 4 },
-  section: { color: C.text, fontSize: 22, fontWeight: '900', marginTop: 22 },
-  chunkToggle: { marginTop: 16, paddingVertical: 8 },
-  chunkToggleText: { color: C.yellow, fontSize: 19, fontWeight: '800' },
-  chunkRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.cardBorder },
-  chunkText: { color: C.text, fontSize: 18, fontWeight: '700' },
+  empty: { color: C.sub, fontSize: 16 },
+  site: { color: C.text, ...T.display },
+  meta: { color: C.sub, fontSize: 16, fontWeight: '600', marginTop: 4 },
+  stats: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  chunkToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 18, paddingVertical: 8 },
+  chunkToggleText: { color: C.sub, fontSize: 17, fontWeight: '800' },
+  chunkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  chunkText: { color: C.text, fontSize: 17, fontWeight: '700', flex: 1, ...T.num },
+  chunkDur: { color: C.sub, fontSize: 15, fontWeight: '700', ...T.num },
+  tlRow: { flexDirection: 'row', paddingLeft: 10, paddingRight: S.pad },
+  rail: { width: 40, alignItems: 'center' },
+  railNum: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+  },
+  railNumText: { color: '#1A1200', fontSize: 15, fontWeight: '900' },
+  railLine: { flex: 1, width: 2, backgroundColor: C.border, marginTop: 4 },
   card: {
-    marginHorizontal: S.pad,
-    marginBottom: 18,
-    backgroundColor: C.card,
-    borderRadius: 14,
+    flex: 1,
+    marginBottom: 16,
+    backgroundColor: C.surface,
+    borderRadius: S.radius,
     borderWidth: 1,
-    borderColor: C.cardBorder,
+    borderColor: C.border,
     padding: 12,
   },
-  cardTime: { color: C.yellow, fontSize: 19, fontWeight: '900', marginBottom: 8 },
-  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, backgroundColor: '#222' },
-  memo: { color: C.text, fontSize: 20, fontWeight: '800', marginTop: 10 },
-  memoEmpty: { color: C.sub, fontSize: 18, fontWeight: '700', marginTop: 10 },
-  ctxBox: { marginTop: 10, backgroundColor: '#0B0B0B', borderRadius: 8, padding: 10, borderLeftWidth: 4, borderLeftColor: C.blue },
-  ctxText: { color: C.text, fontSize: 17, lineHeight: 25 },
-  ctxMark: { color: C.blue, fontSize: 15, fontWeight: '900', marginVertical: 4 },
-  playerBox: { marginTop: 10, backgroundColor: '#0B0B0B', borderRadius: 10, padding: 12 },
-  progress: { height: 14, backgroundColor: '#333', borderRadius: 7, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: C.yellow },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  cardTime: { color: C.text, fontSize: 19, fontWeight: '900', ...T.num },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10, backgroundColor: C.surface2 },
+  zoom: { position: 'absolute', right: 8, bottom: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: 6 },
+  memoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, minHeight: 32 },
+  memo: { color: C.text, fontSize: 18, fontWeight: '800', flex: 1 },
+  memoEmpty: { color: C.faint, fontSize: 16, fontWeight: '700' },
+  ctxBox: { marginTop: 10, backgroundColor: C.blueDark, borderRadius: 10, padding: 12 },
+  ctxLabel: { color: '#9CC5FF', fontSize: 12, fontWeight: '900', letterSpacing: 1, marginBottom: 6 },
+  ctxText: { color: C.text, fontSize: 16, lineHeight: 24 },
+  ctxMarkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 6 },
+  ctxMarkLine: { flex: 1, height: 1, backgroundColor: '#2C4A73' },
+  playerBox: { marginTop: 12, backgroundColor: C.surface2, borderRadius: 12, padding: 12 },
+  progress: { height: 10, backgroundColor: C.surface3, borderRadius: 5, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: C.accent },
   centerMark: { position: 'absolute', top: 0, bottom: 0, width: 3, backgroundColor: C.red },
-  playerTime: { color: C.text, fontSize: 16, fontWeight: '700', marginTop: 8 },
+  playerTimeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  playerTime: { color: C.text, fontSize: 16, fontWeight: '800', ...T.num },
+  playerTimeSub: { color: C.sub, fontSize: 15, fontWeight: '700', ...T.num },
   playerRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   pBtn: {
     flex: 1,
     minHeight: 56,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: C.cardBorder,
+    borderRadius: 12,
+    backgroundColor: C.surface3,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pBtnText: { color: C.text, fontSize: 18, fontWeight: '800' },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', padding: 16 },
-  modal: { backgroundColor: C.card, borderRadius: 16, padding: 18, borderWidth: 2, borderColor: C.cardBorder },
-  modalTitle: { color: C.text, fontSize: 22, fontWeight: '900', marginBottom: 12 },
-  memoInput: {
-    backgroundColor: '#fff',
-    color: '#000',
-    fontSize: 22,
-    fontWeight: '700',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
+  pBtnMain: { backgroundColor: C.accent, flex: 1.4 },
+  viewerClose: { position: 'absolute', top: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 6 },
 });

@@ -2,18 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, BackHandler, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FieldRecorder, { type DeviceHealth } from '../../modules/field-recorder';
 import * as DB from '../db';
-import { BigButton, Header } from '../components/ui';
+import { BigButton, Header, Icon, type IconName, Pill } from '../components/ui';
 import { type PermResult, checkPermissions, getHealth, requestPermissions } from '../inspection';
 import { useNav } from '../nav';
 import { C, S } from '../theme';
 import { fmtBytes } from '../util';
 
-function Step(props: { n: number; title: string; done?: boolean; children: React.ReactNode }) {
+function Step(props: { n: number; title: string; icon: IconName; done?: boolean; children: React.ReactNode }) {
   return (
-    <View style={styles.step}>
+    <View style={[styles.step, props.done && { borderColor: '#1F5C34' }]}>
       <View style={styles.stepHead}>
-        <Text style={[styles.badge, props.done ? { backgroundColor: C.green } : null]}>{props.done ? '✓' : props.n}</Text>
-        <Text style={styles.stepTitle}>{props.title}</Text>
+        <View style={[styles.badge, props.done ? { backgroundColor: C.green } : null]}>
+          <Icon name={props.done ? 'check' : props.icon} size={22} color={props.done ? '#06210F' : '#1A1200'} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.stepNo}>단계 {props.n}</Text>
+          <Text style={styles.stepTitle}>{props.title}</Text>
+        </View>
+        {props.done ? <Pill text="완료" color={C.green} bg={C.greenDark} /> : <Pill text="필요" color={C.accent} bg={C.accentDark} />}
       </View>
       {props.children}
     </View>
@@ -58,19 +64,20 @@ export default function SetupScreen({ first }: { first?: boolean }) {
 
   return (
     <View style={styles.root}>
-      <Header title="녹음 안정성 설정" onBack={first ? undefined : done} />
+      <Header title="녹음 안정성 설정" subtitle="처음 한 번만 하면 됩니다" onBack={first ? undefined : done} />
       <ScrollView contentContainerStyle={{ padding: S.pad, paddingBottom: 60 }}>
         <Text style={styles.lead}>
           화면이 꺼지거나 다른 앱을 써도 녹음이 끊기지 않도록, 처음 한 번만 아래 3가지를 해 주세요.
         </Text>
 
-        <Step n={1} title="권한 허용 (마이크·카메라·알림)" done={permOk}>
+        <Step n={1} icon="shield-key-outline" title="권한 허용 (마이크·카메라·알림)" done={permOk}>
           <Text style={styles.body}>
             알림 권한은 상단에 "점검 녹음 중"을 띄우는 데 필요합니다. 알림이 보여야 안드로이드가 녹음을 멈추지 않습니다.
           </Text>
           {!permOk ? (
             <BigButton
               title="권한 허용하기"
+              icon="check-decagram-outline"
               onPress={async () => {
                 setPerm(await requestPermissions());
               }}
@@ -88,7 +95,7 @@ export default function SetupScreen({ first }: { first?: boolean }) {
           ) : null}
         </Step>
 
-        <Step n={2} title="배터리 최적화 예외" done={battOk}>
+        <Step n={2} icon="battery-heart-variant" title="배터리 최적화 예외" done={battOk}>
           <Text style={styles.body}>
             {battOk
               ? '설정되었습니다.'
@@ -97,13 +104,14 @@ export default function SetupScreen({ first }: { first?: boolean }) {
           {!battOk ? (
             <BigButton
               title="배터리 최적화 예외 요청"
+              icon="battery-check"
               onPress={() => FieldRecorder.requestIgnoreBatteryOptimizations()}
               style={{ marginTop: 10 }}
             />
           ) : null}
         </Step>
 
-        <Step n={3} title="삼성: '절전 예외 앱'에 등록" done={samsungGuideOpened}>
+        <Step n={3} icon="sleep-off" title="삼성: '절전 예외 앱'에 등록" done={samsungGuideOpened}>
           <Text style={styles.body}>
             삼성 갤럭시는 위 설정과 별개로 오래 안 쓴 앱을 "절전 상태"로 만듭니다. 아래 순서로 꼭 등록하세요.
           </Text>
@@ -119,6 +127,7 @@ export default function SetupScreen({ first }: { first?: boolean }) {
           </View>
           <BigButton
             title="배터리 설정 열기"
+            icon="open-in-new"
             onPress={() => {
               FieldRecorder.openSamsungBatterySettings();
               DB.setSetting('samsungGuideSeen', '1');
@@ -129,6 +138,7 @@ export default function SetupScreen({ first }: { first?: boolean }) {
           <BigButton
             kind="dark"
             title="앱 정보 열기 (배터리 → 제한 없음)"
+            icon="information-outline"
             onPress={() => {
               FieldRecorder.openAppSettings();
               DB.setSetting('samsungGuideSeen', '1');
@@ -144,7 +154,7 @@ export default function SetupScreen({ first }: { first?: boolean }) {
         </Step>
 
         <View style={styles.info}>
-          <Text style={styles.infoTitle}>현재 상태</Text>
+          <Text style={styles.infoTitle}>현재 기기 상태</Text>
           <Text style={styles.infoLine}>
             기기: {health ? `${health.manufacturer} ${health.model} (Android API ${health.sdk})` : '-'}
           </Text>
@@ -164,33 +174,30 @@ export default function SetupScreen({ first }: { first?: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  lead: { color: C.text, fontSize: 20, fontWeight: '700', lineHeight: 29, marginBottom: 16 },
+  lead: { color: C.text, fontSize: 18, fontWeight: '600', lineHeight: 27, marginBottom: 16 },
   step: {
-    backgroundColor: C.card,
-    borderRadius: 14,
+    backgroundColor: C.surface,
+    borderRadius: S.radius,
     borderWidth: 1,
-    borderColor: C.cardBorder,
-    padding: 14,
+    borderColor: C.border,
+    padding: 16,
     marginBottom: 14,
   },
-  stepHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  stepHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   badge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.yellow,
-    color: C.black,
-    fontSize: 20,
-    fontWeight: '900',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    overflow: 'hidden',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stepTitle: { color: C.text, fontSize: 21, fontWeight: '900', flex: 1 },
-  body: { color: C.sub, fontSize: 18, lineHeight: 26 },
-  howto: { backgroundColor: '#0B0B0B', borderRadius: 10, padding: 12, marginTop: 10 },
-  howtoLine: { color: C.text, fontSize: 18, lineHeight: 28, fontWeight: '700' },
-  info: { marginTop: 6, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder },
-  infoTitle: { color: C.text, fontSize: 20, fontWeight: '900', marginBottom: 6 },
-  infoLine: { color: C.sub, fontSize: 17, lineHeight: 26 },
+  stepNo: { color: C.faint, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  stepTitle: { color: C.text, fontSize: 19, fontWeight: '800' },
+  body: { color: C.sub, fontSize: 16, lineHeight: 24 },
+  howto: { backgroundColor: C.surface2, borderRadius: 12, padding: 14, marginTop: 12, gap: 2 },
+  howtoLine: { color: C.text, fontSize: 16, lineHeight: 26, fontWeight: '600' },
+  info: { marginTop: 6, padding: 16, borderRadius: S.radius, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+  infoTitle: { color: C.faint, fontSize: 13, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8 },
+  infoLine: { color: C.sub, fontSize: 16, lineHeight: 26 },
 });

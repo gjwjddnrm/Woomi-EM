@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import * as DB from '../db';
-import { BigButton, Header } from '../components/ui';
+import { BigButton, Header, Icon } from '../components/ui';
 import { type KeyName, getKey, maskKey, setKey } from '../keys';
 import { useNav } from '../nav';
 import { C, S } from '../theme';
@@ -14,14 +14,17 @@ function KeyField(props: { name: KeyName; label: string; hint: string; placehold
   }, [props.name]);
   return (
     <View style={styles.box}>
-      <Text style={styles.label}>{props.label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Icon name="key-variant" size={22} color={C.accent} />
+        <Text style={styles.label}>{props.label}</Text>
+      </View>
       <Text style={styles.hint}>{props.hint}</Text>
       <Text style={styles.saved}>저장된 키: {maskKey(saved)}</Text>
       <TextInput
         value={value}
         onChangeText={setValue}
         placeholder={props.placeholder}
-        placeholderTextColor="#777"
+        placeholderTextColor={C.faint}
         autoCapitalize="none"
         autoCorrect={false}
         secureTextEntry
@@ -30,6 +33,7 @@ function KeyField(props: { name: KeyName; label: string; hint: string; placehold
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
         <BigButton
           title="저장"
+          icon="content-save-outline"
           style={{ flex: 1 }}
           disabled={!value.trim()}
           onPress={async () => {
@@ -59,11 +63,14 @@ export default function SettingsScreen() {
   const [shutter, setShutter] = useState(DB.getSetting('shutterSound') === '1');
   return (
     <View style={styles.root}>
-      <Header title="설정" onBack={() => nav.back()} />
+      <Header title="설정" subtitle="촬영 · API 키 · 안정성" onBack={() => nav.back()} />
       <ScrollView contentContainerStyle={{ padding: S.pad, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
         <View style={[styles.box, { flexDirection: 'row', alignItems: 'center' }]}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>촬영음</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Icon name={shutter ? 'volume-high' : 'volume-off'} size={22} color={C.accent} />
+              <Text style={styles.label}>촬영음</Text>
+            </View>
             <Text style={styles.hint}>끄면 찰칵 소리 없이 진동과 화면 깜박임으로만 알려 줍니다. 녹음에도 소리가 섞이지 않습니다.</Text>
           </View>
           <Switch
@@ -93,7 +100,7 @@ export default function SettingsScreen() {
           녹음·사진은 이 폰 안에만 저장됩니다. "텍스트 변환"과 "보고서 초안"을 누를 때만 해당 녹음·사진이 OpenAI·Anthropic으로
           전송됩니다.
         </Text>
-        <BigButton title="녹음 안정성 설정 다시 보기" kind="dark" onPress={() => nav.push({ name: 'setup' })} />
+        <BigButton title="녹음 안정성 설정" icon="shield-check-outline" kind="dark" onPress={() => nav.push({ name: 'setup' })} />
       </ScrollView>
     </View>
   );
@@ -101,18 +108,20 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  box: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder, padding: 14, marginBottom: 16 },
-  label: { color: C.text, fontSize: 21, fontWeight: '900' },
-  hint: { color: C.sub, fontSize: 16, lineHeight: 23, marginTop: 6 },
-  saved: { color: C.yellow, fontSize: 17, fontWeight: '800', marginTop: 8 },
+  box: { backgroundColor: C.surface, borderRadius: S.radius, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 14 },
+  label: { color: C.text, fontSize: 19, fontWeight: '800', flexShrink: 1 },
+  hint: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 6 },
+  saved: { color: C.accent, fontSize: 15, fontWeight: '800', marginTop: 10 },
   input: {
-    backgroundColor: '#fff',
-    color: '#000',
-    fontSize: 18,
-    borderRadius: 10,
+    backgroundColor: C.surface2,
+    color: C.text,
+    fontSize: 17,
+    borderRadius: S.radiusSm,
+    borderWidth: 1.5,
+    borderColor: C.borderStrong,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginTop: 10,
   },
-  note: { color: C.sub, fontSize: 16, lineHeight: 24, marginBottom: 16 },
+  note: { color: C.sub, fontSize: 15, lineHeight: 22, marginBottom: 16 },
 });
