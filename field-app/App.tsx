@@ -11,6 +11,8 @@ import CaptureScreen from './src/screens/CaptureScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import SetupScreen from './src/screens/SetupScreen';
 import TimelineScreen from './src/screens/TimelineScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import ReportScreen from './src/screens/ReportScreen';
 import { BigButton } from './src/components/ui';
 
 class ErrorBoundary extends Component<{ children: ReactNode; onReset: () => void }, { error: Error | null }> {
@@ -115,6 +117,12 @@ export default function App() {
       break;
     case 'timeline':
       screen = <TimelineScreen key={r.id} id={r.id} />;
+      break;
+    case 'settings':
+      screen = <SettingsScreen />;
+      break;
+    case 'report':
+      screen = <ReportScreen key={r.id} id={r.id} />;
       break;
     default:
       screen = <HomeScreen />;

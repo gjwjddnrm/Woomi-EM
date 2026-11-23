@@ -173,7 +173,17 @@ export default function TimelineScreen({ id }: { id: string }) {
         사진 {photos.length}장 · 녹음 {chunks ? `${fmtDuration(totalMs)} (${chunks.length}개 파일)` : '확인 중…'}
       </Text>
 
-      {/* STAGE2_REPORT_BUTTON */}
+      {insp.status === 'ended' ? (
+        <BigButton
+          title="정리하기: 텍스트·보고서·PDF"
+          sub="음성 변환 → 사진별 대화 연결 → 보고서 초안"
+          onPress={() => {
+            stop();
+            nav.push({ name: 'report', id: insp.id });
+          }}
+          style={{ marginTop: 14 }}
+        />
+      ) : null}
 
       <Pressable onPress={() => setShowChunks((v) => !v)} style={styles.chunkToggle}>
         <Text style={styles.chunkToggleText}>{showChunks ? '▾' : '▸'} 녹음 파일 목록</Text>

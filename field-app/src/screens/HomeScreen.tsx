@@ -78,7 +78,7 @@ export default function HomeScreen() {
         Alert.alert('확인해 주세요', msg.map((m) => `• ${m}`).join('\n'), [
           { text: '설정 안내 보기', onPress: () => resolve(false) },
           { text: '그래도 시작', onPress: () => resolve(true) },
-        ])
+        ], { cancelable: false })
       );
       if (!go) {
         nav.push({ name: 'setup' });
@@ -108,7 +108,9 @@ export default function HomeScreen() {
           <Pressable style={styles.smallBtn} onPress={() => nav.push({ name: 'setup' })}>
             <Text style={styles.smallBtnText}>안정성 설정</Text>
           </Pressable>
-          {/* STAGE2_SETTINGS_BUTTON */}
+          <Pressable style={styles.smallBtn} onPress={() => nav.push({ name: 'settings' })}>
+            <Text style={styles.smallBtnText}>설정</Text>
+          </Pressable>
         </View>
       </View>
 
