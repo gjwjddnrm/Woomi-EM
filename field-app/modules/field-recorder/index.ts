@@ -59,6 +59,8 @@ type NativeModuleShape = {
   mergeToM4a(paths: string[], starts: number[], outPath: string): Promise<ClipResult | null>;
   speechSpans(path: string): Promise<number[] | null>;
   writeSpans(path: string, spans: number[], outPath: string): Promise<number>;
+  saveToGallery(paths: string[], names: string[], folder: string): Promise<number>;
+  zipFiles(paths: string[], names: string[], textNames: string[], texts: string[], outPath: string): Promise<number>;
   getDeviceHealth(): DeviceHealth;
   requestIgnoreBatteryOptimizations(): boolean;
   openAppSettings(): boolean;

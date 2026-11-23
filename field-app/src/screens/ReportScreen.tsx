@@ -4,6 +4,7 @@ import * as DB from '../db';
 import { BigButton, Header, Icon, IconButton, Pill, SectionLabel } from '../components/ui';
 import { useNav } from '../nav';
 import { buildPdf, sharePdf } from '../pdf';
+import { exportPhotosZip, savePhotosToGallery } from '../export';
 import { type Report, type ReportItem, generateReport, loadReport, saveReportEdits } from '../report';
 import { listChunks } from '../storage';
 import { type TranscribeProgress, transcribeInspection } from '../transcribe';
@@ -31,7 +32,7 @@ export default function ReportScreen({ id }: { id: string }) {
   const [prog, setProg] = useState<TranscribeProgress | null>(null);
   const [chunkTotal, setChunkTotal] = useState<number | null>(null);
   const [doneCount, setDoneCount] = useState(() => DB.listTranscripts(id).length);
-  const [busy, setBusy] = useState<null | 'stt' | 'report' | 'pdf'>(null);
+  const [busy, setBusy] = useState<null | 'stt' | 'report' | 'pdf' | 'zip' | 'gallery'>(null);
   const [status, setStatus] = useState('');
   const [report, setReport] = useState<Report | null>(() => loadReport(id));
   const [dirty, setDirty] = useState(false);
@@ -99,6 +100,29 @@ export default function ReportScreen({ id }: { id: string }) {
         { text: '다시 만들기', style: 'destructive', onPress: go },
       ]);
     } else go();
+  };
+
+  const runZip = async () => {
+    setBusy('zip');
+    try {
+      await exportPhotosZip(insp);
+    } catch (e) {
+      Alert.alert('내보내기 실패', errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runGallery = async () => {
+    setBusy('gallery');
+    try {
+      const n = await savePhotosToGallery(insp);
+      Alert.alert('갤러리에 저장했습니다', `${n}장 · 갤러리 앱 › 앨범 › 현장점검`);
+    } catch (e) {
+      Alert.alert('저장 실패', errMsg(e));
+    } finally {
+      setBusy(null);
+    }
   };
 
   const runPdf = async () => {
@@ -179,6 +203,27 @@ export default function ReportScreen({ id }: { id: string }) {
 
         <StepCard n={3} title="PDF 내보내기 · 공유">
           <BigButton title="PDF 만들고 공유" sub="카카오톡 · 메일 · 드라이브" icon="file-pdf-box" onPress={runPdf} disabled={!!busy} busy={busy === 'pdf'} />
+        </StepCard>
+
+        <StepCard n={4} title="사진 내보내기 (다른 양식용)">
+          <BigButton
+            title="사진 묶음 보내기 (ZIP)"
+            sub="사진 + 엑셀 사진목록(메모·지적·조치·대화)"
+            icon="folder-zip-outline"
+            onPress={runZip}
+            disabled={!!busy}
+            busy={busy === 'zip'}
+          />
+          <BigButton
+            title="갤러리에 모두 저장"
+            icon="image-multiple-outline"
+            kind="secondary"
+            onPress={runGallery}
+            disabled={!!busy}
+            busy={busy === 'gallery'}
+            style={{ marginTop: 8 }}
+          />
+          <Text style={styles.help}>파일 이름이 "번호_촬영시각_메모.jpg"라서 다른 보고서 양식에 넣을 때 어떤 사진인지 바로 알 수 있습니다. 갤러리에는 '사진 › 현장점검' 폴더에 저장됩니다.</Text>
         </StepCard>
 
         {status ? (

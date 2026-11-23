@@ -54,6 +54,12 @@ const Mock = {
   async speechSpans(): Promise<number[] | null> {
     return [];
   },
+  async saveToGallery(paths: string[]): Promise<number> {
+    return paths.length;
+  },
+  async zipFiles(): Promise<number> {
+    return 1;
+  },
   getDeviceHealth(): DeviceHealth {
     return {
       batteryPct: 82,

@@ -133,6 +133,15 @@ class FieldRecorderModule : Module() {
       SpeechUtil.writeSpansM4a(File(path), spans.map { it.toLong() }.toLongArray(), outPath).toDouble()
     }
 
+    // ── 내보내기 ──
+    AsyncFunction("saveToGallery") { paths: List<String>, names: List<String>, folder: String ->
+      ExportUtil.saveToGallery(context, paths, names, folder)
+    }
+
+    AsyncFunction("zipFiles") { paths: List<String>, names: List<String>, textNames: List<String>, texts: List<String>, outPath: String ->
+      ExportUtil.zip(paths, names, textNames, texts, outPath).toDouble()
+    }
+
     // ── 기기 상태 ──
     Function("getDeviceHealth") {
       val ctx = context

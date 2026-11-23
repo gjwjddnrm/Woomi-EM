@@ -21,6 +21,7 @@ import { deleteInspectionFiles, listChunks, makeClip, totalRecordedMs } from '..
 import { C, F, S, T } from '../theme';
 import { errMsg, fmtClock, fmtDate, fmtDuration, toFileUri } from '../util';
 import { photoContext } from '../transcribe';
+import { exportPhotosZip, savePhotosToGallery, sharePhoto } from '../export';
 
 type Playing = { key: string; clipStart: number; center: number } | null;
 
@@ -245,7 +246,22 @@ export default function TimelineScreen({ id }: { id: string }) {
           stop();
           nav.reset({ name: 'home' });
         }}
-        right={<IconButton icon="trash-can-outline" color={C.red} onPress={onDelete} />}
+        right={
+          <View style={{ flexDirection: 'row' }}>
+            <IconButton
+              icon="export-variant"
+              dark
+              onPress={() =>
+                Alert.alert('사진 내보내기', '다른 보고서 양식에 쓸 사진을 내보냅니다.', [
+                  { text: '취소', style: 'cancel' },
+                  { text: '갤러리에 모두 저장', onPress: () => savePhotosToGallery(insp).then((n) => Alert.alert('저장했습니다', `${n}장 · 갤러리 › 앨범 › 현장점검`)).catch((e) => Alert.alert('저장 실패', errMsg(e))) },
+                  { text: 'ZIP으로 보내기', onPress: () => exportPhotosZip(insp).catch((e) => Alert.alert('내보내기 실패', errMsg(e))) },
+                ])
+              }
+            />
+            <IconButton icon="trash-can-outline" color="#FF8A82" onPress={onDelete} />
+          </View>
+        }
       />
       <FlatList
         data={photos}
@@ -287,6 +303,23 @@ export default function TimelineScreen({ id }: { id: string }) {
                   <Icon name={item.memo ? 'note-text-outline' : 'pencil-plus-outline'} size={20} color={item.memo ? C.primary : C.faint} />
                   <Text style={item.memo ? styles.memo : styles.memoEmpty}>{item.memo ?? '메모 추가'}</Text>
                 </Pressable>
+                <View style={styles.actions}>
+                  <Pressable style={styles.action} onPress={() => sharePhoto(item).catch((e) => Alert.alert('공유 실패', errMsg(e)))}>
+                    <Icon name="share-variant-outline" size={18} color={C.primary} />
+                    <Text style={styles.actionText}>보내기</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.action}
+                    onPress={() =>
+                      savePhotosToGallery(insp, [item])
+                        .then(() => Alert.alert('갤러리에 저장했습니다', '갤러리 › 앨범 › 현장점검'))
+                        .catch((e) => Alert.alert('저장 실패', errMsg(e)))
+                    }
+                  >
+                    <Icon name="download-outline" size={18} color={C.primary} />
+                    <Text style={styles.actionText}>갤러리 저장</Text>
+                  </Pressable>
+                </View>
                 {ctx ? (
                   <View style={styles.ctxBox}>
                     <Text style={styles.ctxLabel}>촬영 전후 대화</Text>
@@ -382,6 +415,9 @@ const styles = StyleSheet.create({
   cardTime: { color: C.text, fontSize: 19, fontFamily: F.xbold, ...T.num },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10, backgroundColor: C.surface2 },
   zoom: { position: 'absolute', right: 8, bottom: 8, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: 6 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: C.primarySoft },
+  actionText: { fontFamily: F.semibold, fontSize: 13.5, color: C.primary },
   memoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, minHeight: 32 },
   memo: { color: C.text, fontSize: 18, fontFamily: F.xbold, flex: 1 },
   memoEmpty: { color: C.faint, fontSize: 16, fontFamily: F.bold },
